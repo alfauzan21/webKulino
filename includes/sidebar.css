@@ -1,0 +1,52 @@
+body {
+    background: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.sidebar {
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 230px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding-top: 25px;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar img {
+    width: 80px;
+    margin-bottom: 15px;
+    border-radius: 12px;
+}
+
+.sidebar h4 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-weight: bold;
+}
+
+.sidebar a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    color: white;
+    text-decoration: none;
+    transition: 0.3s;
+    border-radius: 8px;
+    margin: 5px 10px;
+    font-weight: 500;
+}
+
+.sidebar a:hover,
+.sidebar a.active {
+    background: rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+}
+
+.content {
+    margin-left: 250px;
+    padding: 40px;
+}

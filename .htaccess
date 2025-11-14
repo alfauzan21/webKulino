@@ -1,0 +1,16 @@
+DirectoryIndex index.php
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+</IfModule>
+
+<FilesMatch "\.(env|json|config|log|ini|sh|sql)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+php_flag display_errors Off
+php_value error_reporting 0
+
