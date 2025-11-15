@@ -30,7 +30,7 @@
 </head>
 
 <body class="bg-gradient-to-br from-gray-50 via-gray-100 to-indigo-50">
-  
+
   <!-- Top Bar with Visitor Counter -->
   <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
     <div class="max-w-6xl mx-auto px-4 py-2 flex justify-between items-center text-sm">
@@ -124,7 +124,7 @@
 
   <main class="max-w-6xl mx-auto px-4 py-8">
 
-    <!-- Hero Section -->
+    <!-- Hero Section with Balance Display -->
     <section class="mb-12 relative overflow-hidden rounded-3xl shadow-2xl hero-section">
       <!-- Video Background -->
       <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover">
@@ -133,7 +133,7 @@
 
       <!-- Overlay Content -->
       <div class="relative z-10 p-8 md:p-12 bg-gradient-to-r from-black/60 via-black/40 to-transparent">
-        <div class="max-w-2xl">
+        <div class="max-w-4xl">
           <div class="inline-block bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full mb-4">
             🔥 PLAY TO EARN
           </div>
@@ -144,21 +144,96 @@
             Connect your Phantom wallet and start earning rewards while playing amazing games on the Solana blockchain.
           </p>
 
-          <!-- Wallet Status Card -->
-          <div class="wallet-display inline-block">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-                </svg>
+          <!-- Wallet & Balance Cards -->
+          <div class="grid md:grid-cols-2 gap-4 max-w-3xl">
+
+            <!-- Wallet Status Card -->
+            <div class="wallet-display backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-5 shadow-2xl">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full flex items-center justify-center shadow-lg">
+                    <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-xs text-white/70 font-medium">Wallet Status</p>
+                    <p id="walletStatus" class="font-bold text-white text-sm">Not Connected</p>
+                  </div>
+                </div>
+                <button
+                  onclick="disconnectWallet()"
+                  id="disconnectBtn"
+                  class="hidden text-white/70 hover:text-red-400 transition p-2 rounded-lg hover:bg-white/10"
+                  title="Disconnect Wallet">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
               </div>
-              <div>
-                <p class="text-xs text-white/70">Wallet Status</p>
-                <p id="walletStatus" class="font-semibold text-white">Not Connected</p>
-                <p id="addrShort" class="text-xs font-mono text-white/90 mt-1">-</p>
+              <div class="bg-white/5 rounded-xl p-3 border border-white/10">
+                <p class="text-xs text-white/60 mb-1">Address</p>
+                <p id="addrShort" class="font-mono text-white text-sm">-</p>
               </div>
             </div>
+
+            <!-- Balance Card -->
+            <div class="backdrop-blur-xl bg-gradient-to-br from-indigo-500/20 to-purple-600/20 border border-white/20 rounded-2xl p-5 shadow-2xl">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                    <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"></path>
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-xs text-white/70 font-medium">Your Balance</p>
+                    <p id="kulinoBalance" class="font-bold text-white text-xl">0.00 KULINO</p>
+                  </div>
+                </div>
+                <button
+                  onclick="updateBalanceDisplay()"
+                  id="refreshBalanceBtn"
+                  class="text-white/70 hover:text-white transition p-2 rounded-lg hover:bg-white/10"
+                  title="Refresh Balance">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                  </svg>
+                </button>
+              </div>
+              <div class="bg-white/5 rounded-xl p-3 border border-white/10">
+                <div class="flex items-center justify-between">
+                  <p class="text-xs text-white/60">SOL Balance</p>
+                  <p id="solBalance" class="font-mono text-white text-sm">0.0000 SOL</p>
+                </div>
+              </div>
+            </div>
+
           </div>
+
+          <!-- Quick Actions -->
+          <div class="mt-6 flex flex-wrap gap-3">
+            <a href="https://phantom.com/tokens/solana/E5chNtjGFvCMVYoTwcP9DtrdMdctRCGdGahAAhnHbHc1"
+              target="_blank"
+              class="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl transition backdrop-blur-sm border border-white/20 text-sm font-medium">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"></path>
+                <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"></path>
+              </svg>
+              View Token on Phantom
+            </a>
+
+            <button
+              onclick="updateBalanceDisplay()"
+              class="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl transition backdrop-blur-sm border border-white/20 text-sm font-medium">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
+              Refresh Balance
+            </button>
+          </div>
+
         </div>
       </div>
     </section>
