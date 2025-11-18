@@ -1,16 +1,19 @@
 // ==================== CONFIGURATION ====================
 const unityBuildPath = "./WebUnity/index.html";
 const KULINO_TOKEN_MINT = 'E5chNtjGFvCMVYoTwcP9DtrdMdctRCGdGahAAhnHbHc1';
+const SOLANA_RPC = 'https://api.mainnet-beta.solana.com';
 
 // ==================== STATE MANAGEMENT ====================
 let provider = null;
 let userAddress = null;
 let unityInstance = null;
 let kulinoBalance = 0;
+let solBalance = 0;
 
 // Local Storage Keys
 const WALLET_STORAGE_KEY = 'kulino_connected_wallet';
 const WALLET_TIMESTAMP_KEY = 'kulino_wallet_timestamp';
+const SESSION_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
 
 // ==================== UTILITY FUNCTIONS ====================
 function isMobileDevice() {
@@ -37,6 +40,10 @@ function formatKulinoBalance(balance) {
   return balance.toFixed(2);
 }
 
+function formatSOLBalance(balance) {
+  return balance.toFixed(4);
+}
+
 // ==================== STORAGE FUNCTIONS ====================
 function saveWalletToStorage(address) {
   try {
@@ -44,7 +51,7 @@ function saveWalletToStorage(address) {
     localStorage.setItem(WALLET_TIMESTAMP_KEY, Date.now().toString());
     console.log('✅ Wallet saved to storage:', shortAddr(address));
   } catch (error) {
-    console.error('Failed to save wallet:', error);
+    console.error('❌ Failed to save wallet:', error);
   }
 }
 
@@ -54,8 +61,8 @@ function loadWalletFromStorage() {
     const timestamp = localStorage.getItem(WALLET_TIMESTAMP_KEY);
     
     if (savedAddress && timestamp) {
-      const daysSinceLastConnect = (Date.now() - parseInt(timestamp)) / (1000 * 60 * 60 * 24);
-      if (daysSinceLastConnect < 30) { // Valid for 30 days
+      const timeSinceLastConnect = Date.now() - parseInt(timestamp);
+      if (timeSinceLastConnect < SESSION_DURATION) {
         console.log('✅ Wallet loaded from storage:', shortAddr(savedAddress));
         return savedAddress;
       } else {
@@ -64,7 +71,7 @@ function loadWalletFromStorage() {
       }
     }
   } catch (error) {
-    console.error('Failed to load wallet:', error);
+    console.error('❌ Failed to load wallet:', error);
   }
   return null;
 }
@@ -75,20 +82,33 @@ function clearWalletFromStorage() {
     localStorage.removeItem(WALLET_TIMESTAMP_KEY);
     console.log('🗑️ Wallet cleared from storage');
   } catch (error) {
-    console.error('Failed to clear wallet:', error);
+    console.error('❌ Failed to clear wallet:', error);
   }
 }
 
 // ==================== BALANCE FUNCTIONS ====================
+async function getSOLBalance(walletAddress) {
+  try {
+    console.log('📊 Fetching SOL balance for:', shortAddr(walletAddress));
+    
+    const connection = new solanaWeb3.Connection(SOLANA_RPC, 'confirmed');
+    const pubkey = new solanaWeb3.PublicKey(walletAddress);
+    const balance = await connection.getBalance(pubkey);
+    const solAmount = balance / 1e9; // Convert lamports to SOL
+    
+    console.log('✅ SOL balance:', solAmount);
+    return solAmount;
+  } catch (error) {
+    console.error('❌ Error fetching SOL balance:', error);
+    return 0;
+  }
+}
+
 async function getKulinoBalance(walletAddress) {
   try {
-    console.log('Fetching Kulino balance for:', shortAddr(walletAddress));
+    console.log('📊 Fetching Kulino balance for:', shortAddr(walletAddress));
     
-    const connection = new solanaWeb3.Connection(
-      'https://api.mainnet-beta.solana.com',
-      'confirmed'
-    );
-    
+    const connection = new solanaWeb3.Connection(SOLANA_RPC, 'confirmed');
     const pubkey = new solanaWeb3.PublicKey(walletAddress);
     const tokenMint = new solanaWeb3.PublicKey(KULINO_TOKEN_MINT);
     
@@ -105,26 +125,71 @@ async function getKulinoBalance(walletAddress) {
     console.log('ℹ️ No Kulino tokens found');
     return 0;
   } catch (error) {
-    console.error('Error fetching Kulino balance:', error);
+    console.error('❌ Error fetching Kulino balance:', error);
     return 0;
   }
 }
 
-async function updateBalanceDisplay(address) {
-  const balanceElement = document.getElementById("kulinoBalance");
-  if (!balanceElement) return;
+async function updateBalanceDisplay(address = userAddress) {
+  if (!address) {
+    console.log('⚠️ No address provided for balance update');
+    return;
+  }
+
+  const kulinoBalanceEl = document.getElementById("kulinoBalance");
+  const solBalanceEl = document.getElementById("solBalance");
+  const refreshBtn = document.getElementById("refreshBalanceBtn");
   
-  balanceElement.innerHTML = '<span class="inline-block w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin"></span> Loading...';
+  if (kulinoBalanceEl) {
+    kulinoBalanceEl.innerHTML = '<span class="inline-block w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin"></span>';
+  }
+  
+  if (refreshBtn) {
+    refreshBtn.disabled = true;
+    refreshBtn.classList.add('opacity-50', 'cursor-not-allowed');
+  }
   
   try {
-    const balance = await getKulinoBalance(address);
-    kulinoBalance = balance;
-    const formattedBalance = formatKulinoBalance(balance);
-    balanceElement.innerHTML = `<strong>${formattedBalance}</strong> KULINO`;
-    console.log('✅ Balance updated:', formattedBalance);
+    // Fetch both balances in parallel
+    const [kulinoBalanceValue, solBalanceValue] = await Promise.all([
+      getKulinoBalance(address),
+      getSOLBalance(address)
+    ]);
+    
+    kulinoBalance = kulinoBalanceValue;
+    solBalance = solBalanceValue;
+    
+    // Update UI
+    if (kulinoBalanceEl) {
+      const formattedBalance = formatKulinoBalance(kulinoBalance);
+      kulinoBalanceEl.innerHTML = `<strong>${formattedBalance}</strong> KULINO`;
+    }
+    
+    if (solBalanceEl) {
+      const formattedSOL = formatSOLBalance(solBalance);
+      solBalanceEl.textContent = `${formattedSOL} SOL`;
+    }
+    
+    console.log('✅ Balance updated - Kulino:', kulinoBalance, 'SOL:', solBalance);
+    
+    // Send to Unity if available
+    if (unityInstance && typeof unityInstance.SendMessage === "function") {
+      unityInstance.SendMessage("GameManager", "OnBalanceUpdated", kulinoBalance.toString());
+    }
+    
   } catch (error) {
-    console.error('Failed to update balance:', error);
-    balanceElement.innerHTML = '<strong>0.00</strong> KULINO';
+    console.error('❌ Failed to update balance:', error);
+    if (kulinoBalanceEl) {
+      kulinoBalanceEl.innerHTML = '<strong>0.00</strong> KULINO';
+    }
+    if (solBalanceEl) {
+      solBalanceEl.textContent = '0.0000 SOL';
+    }
+  } finally {
+    if (refreshBtn) {
+      refreshBtn.disabled = false;
+      refreshBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
   }
 }
 
@@ -135,42 +200,34 @@ function updateConnectedUI(address) {
   // Update status display
   const walletStatus = document.getElementById("walletStatus");
   const addrShort = document.getElementById("addrShort");
+  const disconnectBtn = document.getElementById("disconnectBtn");
   
   if (walletStatus) walletStatus.innerText = "Connected ✓";
   if (addrShort) addrShort.innerText = shortAddr(address);
+  if (disconnectBtn) disconnectBtn.classList.remove("hidden");
   
   // Update Desktop button
   const connectBtn = document.getElementById("connectBtn");
   if (connectBtn) {
     connectBtn.innerHTML = `
-      <div class="flex items-center gap-2">
-        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-        </svg>
-        <span class="font-semibold text-white">Connected</span>
-      </div>
+      <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+      </svg>
+      <span class="font-semibold text-white">Connected</span>
     `;
     connectBtn.onclick = showDisconnectDialog;
-    connectBtn.disabled = false;
-    connectBtn.classList.remove('opacity-75', 'cursor-not-allowed');
-    connectBtn.classList.add('cursor-pointer', 'hover:scale-105');
   }
   
   // Update Mobile button
   const connectBtnMobile = document.getElementById("connectBtnMobile");
   if (connectBtnMobile) {
     connectBtnMobile.innerHTML = `
-      <div class="flex items-center gap-2">
-        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-        </svg>
-        <span class="font-semibold text-white">Connected</span>
-      </div>
+      <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+      </svg>
+      <span class="font-semibold text-white">Connected</span>
     `;
     connectBtnMobile.onclick = showDisconnectDialog;
-    connectBtnMobile.disabled = false;
-    connectBtnMobile.classList.remove('opacity-75', 'cursor-not-allowed');
-    connectBtnMobile.classList.add('cursor-pointer');
   }
   
   // Update balance
@@ -184,21 +241,26 @@ function updateConnectedUI(address) {
     unityInstance.SendMessage("GameManager", "OnWalletConnected", address);
   }
   
-  console.log('✅ UI updated for connected wallet');
+  console.log('✅ UI updated for connected wallet:', shortAddr(address));
 }
 
 function resetDisconnectedUI() {
   userAddress = null;
   kulinoBalance = 0;
+  solBalance = 0;
   
   // Reset status display
   const walletStatus = document.getElementById("walletStatus");
   const addrShort = document.getElementById("addrShort");
-  const balanceElement = document.getElementById("kulinoBalance");
+  const kulinoBalanceEl = document.getElementById("kulinoBalance");
+  const solBalanceEl = document.getElementById("solBalance");
+  const disconnectBtn = document.getElementById("disconnectBtn");
   
   if (walletStatus) walletStatus.innerText = "Not Connected";
   if (addrShort) addrShort.innerText = "-";
-  if (balanceElement) balanceElement.innerHTML = '<strong>0.00</strong> KULINO';
+  if (kulinoBalanceEl) kulinoBalanceEl.innerHTML = '<strong>0.00</strong> KULINO';
+  if (solBalanceEl) solBalanceEl.textContent = '0.0000 SOL';
+  if (disconnectBtn) disconnectBtn.classList.add("hidden");
   
   // Reset Desktop button
   const connectBtn = document.getElementById("connectBtn");
@@ -210,8 +272,6 @@ function resetDisconnectedUI() {
       <span class="font-semibold text-white">Connect Wallet</span>
     `;
     connectBtn.onclick = connectWallet;
-    connectBtn.disabled = false;
-    connectBtn.classList.remove('cursor-pointer', 'hover:scale-105');
   }
   
   // Reset Mobile button
@@ -224,7 +284,6 @@ function resetDisconnectedUI() {
       <span class="font-semibold text-white">Connect Wallet</span>
     `;
     connectBtnMobile.onclick = connectWallet;
-    connectBtnMobile.disabled = false;
   }
   
   console.log('✅ UI reset to disconnected state');
@@ -244,12 +303,16 @@ function showDisconnectDialog() {
           <p class="text-sm text-gray-600 mb-1">Kulino Balance:</p>
           <p class="text-lg font-bold text-yellow-600">${formatKulinoBalance(kulinoBalance)} KULINO</p>
         </div>
+        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <p class="text-sm text-gray-600 mb-1">SOL Balance:</p>
+          <p class="text-lg font-bold text-blue-600">${formatSOLBalance(solBalance)} SOL</p>
+        </div>
         <p class="text-sm text-gray-500 mt-3">Are you sure you want to disconnect?</p>
       </div>
     `,
     icon: 'question',
     showCancelButton: true,
-    confirmButtonText: '<i class="fas fa-sign-out-alt mr-2"></i>Disconnect',
+    confirmButtonText: 'Disconnect',
     cancelButtonText: 'Cancel',
     confirmButtonColor: '#ef4444',
     cancelButtonColor: '#64748b',
@@ -265,22 +328,18 @@ function showDisconnectDialog() {
 }
 
 function disconnectWallet() {
-  // Clear storage
   clearWalletFromStorage();
   
-  // Disconnect from provider
   if (provider && provider.disconnect) {
     try {
       provider.disconnect();
     } catch (error) {
-      console.error('Error disconnecting provider:', error);
+      console.error('❌ Error disconnecting provider:', error);
     }
   }
   
-  // Reset UI
   resetDisconnectedUI();
   
-  // Show success message
   Swal.fire({
     icon: 'success',
     title: 'Wallet Disconnected',
@@ -303,24 +362,25 @@ async function autoConnectWallet() {
     return;
   }
   
-  console.log('🔄 Attempting auto-connect...');
+  console.log('🔄 Attempting auto-connect for:', shortAddr(savedAddress));
   
   try {
+    // Wait for Phantom to be ready
+    await waitForPhantom();
+    
     const anyWin = window;
     const isMobile = isMobileDevice();
     
     // Get provider
-    if (isMobile && anyWin.phantom?.solana?.isPhantom) {
-      provider = anyWin.phantom.solana;
-    } else if (!isMobile && anyWin.phantom?.solana?.isPhantom) {
+    if (anyWin.phantom?.solana?.isPhantom) {
       provider = anyWin.phantom.solana;
     } else {
-      console.log('⚠️ Phantom not available, clearing storage');
+      console.log('⚠️ Phantom not available');
       clearWalletFromStorage();
       return;
     }
     
-    // Try to connect silently (only if already trusted)
+    // Try to connect silently
     const resp = await provider.connect({ onlyIfTrusted: true });
     const currentAddress = resp.publicKey.toString();
     
@@ -330,28 +390,38 @@ async function autoConnectWallet() {
       console.log('✅ Auto-connected successfully:', shortAddr(currentAddress));
       
       // Show subtle notification
-      const toast = document.createElement('div');
-      toast.className = 'fixed top-20 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in-down';
-      toast.innerHTML = `
-        <div class="flex items-center gap-2">
-          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-          </svg>
-          <span>Wallet Auto-Connected</span>
-        </div>
-      `;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-      
+      showToast('Wallet Auto-Connected', 'success');
     } else {
       console.log('⚠️ Address mismatch, clearing storage');
       clearWalletFromStorage();
     }
   } catch (error) {
     console.log('ℹ️ Auto-connect not available:', error.message);
-    // Silent fail - user needs to manually connect
     clearWalletFromStorage();
   }
+}
+
+function waitForPhantom(maxWait = 3000) {
+  return new Promise((resolve, reject) => {
+    if (window.phantom?.solana?.isPhantom) {
+      resolve();
+      return;
+    }
+    
+    let waited = 0;
+    const interval = 100;
+    
+    const checkInterval = setInterval(() => {
+      if (window.phantom?.solana?.isPhantom) {
+        clearInterval(checkInterval);
+        resolve();
+      } else if (waited >= maxWait) {
+        clearInterval(checkInterval);
+        reject(new Error('Phantom timeout'));
+      }
+      waited += interval;
+    }, interval);
+  });
 }
 
 // ==================== CONNECT WALLET FUNCTION ====================
@@ -371,18 +441,18 @@ async function connectWallet() {
           title: 'Open in Phantom App',
           html: `
             <div class="text-left">
-              <p class="mb-3">To connect your wallet on mobile, you need to open this website in the Phantom app.</p>
+              <p class="mb-3">To connect your wallet on mobile, open this website in the Phantom app.</p>
               <p class="mb-2 font-semibold">Options:</p>
               <ol class="list-decimal list-inside space-y-2 text-sm">
-                <li>Click the button below to open in Phantom App (if installed)</li>
-                <li>Or download the Phantom App first if you don't have it</li>
+                <li>Click "Open in Phantom" below</li>
+                <li>Or download Phantom App if you don't have it</li>
               </ol>
             </div>
           `,
           showCancelButton: true,
           showDenyButton: true,
-          confirmButtonText: '<i class="fas fa-external-link-alt"></i> Open in Phantom',
-          denyButtonText: '<i class="fas fa-download"></i> Download Phantom',
+          confirmButtonText: 'Open in Phantom',
+          denyButtonText: 'Download Phantom',
           cancelButtonText: 'Cancel',
           confirmButtonColor: '#667eea',
           denyButtonColor: '#10b981',
@@ -411,7 +481,7 @@ async function connectWallet() {
           title: 'Phantom Wallet Not Found',
           html: `
             <p>Phantom wallet extension is not detected.</p>
-            <p class="mt-2">Please install Phantom Wallet first:</p>
+            <p class="mt-2">Please install Phantom Wallet first.</p>
           `,
           showCancelButton: true,
           confirmButtonText: 'Install Phantom',
@@ -474,7 +544,7 @@ async function connectWallet() {
     });
 
   } catch (err) {
-    console.error("connectWallet error:", err);
+    console.error("❌ connectWallet error:", err);
     
     if (err.message?.includes('User rejected') || err.code === 4001) {
       Swal.fire({
@@ -496,7 +566,7 @@ async function connectWallet() {
 
 // ==================== UNITY & GAME FUNCTIONS ====================
 async function requestReward(jsonPayload) {
-  console.log("Unity requested reward:", jsonPayload);
+  console.log("🎮 Unity requested reward:", jsonPayload);
   const payload = JSON.parse(jsonPayload);
 
   if (!provider || !userAddress) {
@@ -561,8 +631,10 @@ async function requestReward(jsonPayload) {
         confirmButtonColor: '#10b981',
       });
       
-      // Refresh balance
-      updateBalanceDisplay(userAddress);
+      // Refresh balance after 2 seconds
+      setTimeout(() => {
+        updateBalanceDisplay(userAddress);
+      }, 2000);
     } else {
       Swal.fire({
         icon: 'error',
@@ -572,7 +644,7 @@ async function requestReward(jsonPayload) {
       });
     }
   } catch (err) {
-    console.error("requestReward error:", err);
+    console.error("❌ requestReward error:", err);
     
     Swal.fire({
       icon: 'error',
@@ -592,7 +664,7 @@ async function requestReward(jsonPayload) {
 }
 
 function setUnityInstance(instance) {
-  console.log("setUnityInstance called");
+  console.log("🎮 setUnityInstance called");
   unityInstance = instance;
   if (userAddress && unityInstance && typeof unityInstance.SendMessage === "function") {
     unityInstance.SendMessage("GameManager", "OnWalletConnected", userAddress);
@@ -626,8 +698,37 @@ function playGame(gameId) {
 
 function scrollSlider(id, direction) {
   const slider = document.getElementById(id);
+  if (!slider) return;
   const scrollAmount = 320;
   slider.scrollBy({ left: direction * scrollAmount, behavior: "smooth" });
+}
+
+// ==================== TOAST NOTIFICATION ====================
+function showToast(message, type = 'info') {
+  const colors = {
+    success: 'bg-green-500',
+    error: 'bg-red-500',
+    info: 'bg-blue-500',
+    warning: 'bg-yellow-500'
+  };
+  
+  const icons = {
+    success: '✓',
+    error: '✕',
+    info: 'ℹ',
+    warning: '⚠'
+  };
+  
+  const toast = document.createElement('div');
+  toast.className = `fixed top-20 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in-down`;
+  toast.innerHTML = `
+    <div class="flex items-center gap-2">
+      <span class="text-xl">${icons[type]}</span>
+      <span>${message}</span>
+    </div>
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
 }
 
 // ==================== VISITOR TRACKING ====================
@@ -639,7 +740,7 @@ async function trackVisitor() {
     if (visitorElement) {
       visitorElement.innerText = data.today || 0;
     }
-    console.log("✅ Visitor tracked successfully. Total today:", data.today);
+    console.log("✅ Visitor tracked. Total today:", data.today);
   } catch (error) {
     console.error("❌ Failed to track visitor:", error);
     const visitorElement = document.getElementById("visitorCount");
@@ -658,32 +759,48 @@ async function updateVisitorCount() {
       visitorElement.innerText = data.today || 0;
     }
   } catch (error) {
-    console.error("Failed to update visitor count:", error);
+    console.error("❌ Failed to update visitor count:", error);
   }
 }
 
 // ==================== INITIALIZATION ====================
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   console.log('🚀 Kulino Game Hub Initializing...');
   
   // Track visitor
   trackVisitor();
   setInterval(updateVisitorCount, 30000);
   
-  // AUTO-CONNECT WALLET (CRITICAL FOR PERSISTENCE)
-  setTimeout(() => {
-    autoConnectWallet();
-  }, 500); // Small delay to ensure Phantom is loaded
+  // Setup event listeners first
+  const connectBtn = document.getElementById("connectBtn");
+  const connectBtnMobile = document.getElementById("connectBtnMobile");
   
-  // Setup event listeners
-  document.getElementById("connectBtn")?.addEventListener("click", connectWallet);
-  document.getElementById("connectBtnMobile")?.addEventListener("click", connectWallet);
+  if (connectBtn) {
+    connectBtn.addEventListener("click", connectWallet);
+    console.log('✅ Desktop connect button listener attached');
+  }
+  
+  if (connectBtnMobile) {
+    connectBtnMobile.addEventListener("click", connectWallet);
+    console.log('✅ Mobile connect button listener attached');
+  }
+  
+  // AUTO-CONNECT WALLET (Wait for Solana Web3 to load)
+  setTimeout(async () => {
+    if (typeof solanaWeb3 !== 'undefined') {
+      await autoConnectWallet();
+    } else {
+      console.warn('⚠️ Solana Web3.js not loaded yet');
+    }
+  }, 1000);
   
   // Featured card video preview
   document.querySelectorAll(".featured-card").forEach((card) => {
     const video = card.querySelector("video");
     if (video) {
-      card.addEventListener("mouseenter", () => video.play());
+      card.addEventListener("mouseenter", () => {
+        video.play().catch(e => console.log('Video play failed:', e));
+      });
       card.addEventListener("mouseleave", () => {
         video.pause();
         video.currentTime = 0;
@@ -706,11 +823,9 @@ window.addEventListener('DOMContentLoaded', () => {
   if (header) {
     window.addEventListener("scroll", () => {
       if (window.scrollY > 50) {
-        header.classList.remove("bg-white/50", "backdrop-blur");
-        header.classList.add("bg-white", "shadow-md");
+        header.classList.add("shadow-md");
       } else {
-        header.classList.add("bg-white/50", "backdrop-blur");
-        header.classList.remove("bg-white", "shadow-md");
+        header.classList.remove("shadow-md");
       }
     });
   }
@@ -718,37 +833,11 @@ window.addEventListener('DOMContentLoaded', () => {
   console.log('✅ Kulino Game Hub Initialized');
 });
 
-const KULINO_TOKEN_MINT = 'E5chNtjGFvCMVYoTwcP9DtrdMdctRCGdGahAAhnHbHc1';
-    
-    async function getKulinoBalance(walletAddress) {
-      try {
-        const connection = new solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
-        const pubkey = new solanaWeb3.PublicKey(walletAddress);
-        const tokenMint = new solanaWeb3.PublicKey(KULINO_TOKEN_MINT);
-        
-        // Get token accounts
-        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(pubkey, {
-          mint: tokenMint
-        });
-        
-        if (tokenAccounts.value.length > 0) {
-          const balance = tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount;
-          return balance || 0;
-        }
-        return 0;
-      } catch (error) {
-        console.error('Error fetching Kulino balance:', error);
-        return 0;
-      }
-    }
-    
-    function formatKulinoBalance(balance) {
-      if (balance >= 1000) {
-        return (balance / 1000).toFixed(2) + 'K';
-      }
-      return balance.toFixed(2);
-    }
 // ==================== EXPOSE GLOBAL FUNCTIONS ====================
 window.requestReward = requestReward;
 window.connectWallet = connectWallet;
 window.setUnityInstance = setUnityInstance;
+window.playGame = playGame;
+window.scrollSlider = scrollSlider;
+window.disconnectWallet = disconnectWallet;
+window.updateBalanceDisplay = updateBalanceDisplay;
