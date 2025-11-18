@@ -20,7 +20,8 @@
 
   <!-- bs58 for signature encoding -->
   <script src="https://cdn.jsdelivr.net/npm/bs58/dist/index.min.js"></script>
-
+  <!-- Solana Web3.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.min.js"></script>
   <!-- CSS -->
   <link rel="stylesheet" href="./css/style-index.css" />
 
@@ -178,7 +179,7 @@
             </div>
 
             <!-- Balance Card -->
-            <div class="backdrop-blur-xl bg-gradient-to-br from-indigo-500/20 to-purple-600/20 border border-white/20 rounded-2xl p-5 shadow-2xl">
+            <div class="backdrop-blur-xl bg-gradient-to-br from-yellow-500/20 to-orange-600/20 border border-white/20 rounded-2xl p-5 shadow-2xl">
               <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
@@ -188,7 +189,7 @@
                     </svg>
                   </div>
                   <div>
-                    <p class="text-xs text-white/70 font-medium">Your Balance</p>
+                    <p class="text-xs text-white/70 font-medium">Kulino Balance</p>
                     <p id="kulinoBalance" class="font-bold text-white text-xl">0.00 KULINO</p>
                   </div>
                 </div>
@@ -251,7 +252,7 @@
         <!-- Featured Game Card 1 -->
         <article class="featured-card relative bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer group">
           <div class="relative overflow-hidden aspect-video">
-            <img src="assets/game-free-fire.jpg" alt="Free Fire" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+            <img src="assets/flytothemoon.png" alt="Free Fire" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
             <video class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300" muted loop>
               <source src="assets/video/hover-ff.mp4" type="video/mp4" />
             </video>
@@ -484,6 +485,44 @@
 
   <!-- Scripts -->
   <script src="./js/script-index.js"></script>
+  <!-- Kulino Token Balance Checker -->
+  <!-- Kulino Token Balance Checker -->
+  <script>
+    // Token Kulino Config
+    const KULINO_TOKEN_MINT = 'E5chNtjGFvCMVYoTwcP9DtrdMdctRCGdGahAAhnHbHc1';
+
+    async function getKulinoBalance(walletAddress) {
+      try {
+        const connection = new solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
+        const pubkey = new solanaWeb3.PublicKey(walletAddress);
+        const tokenMint = new solanaWeb3.PublicKey(KULINO_TOKEN_MINT);
+
+        // Get token accounts
+        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(pubkey, {
+          mint: tokenMint
+        });
+
+        if (tokenAccounts.value.length > 0) {
+          const balance = tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount;
+          return balance || 0;
+        }
+        return 0;
+      } catch (error) {
+        console.error('Error fetching Kulino balance:', error);
+        return 0;
+      }
+    }
+
+    function formatKulinoBalance(balance) {
+      if (balance >= 1000) {
+        return (balance / 1000).toFixed(2) + 'K';
+      }
+      return balance.toFixed(2);
+    }
+  </script>
+
+  <!-- Solana Web3.js -->
+  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
 
 </body>
 
