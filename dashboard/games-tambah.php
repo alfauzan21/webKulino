@@ -2,47 +2,84 @@
 include("../includes/koneksi.php");
 session_start();
 if (!isset($_SESSION['login'])) {
-    header("Location: ../login.php");
+    header("Location: ../auth/login.php");
     exit;
 }
 
+$error = "";
+$success = "";
+
 if (isset($_POST['simpan'])) {
-    $title = mysqli_real_escape_string($koneksi, $_POST['title']);
-    $description = mysqli_real_escape_string($koneksi, $_POST['description']);
-    $game_url = mysqli_real_escape_string($koneksi, $_POST['game_url']);
-    $badge = mysqli_real_escape_string($koneksi, $_POST['badge']);
+    $title = mysqli_real_escape_string($koneksi, trim($_POST['title']));
+    $description = mysqli_real_escape_string($koneksi, trim($_POST['description']));
+    $game_url = mysqli_real_escape_string($koneksi, trim($_POST['game_url']));
+    $badge = mysqli_real_escape_string($koneksi, trim($_POST['badge']));
     $is_featured = isset($_POST['is_featured']) ? 1 : 0;
     $is_active = isset($_POST['is_active']) ? 1 : 0;
     $sort_order = (int)$_POST['sort_order'];
 
-    // Upload image
-    $imageName = null;
-    if (!empty($_FILES['image']['name'])) {
-        $image = $_FILES['image']['name'];
-        $tmp = $_FILES['image']['tmp_name'];
-        $ext = pathinfo($image, PATHINFO_EXTENSION);
-        $imageName = time() . '_img.' . $ext;
-        move_uploaded_file($tmp, "../assets/" . $imageName);
-    }
-
-    // Upload hover video (optional)
-    $videoName = null;
-    if (!empty($_FILES['video_hover']['name'])) {
-        $video = $_FILES['video_hover']['name'];
-        $tmp_video = $_FILES['video_hover']['tmp_name'];
-        $ext_video = pathinfo($video, PATHINFO_EXTENSION);
-        $videoName = time() . '_video.' . $ext_video;
-        move_uploaded_file($tmp_video, "../assets/video/" . $videoName);
-    }
-
-    $sql = "INSERT INTO tb_games (title, description, image, video_hover, game_url, badge, is_featured, is_active, sort_order) 
-            VALUES ('$title', '$description', '$imageName', '$videoName', '$game_url', '$badge', $is_featured, $is_active, $sort_order)";
-    
-    if (mysqli_query($koneksi, $sql)) {
-        header("Location: games-index.php");
-        exit;
+    // Validasi input required
+    if (empty($title) || empty($description) || empty($game_url)) {
+        $error = "Title, Description, and Game URL are required!";
     } else {
-        $error = "Error: " . mysqli_error($koneksi);
+        // Upload image
+        $imageName = null;
+        if (!empty($_FILES['image']['name'])) {
+            $image = $_FILES['image']['name'];
+            $tmp = $_FILES['image']['tmp_name'];
+            $ext = strtolower(pathinfo($image, PATHINFO_EXTENSION));
+            $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            
+            if (!in_array($ext, $allowed)) {
+                $error = "Invalid image format! Allowed: JPG, PNG, GIF, WEBP";
+            } else {
+                $imageName = time() . '_img.' . $ext;
+                $uploadPath = "../assets/" . $imageName;
+                
+                if (!move_uploaded_file($tmp, $uploadPath)) {
+                    $error = "Failed to upload image!";
+                }
+            }
+        }
+
+        // Upload hover video (optional)
+        $videoName = null;
+        if (!empty($_FILES['video_hover']['name']) && empty($error)) {
+            $video = $_FILES['video_hover']['name'];
+            $tmp_video = $_FILES['video_hover']['tmp_name'];
+            $ext_video = strtolower(pathinfo($video, PATHINFO_EXTENSION));
+            $allowed_video = ['mp4', 'webm', 'ogg'];
+            
+            if (!in_array($ext_video, $allowed_video)) {
+                $error = "Invalid video format! Allowed: MP4, WEBM, OGG";
+            } else {
+                // Buat folder video jika belum ada
+                if (!is_dir("../assets/video")) {
+                    mkdir("../assets/video", 0755, true);
+                }
+                
+                $videoName = time() . '_video.' . $ext_video;
+                $uploadPath = "../assets/video/" . $videoName;
+                
+                if (!move_uploaded_file($tmp_video, $uploadPath)) {
+                    $error = "Failed to upload video!";
+                }
+            }
+        }
+
+        // Insert ke database jika tidak ada error
+        if (empty($error)) {
+            $sql = "INSERT INTO tb_games (title, description, image, video_hover, game_url, badge, is_featured, is_active, sort_order, created_at) 
+                    VALUES ('$title', '$description', '$imageName', '$videoName', '$game_url', '$badge', $is_featured, $is_active, $sort_order, NOW())";
+            
+            if (mysqli_query($koneksi, $sql)) {
+                $_SESSION['success_message'] = "Game berhasil ditambahkan!";
+                header("Location: games-index.php");
+                exit;
+            } else {
+                $error = "Database Error: " . mysqli_error($koneksi);
+            }
+        }
     }
 }
 ?>
@@ -54,92 +91,14 @@ if (isset($_POST['simpan'])) {
     <title>Tambah Game</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-       body {
-            background: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        .sidebar {
-            height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 220px;
-            background: linear-gradient(135deg, #667eea, #667eea);
-            color: white;
-            padding-top: 20px;
-        }
-
-        .sidebar img {
-            width: 80px;
-            margin-bottom: 15px;
-            border-radius: 12px;
-        }
-
-        .sidebar h4 {
-            text-align: center;
-            margin-bottom: 25px;
-            font-weight: bold;
-        }
-
-        .sidebar a {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 20px;
-            color: white;
-            text-decoration: none;
-            transition: 0.3s;
-            border-radius: 8px;
-            margin: 5px 10px;
-            font-weight: 500;
-        }
-
-        .sidebar a:hover,
-        .sidebar a.active {
-            background: rgba(255, 255, 255, 0.2);
-            font-weight: 600;
-        }
-
-        .content {
-            margin-left: 240px;
-            padding: 40px;
-        }
-
-        .card {
-            border-radius: 15px;
-            border: none;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea, #667eea);
-            border: none;
-        }
-
-        .btn-secondary {
-            border: none;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea, #667eea);
-            border: none;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: #495057;
-        }
-
-        .form-check-label {
-            font-weight: 500;
-        }
-    </style>
+    <link href="../includes/sidebar.css" rel="stylesheet">
 </head>
 
 <body>
-    <?php $currentPage = basename($_SERVER['PHP_SELF']); ?>
-    <?php include("../includes/sidebar.php"); ?>
+    <?php 
+    $currentPage = basename($_SERVER['PHP_SELF']); 
+    include("../includes/sidebar.php"); 
+    ?>
 
     <div class="content">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -147,9 +106,12 @@ if (isset($_POST['simpan'])) {
             <?php include("../includes/dark-mode.php"); ?>
         </div>
 
-        <?php if (isset($error)) { ?>
-            <div class="alert alert-danger"><?= $error ?></div>
-        <?php } ?>
+        <?php if (!empty($error)): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i> <?= $error ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
 
         <div class="card">
             <div class="card-body p-4">
@@ -158,18 +120,18 @@ if (isset($_POST['simpan'])) {
                         <!-- Left Column -->
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Title Game *</label>
-                                <input type="text" name="title" class="form-control" placeholder="Contoh: Free Fire" required>
+                                <label class="form-label">Title Game <span class="text-danger">*</span></label>
+                                <input type="text" name="title" class="form-control" placeholder="Contoh: Free Fire" required value="<?= isset($_POST['title']) ? htmlspecialchars($_POST['title']) : '' ?>">
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Description *</label>
-                                <textarea name="description" rows="4" class="form-control" placeholder="Epic battle royale game..." required></textarea>
+                                <label class="form-label">Description <span class="text-danger">*</span></label>
+                                <textarea name="description" rows="4" class="form-control" placeholder="Epic battle royale game..." required><?= isset($_POST['description']) ? htmlspecialchars($_POST['description']) : '' ?></textarea>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Game URL / ID *</label>
-                                <input type="text" name="game_url" class="form-control" placeholder="blox-d" required>
+                                <label class="form-label">Game URL / ID <span class="text-danger">*</span></label>
+                                <input type="text" name="game_url" class="form-control" placeholder="blox-d" required value="<?= isset($_POST['game_url']) ? htmlspecialchars($_POST['game_url']) : '' ?>">
                                 <small class="text-muted">URL atau ID game yang akan diakses</small>
                             </div>
 
@@ -177,11 +139,11 @@ if (isset($_POST['simpan'])) {
                                 <label class="form-label">Badge (Optional)</label>
                                 <select name="badge" class="form-select">
                                     <option value="">-- No Badge --</option>
-                                    <option value="New">New</option>
-                                    <option value="Hot">Hot</option>
-                                    <option value="Top Rated">Top Rated</option>
-                                    <option value="Updated">Updated</option>
-                                    <option value="Popular">Popular</option>
+                                    <option value="New" <?= (isset($_POST['badge']) && $_POST['badge'] == 'New') ? 'selected' : '' ?>>New</option>
+                                    <option value="Hot" <?= (isset($_POST['badge']) && $_POST['badge'] == 'Hot') ? 'selected' : '' ?>>Hot</option>
+                                    <option value="Top Rated" <?= (isset($_POST['badge']) && $_POST['badge'] == 'Top Rated') ? 'selected' : '' ?>>Top Rated</option>
+                                    <option value="Updated" <?= (isset($_POST['badge']) && $_POST['badge'] == 'Updated') ? 'selected' : '' ?>>Updated</option>
+                                    <option value="Popular" <?= (isset($_POST['badge']) && $_POST['badge'] == 'Popular') ? 'selected' : '' ?>>Popular</option>
                                 </select>
                             </div>
                         </div>
@@ -189,26 +151,26 @@ if (isset($_POST['simpan'])) {
                         <!-- Right Column -->
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Upload Image *</label>
+                                <label class="form-label">Upload Image <span class="text-danger">*</span></label>
                                 <input type="file" name="image" class="form-control" accept="image/*" required>
-                                <small class="text-muted">Recommended: 800x450px (16:9 ratio)</small>
+                                <small class="text-muted">Recommended: 800x450px (16:9 ratio). Max 5MB</small>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label">Upload Hover Video (Optional)</label>
                                 <input type="file" name="video_hover" class="form-control" accept="video/*">
-                                <small class="text-muted">Video akan play saat hover (Featured games only)</small>
+                                <small class="text-muted">Video akan play saat hover (Featured games only). Max 10MB</small>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label">Sort Order</label>
-                                <input type="number" name="sort_order" class="form-control" value="0" min="0">
+                                <input type="number" name="sort_order" class="form-control" value="<?= isset($_POST['sort_order']) ? $_POST['sort_order'] : '0' ?>" min="0">
                                 <small class="text-muted">Urutan tampilan (semakin kecil semakin depan)</small>
                             </div>
 
                             <div class="mb-3">
                                 <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" name="is_featured" id="isFeatured" checked>
+                                    <input class="form-check-input" type="checkbox" name="is_featured" id="isFeatured" <?= (isset($_POST['is_featured']) || !isset($_POST['simpan'])) ? 'checked' : '' ?>>
                                     <label class="form-check-label" for="isFeatured">
                                         <i class="bi bi-star-fill text-warning"></i> Featured Game
                                     </label>
@@ -218,7 +180,7 @@ if (isset($_POST['simpan'])) {
 
                             <div class="mb-3">
                                 <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" name="is_active" id="isActive" checked>
+                                    <input class="form-check-input" type="checkbox" name="is_active" id="isActive" <?= (isset($_POST['is_active']) || !isset($_POST['simpan'])) ? 'checked' : '' ?>>
                                     <label class="form-check-label" for="isActive">
                                         <i class="bi bi-check-circle-fill text-success"></i> Active
                                     </label>
