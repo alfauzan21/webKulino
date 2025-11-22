@@ -417,7 +417,10 @@ async function autoConnectWallet() {
 }
 
 // ==================== GAME & UTILITIES ====================
+// ==================== GAME PLAY FUNCTION ====================
 function playGame(gameId) {
+  console.log('🎮 playGame called with:', gameId);
+  
   if (!userAddress) {
     Swal.fire({
       icon: 'warning',
@@ -425,33 +428,68 @@ function playGame(gameId) {
       text: 'Please connect your wallet before playing',
       showCancelButton: true,
       confirmButtonText: 'Connect Now',
-      confirmButtonColor: '#667eea'
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#667eea',
+      cancelButtonColor: '#6c757d'
     }).then((result) => {
       if (result.isConfirmed) connectWallet();
     });
     return;
   }
 
-  const url = new URL("./WebUnity/index.html", window.location.href);
-  url.searchParams.set("wallet", userAddress);
-  url.searchParams.set("game", gameId);
-  window.open(url.toString(), "_blank");
-}
-
-function scrollSlider(id, direction) {
-  const slider = document.getElementById(id);
-  if (slider) slider.scrollBy({ left: direction * 320, behavior: "smooth" });
-}
-
-async function trackVisitor() {
-  try {
-    const res = await fetch("track.php?add=1");
-    const data = await res.json();
-    const el = document.getElementById("visitorCount");
-    if (el) el.innerText = data.today || 0;
-  } catch (error) {
-    console.error("Visitor tracking error:", error);
-  }
+  // Construct game URL
+  const baseUrl = window.location.origin + window.location.pathname.replace('index.php', '');
+  const gameUrl = `${baseUrl}WebUnity/index.html?wallet=${encodeURIComponent(userAddress)}&game=${encodeURIComponent(gameId)}`;
+  
+  console.log('🚀 Opening game URL:', gameUrl);
+  
+  // Show loading message
+  Swal.fire({
+    title: 'Loading Game...',
+    html: `
+      <div class="text-center">
+        <div class="inline-block w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-gray-600">Opening <strong>${gameId}</strong></p>
+        <p class="text-sm text-gray-500 mt-2">Game will open in a new tab</p>
+      </div>
+    `,
+    showConfirmButton: false,
+    timer: 2000,
+    allowOutsideClick: false
+  });
+  
+  // Open game in new tab
+  setTimeout(() => {
+    const newWindow = window.open(gameUrl, "_blank");
+    
+    // Check if popup was blocked
+    if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+      Swal.fire({
+        icon: 'error',
+        title: 'Popup Blocked',
+        html: `
+          <p>Your browser blocked the game window.</p>
+          <p class="text-sm text-gray-600 mt-2">Please allow popups for this site or click the button below:</p>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Try Again',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#667eea'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.open(gameUrl, "_blank");
+        }
+      });
+    } else {
+      Swal.fire({
+        icon: 'success',
+        title: 'Game Opened!',
+        text: 'Check your new tab to play',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    }
+  }, 500);
 }
 
 // ==================== INITIALIZATION ====================
