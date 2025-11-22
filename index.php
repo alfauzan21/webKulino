@@ -23,12 +23,489 @@
   <!-- Solana Web3.js Library -->
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.min.js"></script>
   <!-- CSS -->
-  <link rel="stylesheet" href="./css/style-index.css" />
+  <link rel="stylesheet" href="public_html/game/css/style-index.css" />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ===== Gaming Theme Variables ===== */
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --secondary: #8b5cf6;
+      --accent: #ec4899;
+      --dark: #1e293b;
+      --light: #f8fafc;
+    }
+
+    /* ===== Global Styles ===== */
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* ===== Smooth Scroll ===== */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* ===== Hide Scrollbar ===== */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* ===== Sponsor Container ===== */
+    .logo-container-sponsor {
+      overflow: hidden;
+      position: relative;
+      width: 100%;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      background: #fff;
+      padding: 1rem 0;
+    }
+
+    /* ===== Video Background Mobile Hide ===== */
+    .bg-gray-100 video {
+      display: none;
+    }
+
+    @media (min-width: 768px) {
+      .bg-gray-100 video {
+        display: block !important;
+      }
+    }
+
+    /* ===== Hamburger Menu Animation ===== */
+    #menuToggle span {
+      transition: all 0.3s ease;
+    }
+
+    #menuToggle.open span:nth-child(1) {
+      transform: rotate(45deg) translate(3px, 4px);
+    }
+
+    #menuToggle.open span:nth-child(2) {
+      opacity: 0;
+    }
+
+    #menuToggle.open span:nth-child(3) {
+      transform: rotate(-45deg) translate(4px, -5px);
+    }
+
+    /* ===== Enhanced Buttons ===== */
+    .btn-gaming {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-size: 0.875rem;
+    }
+
+    .btn-gaming::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .btn-gaming:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .btn-gaming:active {
+      transform: scale(0.95);
+    }
+
+    /* Primary Button */
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+      transform: translateY(-2px);
+    }
+
+    /* Secondary Button */
+    .btn-secondary {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+    }
+
+    .btn-secondary:hover {
+      box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+      transform: translateY(-2px);
+    }
+
+    /* Play Button */
+    .btn-play {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+    }
+
+    .btn-play:hover {
+      box-shadow: 0 6px 20px rgba(79, 172, 254, 0.6);
+      transform: translateY(-2px);
+    }
+
+    /* Admin Button */
+    .btn-admin {
+      background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+      box-shadow: 0 4px 15px rgba(250, 112, 154, 0.4);
+    }
+
+    .btn-admin:hover {
+      box-shadow: 0 6px 20px rgba(250, 112, 154, 0.6);
+      transform: translateY(-2px);
+    }
+
+    /* Outline Button */
+    .btn-outline {
+      background: transparent;
+      border: 2px solid;
+      border-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%) 1;
+      color: #667eea;
+      box-shadow: none;
+    }
+
+    .btn-outline:hover {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    /* ===== Card Animations ===== */
+    .game-card {
+      transition: all 0.3s ease;
+    }
+
+    .game-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .featured-card {
+      transition: all 0.3s ease;
+    }
+
+    .featured-card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .featured-card:hover video {
+      opacity: 1;
+    }
+
+    .featured-card video {
+      transition: opacity 0.3s ease;
+    }
+
+    /* ===== News Card ===== */
+    .news-card {
+      transition: all 0.3s ease;
+    }
+
+    .news-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    /* ===== Overlay Effect ===== */
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.7) 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .game-card:hover .overlay {
+      opacity: 1;
+    }
+
+    /* ===== Badge Styles ===== */
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-new {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .badge-hot {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+
+    .badge-top {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+    }
+
+    /* ===== Glow Effect ===== */
+    .glow {
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from {
+        box-shadow: 0 0 5px rgba(102, 126, 234, 0.5),
+          0 0 10px rgba(102, 126, 234, 0.5),
+          0 0 15px rgba(102, 126, 234, 0.5);
+      }
+
+      to {
+        box-shadow: 0 0 10px rgba(102, 126, 234, 0.8),
+          0 0 20px rgba(102, 126, 234, 0.8),
+          0 0 30px rgba(102, 126, 234, 0.8);
+      }
+    }
+
+    /* ===== Fade In Animation ===== */
+    .fade-in {
+      animation: fadeIn 0.6s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ===== Pulse Animation ===== */
+    .pulse {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    /* ===== Wallet Display ===== */
+    .wallet-display {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 1rem;
+      border-radius: 1rem;
+      color: white;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    /* ===== Hero Section ===== */
+    .hero-section {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-section::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+      animation: rotate 20s linear infinite;
+    }
+
+    @keyframes rotate {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ===== Responsive Design ===== */
+    @media (max-width: 640px) {
+      .btn-gaming {
+        font-size: 0.75rem;
+        padding: 0.5rem 1rem;
+      }
+    }
+
+    /* ===== Navigation Buttons ===== */
+    .nav-btn {
+      transition: all 0.3s ease;
+      background: white;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-btn:hover {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .nav-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* ===== Loading Spinner ===== */
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top: 3px solid white;
+      border-radius: 50%;
+      width: 1.5rem;
+      height: 1.5rem;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ===== Featured Games - Force 16:9 Aspect Ratio ===== */
+    .featured-card .aspect-video {
+      aspect-ratio: 16 / 9;
+      position: relative;
+      width: 100%;
+      background-color: #1f2937;
+    }
+
+    .featured-card .aspect-video img,
+    .featured-card .aspect-video video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* ===== News Section - Preserve Original Image Aspect Ratio ===== */
+    .news-card img {
+      max-height: 240px;
+      min-height: 180px;
+      object-fit: contain;
+      background-color: #f3f4f6;
+    }
+
+    /* Optional: Add max height for very tall images */
+    @media (min-width: 768px) {
+      .news-card img {
+        max-height: 280px;
+      }
+    }
+
+    /* ===== Ensure consistent card heights ===== */
+    .featured-card {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .news-card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* ===== Image Loading State ===== */
+    .news-card img,
+    .featured-card img {
+      background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+    }
+
+    .news-card img[src],
+    .featured-card img[src] {
+      animation: none;
+    }
+
+    @keyframes loading {
+      0% {
+        background-position: 200% 0;
+      }
+
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    .badge-new {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .badge-hot {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+
+    .badge-top {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+    }
+
+    .badge-top-rated {
+      background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+      color: #000;
+    }
+
+    .badge-updated {
+      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+      color: #333;
+    }
+
+    .badge-popular {
+      background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+      color: #333;
+    }
+  </style>
 </head>
+
 
 <body class="bg-gradient-to-br from-gray-50 via-gray-100 to-indigo-50">
 
@@ -48,7 +525,6 @@
     </div>
   </div>
 
-  <!-- Header -->
   <!-- Header with Enhanced Visibility -->
   <header id="mainHeader" class="sticky top-0 z-50 transition-all duration-300">
     <!-- Navbar Container with Glass Effect -->
@@ -87,8 +563,11 @@
               <span class="hidden lg:inline font-semibold text-white">Admin</span>
             </a>
 
-            <!-- Connect Wallet Button -->
-            <button id="connectBtn" class="group relative overflow-hidden bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-6 py-2.5 rounded-xl transition-all duration-300 inline-flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105">
+            <!-- Connect Wallet Button - REMOVE ALL ONCLICK -->
+            <button
+              type="button"
+              id="connectBtn"
+              class="group relative overflow-hidden bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-6 py-2.5 rounded-xl transition-all duration-300 inline-flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105">
               <svg class="w-5 h-5 text-white transition-transform group-hover:scale-110" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
               </svg>
@@ -112,7 +591,11 @@
             </svg>
             <span class="font-semibold text-white">Admin Login</span>
           </a>
-          <button id="connectBtnMobile" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 w-full px-5 py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg">
+          <!-- Mobile Connect Button - REMOVE ALL ONCLICK -->
+          <button
+            type="button"
+            id="connectBtnMobile"
+            class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 w-full px-5 py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg">
             <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
             </svg>
@@ -249,87 +732,90 @@
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <!-- Featured Game Card 1 -->
-        <article class="featured-card relative bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer group">
-          <div class="relative overflow-hidden aspect-video">
-            <img src="assets/flytothemoon.png" alt="Free Fire" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <video class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300" muted loop>
-              <source src="assets/video/hover-ff.mp4" type="video/mp4" />
-            </video>
-            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <span class="badge badge-new absolute top-3 left-3">Updated</span>
-          </div>
-          <div class="p-5">
-            <h4 class="font-bold text-lg text-gray-800 mb-2">Free Fire</h4>
-            <p class="text-sm text-gray-600 mb-4">Epic battle royale game with intense action.</p>
-            <button onclick="playGame('blox-d')" class="btn-gaming btn-play w-full px-4 py-3 text-white rounded-xl inline-flex items-center justify-center gap-2">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
-              </svg>
-              Play Now
-            </button>
-          </div>
-        </article>
+        <?php
+        // Query featured games dari database
+        $sqlFeatured = mysqli_query($koneksi, "
+      SELECT * FROM tb_games 
+      WHERE is_featured = 1 AND is_active = 1 
+      ORDER BY sort_order ASC, id DESC 
+      LIMIT 4
+    ");
 
-        <!-- Featured Game Card 2 -->
-        <article class="featured-card relative bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer group">
-          <div class="relative overflow-hidden aspect-video">
-            <img src="assets/efootball.jpeg" alt="eFootball" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <video class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300" muted loop>
-              <source src="assets/video/hover-pes.mp4" type="video/mp4" />
-            </video>
-            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <span class="badge badge-hot absolute top-3 left-3">Top Rated</span>
-          </div>
-          <div class="p-5">
-            <h4 class="font-bold text-lg text-gray-800 mb-2">Brainrot Online</h4>
-            <p class="text-sm text-gray-600 mb-4">Multiplayer game with unique gameplay.</p>
-            <button onclick="playGame('brainrot-online')" class="btn-gaming btn-play w-full px-4 py-3 text-white rounded-xl inline-flex items-center justify-center gap-2">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
-              </svg>
-              Play Now
-            </button>
-          </div>
-        </article>
+        if (mysqli_num_rows($sqlFeatured) > 0) {
+          while ($game = mysqli_fetch_assoc($sqlFeatured)) {
+            // Tentukan badge class
+            $badgeClass = '';
+            switch ($game['badge']) {
+              case 'New':
+                $badgeClass = 'badge-new';
+                break;
+              case 'Hot':
+                $badgeClass = 'badge-hot';
+                break;
+              case 'Top Rated':
+                $badgeClass = 'badge-top-rated';
+                break;
+              case 'Updated':
+                $badgeClass = 'badge-updated';
+                break;
+              case 'Popular':
+                $badgeClass = 'badge-popular';
+                break;
+              default:
+                $badgeClass = 'badge-new';
+            }
+        ?>
+            <!-- Featured Game Card (Dynamic) -->
+            <article class="featured-card relative bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer group">
+              <div class="relative overflow-hidden aspect-video">
+                <img src="assets/<?= htmlspecialchars($game['image']) ?>"
+                  alt="<?= htmlspecialchars($game['title']) ?>"
+                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
 
-        <!-- Featured Game Card 3 -->
-        <article class="featured-card relative bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer group">
-          <div class="relative overflow-hidden aspect-video">
-            <img src="assets/mobile-legends.jpg" alt="Mobile Legends" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <span class="badge badge-top absolute top-3 left-3">Popular</span>
-          </div>
-          <div class="p-5">
-            <h4 class="font-bold text-lg text-gray-800 mb-2">Mobile Legends</h4>
-            <p class="text-sm text-gray-600 mb-4">5v5 MOBA battle arena game.</p>
-            <button onclick="playGame('mobile-legends')" class="btn-gaming btn-play w-full px-4 py-3 text-white rounded-xl inline-flex items-center justify-center gap-2">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
-              </svg>
-              Play Now
-            </button>
-          </div>
-        </article>
+                <?php if (!empty($game['video_hover'])): ?>
+                  <video class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300" muted loop>
+                    <source src="assets/video/<?= htmlspecialchars($game['video_hover']) ?>" type="video/mp4" />
+                  </video>
+                <?php endif; ?>
 
-        <!-- Featured Game Card 4 -->
-        <article class="featured-card relative bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer group">
-          <div class="relative overflow-hidden aspect-video">
-            <img src="assets/game-free-fire.jpg" alt="Simple Kulino" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <span class="badge badge-new absolute top-3 left-3">New</span>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                <?php if (!empty($game['badge'])): ?>
+                  <span class="badge <?= $badgeClass ?> absolute top-3 left-3">
+                    <?= htmlspecialchars($game['badge']) ?>
+                  </span>
+                <?php endif; ?>
+              </div>
+
+              <div class="p-5">
+                <h4 class="font-bold text-lg text-gray-800 mb-2">
+                  <?= htmlspecialchars($game['title']) ?>
+                </h4>
+                <p class="text-sm text-gray-600 mb-4">
+                  <?= htmlspecialchars(substr($game['description'], 0, 50)) ?>...
+                </p>
+                <button onclick="playGame('<?= htmlspecialchars($game['game_url']) ?>')"
+                  class="btn-gaming btn-play w-full px-4 py-3 text-white rounded-xl inline-flex items-center justify-center gap-2">
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                  </svg>
+                  Play Now
+                </button>
+              </div>
+            </article>
+          <?php
+          }
+        } else {
+          // Fallback jika tidak ada featured games
+          ?>
+          <div class="col-span-full text-center py-12">
+            <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p class="text-gray-500 font-semibold">No Featured Games Available</p>
+            <p class="text-sm text-gray-400 mt-2">Check back soon for new games!</p>
           </div>
-          <div class="p-5">
-            <h4 class="font-bold text-lg text-gray-800 mb-2">Simple Kulino</h4>
-            <p class="text-sm text-gray-600 mb-4">Tap to win and earn rewards.</p>
-            <button onclick="playGame('simple-kulino')" class="btn-gaming btn-play w-full px-4 py-3 text-white rounded-xl inline-flex items-center justify-center gap-2">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
-              </svg>
-              Play Now
-            </button>
-          </div>
-        </article>
+        <?php } ?>
       </div>
     </section>
 
@@ -344,51 +830,86 @@
 
       <div class="relative">
         <div id="gamesSlider" class="flex overflow-x-auto gap-6 scroll-smooth no-scrollbar pb-4">
-          <!-- Repeat game cards here -->
-          <article class="game-card bg-white rounded-2xl shadow-lg min-w-[280px] md:min-w-[320px] overflow-hidden group">
-            <div class="relative overflow-hidden">
-              <img src="assets/game-free-fire.jpg" alt="Game" class="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500" />
-              <div class="overlay rounded-t-2xl"></div>
-            </div>
-            <div class="p-5">
-              <h4 class="font-semibold text-lg text-gray-800 mb-2">Simple Kulino Demo</h4>
-              <p class="text-sm text-gray-600 mb-4">Tap to win, earn rewards instantly.</p>
-              <div class="flex gap-3">
-                <button onclick="playGame('simple-kulino')" class="btn-gaming btn-play flex-1 px-4 py-2.5 text-white rounded-lg text-sm">
-                  Play
-                </button>
-                <button class="btn-gaming btn-outline flex-1 px-4 py-2.5 rounded-lg text-sm">
-                  Preview
-                </button>
-              </div>
-            </div>
-          </article>
+          <?php
+          // Query all active games (not featured)
+          $sqlAllGames = mysqli_query($koneksi, "
+        SELECT * FROM tb_games 
+        WHERE is_active = 1 
+        ORDER BY is_featured DESC, sort_order ASC, id DESC
+      ");
 
-          <!-- Add more game cards as needed -->
-          <article class="game-card bg-white rounded-2xl shadow-lg min-w-[280px] md:min-w-[320px] overflow-hidden group">
-            <div class="relative overflow-hidden">
-              <img src="assets/mobile-legends.jpg" alt="Game" class="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500" />
-              <div class="overlay rounded-t-2xl"></div>
+          if (mysqli_num_rows($sqlAllGames) > 0) {
+            while ($game = mysqli_fetch_assoc($sqlAllGames)) {
+              $badgeClass = '';
+              switch ($game['badge']) {
+                case 'New':
+                  $badgeClass = 'badge-new';
+                  break;
+                case 'Hot':
+                  $badgeClass = 'badge-hot';
+                  break;
+                case 'Top Rated':
+                  $badgeClass = 'badge-top-rated';
+                  break;
+                case 'Updated':
+                  $badgeClass = 'badge-updated';
+                  break;
+                case 'Popular':
+                  $badgeClass = 'badge-popular';
+                  break;
+              }
+          ?>
+              <article class="game-card bg-white rounded-2xl shadow-lg min-w-[280px] md:min-w-[320px] overflow-hidden group">
+                <div class="relative overflow-hidden">
+                  <img src="assets/<?= htmlspecialchars($game['image']) ?>"
+                    alt="<?= htmlspecialchars($game['title']) ?>"
+                    class="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <div class="overlay rounded-t-2xl"></div>
+
+                  <?php if (!empty($game['badge'])): ?>
+                    <span class="badge <?= $badgeClass ?> absolute top-3 left-3">
+                      <?= htmlspecialchars($game['badge']) ?>
+                    </span>
+                  <?php endif; ?>
+                </div>
+
+                <div class="p-5">
+                  <h4 class="font-semibold text-lg text-gray-800 mb-2">
+                    <?= htmlspecialchars($game['title']) ?>
+                  </h4>
+                  <p class="text-sm text-gray-600 mb-4">
+                    <?= htmlspecialchars(substr($game['description'], 0, 60)) ?>...
+                  </p>
+                  <div class="flex gap-3">
+                    <button onclick="playGame('<?= htmlspecialchars($game['game_url']) ?>')"
+                      class="btn-gaming btn-play flex-1 px-4 py-2.5 text-white rounded-lg text-sm">
+                      Play
+                    </button>
+                    <button class="btn-gaming btn-outline flex-1 px-4 py-2.5 rounded-lg text-sm">
+                      Preview
+                    </button>
+                  </div>
+                </div>
+              </article>
+            <?php
+            }
+          } else {
+            ?>
+            <div class="w-full text-center py-12">
+              <p class="text-gray-500">No games available at the moment</p>
             </div>
-            <div class="p-5">
-              <h4 class="font-semibold text-lg text-gray-800 mb-2">Forest Battle</h4>
-              <p class="text-sm text-gray-600 mb-4">Coming soon - Epic battles await.</p>
-              <div class="flex gap-3">
-                <button class="btn-gaming btn-play flex-1 px-4 py-2.5 text-white rounded-lg text-sm opacity-50 cursor-not-allowed" disabled>
-                  Coming Soon
-                </button>
-              </div>
-            </div>
-          </article>
+          <?php } ?>
         </div>
 
         <!-- Navigation Buttons -->
-        <button onclick="scrollSlider('gamesSlider', -1)" class="nav-btn hidden lg:block absolute top-1/2 -left-5 transform -translate-y-1/2 rounded-full p-3">
+        <button onclick="scrollSlider('gamesSlider', -1)"
+          class="nav-btn hidden lg:block absolute top-1/2 -left-5 transform -translate-y-1/2 rounded-full p-3">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <button onclick="scrollSlider('gamesSlider', 1)" class="nav-btn hidden lg:block absolute top-1/2 -right-5 transform -translate-y-1/2 rounded-full p-3">
+        <button onclick="scrollSlider('gamesSlider', 1)"
+          class="nav-btn hidden lg:block absolute top-1/2 -right-5 transform -translate-y-1/2 rounded-full p-3">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
@@ -483,35 +1004,14 @@
   <!-- Footer -->
   <?php include("./includes/footer.php"); ?>
 
-  <!-- Scripts -->
-  <script src="./js/script-index.js"></script>
-  <!-- Kulino Token Balance Checker -->
+  <!-- Solana Web3.js -->
+  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+
+  <!-- bs58 for signature encoding -->
+  <script src="https://cdn.jsdelivr.net/npm/bs58/dist/index.min.js"></script>
+
   <!-- Kulino Token Balance Checker -->
   <script>
-    // Token Kulino Config
-    const KULINO_TOKEN_MINT = 'E5chNtjGFvCMVYoTwcP9DtrdMdctRCGdGahAAhnHbHc1';
-
-    async function getKulinoBalance(walletAddress) {
-      try {
-        const connection = new solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
-        const pubkey = new solanaWeb3.PublicKey(walletAddress);
-        const tokenMint = new solanaWeb3.PublicKey(KULINO_TOKEN_MINT);
-
-        // Get token accounts
-        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(pubkey, {
-          mint: tokenMint
-        });
-
-        if (tokenAccounts.value.length > 0) {
-          const balance = tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount;
-          return balance || 0;
-        }
-        return 0;
-      } catch (error) {
-        console.error('Error fetching Kulino balance:', error);
-        return 0;
-      }
-    }
 
     function formatKulinoBalance(balance) {
       if (balance >= 1000) {
@@ -521,9 +1021,8 @@
     }
   </script>
 
-  <!-- Solana Web3.js -->
-  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+  <script src="./js/script-index.js"></script>
 
 </body>
 
-</html>
+</html>x
