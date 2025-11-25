@@ -1,3 +1,54 @@
+// ===== TAMBAHKAN DI AWAL FILE bridge.js =====
+
+// Parse URL parameters dan kirim ke Unity
+(function initializeWalletFromURL() {
+  const LOG = (...a) => console.log('[KULINO-INIT]', ...a);
+  
+  // Parse URL params
+  function getURLParams() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      wallet: params.get('wallet') || '',
+      game: params.get('game') || ''
+    };
+  }
+  
+  const urlParams = getURLParams();
+  LOG('URL Params:', urlParams);
+  
+  // Wait for Unity to be ready, then send wallet address
+  function waitForUnityAndSendWallet() {
+    if (window.unityInstance && typeof window.unityInstance.SendMessage === 'function') {
+      if (urlParams.wallet) {
+        LOG('✓ Sending wallet to Unity:', urlParams.wallet);
+        window.unityInstance.SendMessage('GameManager', 'OnWalletConnected', urlParams.wallet);
+      }
+      
+      if (urlParams.game) {
+        LOG('✓ Sending game ID to Unity:', urlParams.game);
+        window.unityInstance.SendMessage('GameManager', 'SetGameId', urlParams.game);
+      }
+    } else {
+      // Retry after 500ms
+      setTimeout(waitForUnityAndSendWallet, 500);
+    }
+  }
+  
+  // Start checking when page loads
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(waitForUnityAndSendWallet, 1000);
+    });
+  } else {
+    setTimeout(waitForUnityAndSendWallet, 1000);
+  }
+  
+  LOG('Wallet initialization module loaded');
+})();
+
+// ===== SISANYA TETAP SEPERTI CODE BRIDGE.JS YANG ADA =====
+
+
 // Assets/WebBridge/bridge.js
 // Minimal Kulino Bridge for Unity WebGL
 // - tidak bergantung CDN (mengandung base58 encoder kecil).
