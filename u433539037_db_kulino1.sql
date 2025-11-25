@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Nov 22, 2025 at 09:19 AM
+-- Generation Time: Nov 25, 2025 at 02:36 AM
 -- Server version: 11.8.3-MariaDB-log
 -- PHP Version: 7.2.34
 
@@ -71,7 +71,37 @@ CREATE TABLE `tb_games` (
 --
 
 INSERT INTO `tb_games` (`id`, `title`, `description`, `image`, `video_hover`, `game_url`, `badge`, `is_featured`, `is_active`, `sort_order`, `created_at`, `updated_at`) VALUES
-(13, 'Fly to The Moon', 'ly to the Moon adalah game 2D bertema petualangan luar angkasa, berusaha terbang setinggi mungkin untuk mendapatkan koin KULINO', '1763463459_img.png', '', 'block', 'New', 1, 1, 2, '2025-11-18 10:57:39', '2025-11-21 07:34:15');
+(13, 'Fly to The Moon', 'ly to the Moon adalah game 2D bertema petualangan luar angkasa, berusaha terbang setinggi mungkin untuk mendapatkan koin KULINO', '1763463459_img.png', '', 'fly-to-moon', 'New', 1, 1, 2, '2025-11-18 10:57:39', '2025-11-22 09:42:20');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `tb_marketplace`
+--
+
+CREATE TABLE `tb_marketplace` (
+  `id` int(11) NOT NULL,
+  `product_name` varchar(255) NOT NULL,
+  `category` varchar(100) NOT NULL COMMENT 'Aksesoris atau Board Game',
+  `subcategory` varchar(100) NOT NULL COMMENT 'Baju, Ganci, Topi, dll',
+  `description` text NOT NULL,
+  `price` decimal(10,2) NOT NULL,
+  `original_price` decimal(10,2) DEFAULT NULL COMMENT 'Harga coret jika ada diskon',
+  `image` varchar(255) NOT NULL,
+  `stock` int(11) DEFAULT 0,
+  `is_active` tinyint(1) DEFAULT 1,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Dumping data for table `tb_marketplace`
+--
+
+INSERT INTO `tb_marketplace` (`id`, `product_name`, `category`, `subcategory`, `description`, `price`, `original_price`, `image`, `stock`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'Jenipapo', 'Board Game', 'Monopoly', 'Sebuah Tattoo yang baguss dan tanpa takut permanent', 1500000.00, 200000.00, '1763955935_6923d4df48987.jpg', 10, 1, '2025-11-24 03:45:35', '2025-11-24 09:42:57'),
+(2, 'Gelas', 'Aksesoris', 'Gelas', 'Gelas canggih yang bewarna putih', 200000.00, 10000000.00, '1763977533_6924293d057cd.png', 2, 1, '2025-11-24 09:45:33', '2025-11-24 09:45:33'),
+(3, 'T-Shirt Kulino Size ( M - XXL )', 'Aksesoris', 'Baju', 'akffdaokfdsknfsodno', 100000.00, 150000.00, '1763978784_69242e20d0ada.jpg', 12, 1, '2025-11-24 10:06:24', '2025-11-24 10:06:24');
 
 -- --------------------------------------------------------
 
@@ -143,6 +173,12 @@ ALTER TABLE `tb_games`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `tb_marketplace`
+--
+ALTER TABLE `tb_marketplace`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `tb_sponsor`
 --
 ALTER TABLE `tb_sponsor`
@@ -177,6 +213,12 @@ ALTER TABLE `tb_berita`
 --
 ALTER TABLE `tb_games`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+
+--
+-- AUTO_INCREMENT for table `tb_marketplace`
+--
+ALTER TABLE `tb_marketplace`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `tb_sponsor`
