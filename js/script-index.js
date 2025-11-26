@@ -1,6 +1,44 @@
 // ==================== CONFIGURATION ====================
 const KULINO_TOKEN_MINT = "E5chNtjGFvCMVYoTwcP9DtrdMdctRCGdGahAAhnHbHc1";
-const SOLANA_RPC = "https://api.mainnet-beta.solana.com";
+
+// 🔧 FIX: Multiple RPC endpoints dengan fallback
+const SOLANA_RPC_ENDPOINTS = [
+  "https://solana-mainnet.g.alchemy.com/v2/demo", // Alchemy demo
+  "https://api.mainnet-beta.solana.com",
+  "https://solana-api.projectserum.com",
+  "https://rpc.ankr.com/solana"
+];
+
+let currentRPCIndex = 0;
+
+// Function untuk mendapatkan RPC connection dengan retry
+function getConnection() {
+  const rpcUrl = SOLANA_RPC_ENDPOINTS[currentRPCIndex];
+  return new solanaWeb3.Connection(rpcUrl, {
+    commitment: "confirmed",
+    confirmTransactionInitialTimeout: 60000
+  });
+}
+
+// Function untuk retry dengan RPC endpoint berikutnya
+async function retryWithNextRPC(fn) {
+  const maxRetries = SOLANA_RPC_ENDPOINTS.length;
+  let lastError;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      console.warn(`❌ RPC ${SOLANA_RPC_ENDPOINTS[currentRPCIndex]} failed:`, error.message);
+      currentRPCIndex = (currentRPCIndex + 1) % SOLANA_RPC_ENDPOINTS.length;
+      console.log(`🔄 Switching to RPC: ${SOLANA_RPC_ENDPOINTS[currentRPCIndex]}`);
+    }
+  }
+  
+  throw lastError;
+}
+
 const WALLET_STORAGE_KEY = "kulino_connected_wallet";
 const SESSION_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 days
 
@@ -10,7 +48,7 @@ let userAddress = null;
 let kulinoBalance = 0;
 let solBalance = 0;
 
-console.log("🚀 Script loading...");
+console.log("🚀 Kulino Script Starting...");
 
 // ==================== UTILITY FUNCTIONS ====================
 function shortAddr(addr) {
@@ -51,18 +89,23 @@ function showToast(message, type = "info") {
   }, 2700);
 }
 
-// ==================== BALANCE FUNCTIONS ====================
+// ==================== BALANCE FUNCTIONS (FIXED) ====================
 async function getSOLBalance(walletAddress) {
   try {
     console.log("📊 Fetching SOL balance...");
-    const connection = new solanaWeb3.Connection(SOLANA_RPC, "confirmed");
-    const pubkey = new solanaWeb3.PublicKey(walletAddress);
-    const balance = await connection.getBalance(pubkey);
+    
+    const balance = await retryWithNextRPC(async () => {
+      const connection = getConnection();
+      const pubkey = new solanaWeb3.PublicKey(walletAddress);
+      return await connection.getBalance(pubkey);
+    });
+    
     const solAmount = balance / solanaWeb3.LAMPORTS_PER_SOL;
     console.log("✅ SOL balance:", solAmount);
     return solAmount;
   } catch (error) {
     console.error("❌ SOL fetch error:", error);
+    showToast("Failed to fetch SOL balance", "error");
     return 0;
   }
 }
@@ -70,35 +113,36 @@ async function getSOLBalance(walletAddress) {
 async function getKulinoBalance(walletAddress) {
   try {
     console.log("📊 Fetching Kulino balance...");
-    const connection = new solanaWeb3.Connection(SOLANA_RPC, "confirmed");
-    const pubkey = new solanaWeb3.PublicKey(walletAddress);
-    const tokenMint = new solanaWeb3.PublicKey(KULINO_TOKEN_MINT);
-
-    const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-      pubkey,
-      {
+    
+    const tokenAccounts = await retryWithNextRPC(async () => {
+      const connection = getConnection();
+      const pubkey = new solanaWeb3.PublicKey(walletAddress);
+      const tokenMint = new solanaWeb3.PublicKey(KULINO_TOKEN_MINT);
+      
+      return await connection.getParsedTokenAccountsByOwner(pubkey, {
         mint: tokenMint,
-      }
-    );
+      });
+    });
 
     if (tokenAccounts.value.length > 0) {
       const balance =
-        tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount ||
-        0;
+        tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount || 0;
       console.log("✅ Kulino balance:", balance);
       return balance;
     }
-    console.log("ℹ️ No Kulino tokens");
+    
+    console.log("ℹ️ No Kulino tokens found");
     return 0;
   } catch (error) {
     console.error("❌ Kulino fetch error:", error);
+    showToast("Failed to fetch KULINO balance", "error");
     return 0;
   }
 }
 
 async function updateBalanceDisplay(address = userAddress) {
   if (!address) {
-    console.log("⚠️ No address");
+    console.log("⚠️ No address to update balance");
     return;
   }
 
@@ -106,31 +150,43 @@ async function updateBalanceDisplay(address = userAddress) {
   const solEl = document.getElementById("solBalance");
   const refreshBtn = document.getElementById("refreshBalanceBtn");
 
-  if (kulinoEl)
-    kulinoEl.innerHTML =
-      '<span class="inline-block w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin"></span>';
+  // Show loading state
+  if (kulinoEl) {
+    kulinoEl.innerHTML = '<span class="inline-block w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin"></span>';
+  }
   if (refreshBtn) {
     refreshBtn.disabled = true;
     refreshBtn.classList.add("opacity-50");
   }
 
   try {
-    [kulinoBalance, solBalance] = await Promise.all([
+    // Fetch balances with timeout
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Balance fetch timeout")), 15000)
+    );
+    
+    const balancePromise = Promise.all([
       getKulinoBalance(address),
       getSOLBalance(address),
     ]);
+    
+    [kulinoBalance, solBalance] = await Promise.race([balancePromise, timeoutPromise]);
 
-    if (kulinoEl)
-      kulinoEl.innerHTML = `<strong>${formatKulinoBalance(
-        kulinoBalance
-      )}</strong> KULINO`;
-    if (solEl) solEl.textContent = `${formatSOLBalance(solBalance)} SOL`;
+    // Update UI
+    if (kulinoEl) {
+      kulinoEl.innerHTML = `<strong>${formatKulinoBalance(kulinoBalance)}</strong> KULINO`;
+    }
+    if (solEl) {
+      solEl.textContent = `${formatSOLBalance(solBalance)} SOL`;
+    }
 
     console.log("✅ Balance updated");
+    showToast("Balance updated successfully", "success");
   } catch (error) {
     console.error("❌ Balance update failed:", error);
     if (kulinoEl) kulinoEl.innerHTML = "<strong>0.00</strong> KULINO";
     if (solEl) solEl.textContent = "0.0000 SOL";
+    showToast("Failed to update balance", "error");
   } finally {
     if (refreshBtn) {
       refreshBtn.disabled = false;
@@ -144,7 +200,6 @@ function updateConnectedUI(address) {
   console.log("🔄 Updating UI for:", shortAddr(address));
   userAddress = address;
 
-  // Update wallet status
   const walletStatus = document.getElementById("walletStatus");
   const addrShort = document.getElementById("addrShort");
   const disconnectBtn = document.getElementById("disconnectBtn");
@@ -153,7 +208,6 @@ function updateConnectedUI(address) {
   if (addrShort) addrShort.innerText = shortAddr(address);
   if (disconnectBtn) disconnectBtn.classList.remove("hidden");
 
-  // Update connect buttons
   const updateButton = (btn) => {
     if (!btn) return;
     btn.innerHTML = `
@@ -167,7 +221,6 @@ function updateConnectedUI(address) {
   updateButton(document.getElementById("connectBtn"));
   updateButton(document.getElementById("connectBtnMobile"));
 
-  // Save to storage
   try {
     localStorage.setItem(WALLET_STORAGE_KEY, address);
     localStorage.setItem("kulino_wallet_timestamp", Date.now().toString());
@@ -175,14 +228,12 @@ function updateConnectedUI(address) {
     console.error("Storage error:", e);
   }
 
-  // Update balance
   updateBalanceDisplay(address);
-
   console.log("✅ UI updated");
 }
 
 function resetDisconnectedUI() {
-  console.log("🔄 Resetting UI");
+  console.log("🔄 Resetting UI to disconnected state");
   userAddress = null;
   kulinoBalance = 0;
   solBalance = 0;
@@ -219,19 +270,18 @@ function resetDisconnectedUI() {
     console.error("Storage error:", e);
   }
 
-  console.log("✅ UI reset");
+  console.log("✅ UI reset complete");
 }
 
-// ==================== CONNECT WALLET ====================
+// ==================== WALLET FUNCTIONS ====================
 async function connectWallet() {
-  console.log("🔌 Connect wallet clicked!");
+  console.log("🔌 Connect wallet initiated");
 
   const isMobile = isMobileDevice();
 
   try {
-    // Check Phantom
     if (!window.phantom?.solana?.isPhantom) {
-      console.log("⚠️ Phantom not found");
+      console.log("⚠️ Phantom wallet not detected");
 
       if (isMobile) {
         await Swal.fire({
@@ -246,9 +296,7 @@ async function connectWallet() {
           denyButtonColor: "#10b981",
         }).then((result) => {
           if (result.isConfirmed) {
-            const deepLink = `https://phantom.app/ul/browse/${encodeURIComponent(
-              window.location.href
-            )}`;
+            const deepLink = `https://phantom.app/ul/browse/${encodeURIComponent(window.location.href)}`;
             window.location.href = deepLink;
           } else if (result.isDenied) {
             const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -275,10 +323,9 @@ async function connectWallet() {
       return;
     }
 
-    console.log("✅ Phantom detected");
+    console.log("✅ Phantom wallet detected");
     provider = window.phantom.solana;
 
-    // Show loading
     Swal.fire({
       title: "Connecting...",
       text: "Please approve the connection in Phantom",
@@ -286,17 +333,13 @@ async function connectWallet() {
       didOpen: () => Swal.showLoading(),
     });
 
-    // Connect
-    console.log("🔄 Requesting connection...");
+    console.log("🔄 Requesting wallet connection...");
     const resp = await provider.connect();
     const address = resp.publicKey.toString();
 
-    console.log("✅ Connected:", shortAddr(address));
-
-    // Update UI
+    console.log("✅ Connected to wallet:", shortAddr(address));
     updateConnectedUI(address);
 
-    // Success message
     await Swal.fire({
       icon: "success",
       title: "Connected!",
@@ -304,9 +347,7 @@ async function connectWallet() {
         <div class="space-y-3">
           <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-3 rounded-lg">
             <p class="text-sm text-gray-600 mb-1">Wallet Address:</p>
-            <code class="text-xs font-mono text-indigo-600 font-semibold">${shortAddr(
-              address
-            )}</code>
+            <code class="text-xs font-mono text-indigo-600 font-semibold">${shortAddr(address)}</code>
           </div>
           <div class="bg-green-50 border border-green-200 rounded-lg p-3">
             <p class="text-sm text-green-800">✓ Auto-reconnect enabled for 30 days</p>
@@ -319,7 +360,6 @@ async function connectWallet() {
     });
   } catch (err) {
     console.error("❌ Connect error:", err);
-
     Swal.close();
 
     if (err.message?.includes("rejected") || err.code === 4001) {
@@ -340,7 +380,6 @@ async function connectWallet() {
   }
 }
 
-// ==================== DISCONNECT ====================
 function showDisconnectDialog() {
   Swal.fire({
     title: "Disconnect Wallet?",
@@ -348,15 +387,11 @@ function showDisconnectDialog() {
       <div class="text-left space-y-3">
         <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg">
           <p class="text-sm text-gray-600 mb-1">Connected Wallet:</p>
-          <code class="text-sm font-mono text-indigo-600 font-semibold">${shortAddr(
-            userAddress
-          )}</code>
+          <code class="text-sm font-mono text-indigo-600 font-semibold">${shortAddr(userAddress)}</code>
         </div>
         <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
           <p class="text-sm text-gray-600 mb-1">Kulino Balance:</p>
-          <p class="text-lg font-bold text-yellow-600">${formatKulinoBalance(
-            kulinoBalance
-          )} KULINO</p>
+          <p class="text-lg font-bold text-yellow-600">${formatKulinoBalance(kulinoBalance)} KULINO</p>
         </div>
       </div>
     `,
@@ -392,31 +427,30 @@ function disconnectWallet() {
   });
 }
 
-// ==================== AUTO-CONNECT ====================
 async function autoConnectWallet() {
   try {
     const savedAddress = localStorage.getItem(WALLET_STORAGE_KEY);
     const timestamp = localStorage.getItem("kulino_wallet_timestamp");
 
     if (!savedAddress || !timestamp) {
-      console.log("ℹ️ No saved wallet");
+      console.log("ℹ️ No saved wallet session");
       return;
     }
 
     const timeSince = Date.now() - parseInt(timestamp);
     if (timeSince > SESSION_DURATION) {
-      console.log("⏰ Session expired");
+      console.log("⏰ Wallet session expired");
       localStorage.removeItem(WALLET_STORAGE_KEY);
       localStorage.removeItem("kulino_wallet_timestamp");
       return;
     }
 
     if (!window.phantom?.solana?.isPhantom) {
-      console.log("⚠️ Phantom not available");
+      console.log("⚠️ Phantom not available for auto-connect");
       return;
     }
 
-    console.log("🔄 Auto-connecting:", shortAddr(savedAddress));
+    console.log("🔄 Auto-connecting wallet:", shortAddr(savedAddress));
     provider = window.phantom.solana;
 
     const resp = await provider.connect({ onlyIfTrusted: true });
@@ -425,50 +459,48 @@ async function autoConnectWallet() {
     if (address.toLowerCase() === savedAddress.toLowerCase()) {
       updateConnectedUI(address);
       showToast("Wallet Auto-Connected", "success");
-      console.log("✅ Auto-connected");
+      console.log("✅ Auto-connected successfully");
     } else {
-      console.log("⚠️ Address mismatch");
+      console.log("⚠️ Address mismatch during auto-connect");
       localStorage.removeItem(WALLET_STORAGE_KEY);
     }
   } catch (error) {
     console.log("ℹ️ Auto-connect skipped:", error.message);
   }
 }
-// ==================== GANTI FUNCTION playGame() ====================
 
+// ==================== GAME FUNCTIONS ====================
 function playGame(gameId) {
-  console.log('🎮 playGame called with:', gameId);
+  console.log("🎮 playGame called with gameId:", gameId);
 
   if (!userAddress) {
     Swal.fire({
-      icon: 'warning',
-      title: 'Connect Wallet First',
-      text: 'Please connect your wallet before playing',
+      icon: "warning",
+      title: "Connect Wallet First",
+      text: "Please connect your wallet before playing",
       showCancelButton: true,
-      confirmButtonText: 'Connect Now',
-      cancelButtonText: 'Cancel',
-      confirmButtonColor: '#667eea',
-      cancelButtonColor: '#6c757d',
+      confirmButtonText: "Connect Now",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#667eea",
+      cancelButtonColor: "#6c757d",
     }).then((result) => {
       if (result.isConfirmed) connectWallet();
     });
     return;
   }
 
-  // ✅ Construct game URL dengan wallet dan game ID
-  const baseUrl = window.location.origin + window.location.pathname.replace('index.php', '');
+  const baseUrl = window.location.origin + window.location.pathname.replace("index.php", "");
   const gameUrl = `${baseUrl}WebUnity/index.html?wallet=${encodeURIComponent(userAddress)}&game=${encodeURIComponent(gameId)}`;
 
-  console.log('🚀 Opening game URL:', gameUrl);
+  console.log("🚀 Opening game at:", gameUrl);
 
-  // Show loading message
   Swal.fire({
-    title: 'Loading Game...',
+    title: "Loading Game...",
     html: `
       <div class="text-center">
         <div class="inline-block w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
         <p class="text-gray-600">Opening <strong>${gameId}</strong></p>
-        <p class="text-sm text-gray-500 mt-2">Wallet: ${shortAddr(userAddress)}</p>
+        <p class="text-sm text-gray-500 mt-2">Game will open in a new tab</p>
       </div>
     `,
     showConfirmButton: false,
@@ -476,37 +508,266 @@ function playGame(gameId) {
     allowOutsideClick: false,
   });
 
-  // Open game in new tab
   setTimeout(() => {
-    const newWindow = window.open(gameUrl, '_blank');
+    const newWindow = window.open(gameUrl, "_blank");
 
-    if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+    if (!newWindow || newWindow.closed || typeof newWindow.closed == "undefined") {
       Swal.fire({
-        icon: 'error',
-        title: 'Popup Blocked',
+        icon: "error",
+        title: "Popup Blocked",
         html: `
           <p>Your browser blocked the game window.</p>
-          <p class="text-sm text-gray-600 mt-2">Please allow popups or click below:</p>
+          <p class="text-sm text-gray-600 mt-2">Please allow popups for this site</p>
         `,
         showCancelButton: true,
-        confirmButtonText: 'Try Again',
-        cancelButtonText: 'Cancel',
-        confirmButtonColor: '#667eea',
+        confirmButtonText: "Try Again",
+        cancelButtonText: "Cancel",
+        confirmButtonColor: "#667eea",
       }).then((result) => {
-        if (result.isConfirmed) {
-          window.open(gameUrl, '_blank');
-        }
+        if (result.isConfirmed) window.open(gameUrl, "_blank");
       });
     } else {
       Swal.fire({
-        icon: 'success',
-        title: 'Game Opened!',
-        text: 'Check your new tab to play',
+        icon: "success",
+        title: "Game Opened!",
+        text: "Check your new tab to play",
         timer: 2000,
         showConfirmButton: false,
       });
     }
   }, 500);
+}
+
+// ==================== SLIDER FUNCTIONS ====================
+function scrollSlider(sliderId, direction) {
+  const slider = document.getElementById(sliderId);
+  if (!slider) return;
+  
+  const scrollAmount = 300;
+  slider.scrollBy({
+    left: direction * scrollAmount,
+    behavior: 'smooth'
+  });
+}
+
+// 🔧 FIX: Marketplace Functions (ADDED)
+function filterMarketplace(category) {
+  console.log("🔍 Filtering marketplace by category:", category);
+  
+  const cards = document.querySelectorAll(".product-card");
+  const filterBtns = document.querySelectorAll(".marketplace-filter-btn");
+
+  // Update active button styling
+  filterBtns.forEach((btn) => {
+    btn.classList.remove("active", "from-indigo-600", "to-purple-600", "text-white");
+    btn.classList.add("bg-gray-100", "text-gray-700");
+  });
+
+  event.target.classList.add("active", "from-indigo-600", "to-purple-600", "text-white");
+  event.target.classList.remove("bg-gray-100", "text-gray-700");
+
+  // Show/hide sub-category filter
+  const subFilter = document.getElementById("subCategoryFilter");
+  if (subFilter) {
+    if (category !== "all") {
+      showSubCategories(category);
+      subFilter.classList.remove("hidden");
+    } else {
+      subFilter.classList.add("hidden");
+    }
+  }
+
+  // Filter product cards
+  cards.forEach((card) => {
+    if (category === "all" || card.dataset.category === category) {
+      card.style.display = "flex";
+    } else {
+      card.style.display = "none";
+    }
+  });
+}
+
+function showSubCategories(category) {
+  const subFilter = document.getElementById("subCategoryFilter");
+  if (!subFilter) return;
+  
+  let subCategories = [];
+
+  if (category === "Aksesoris") {
+    subCategories = ["All", "Baju", "Ganci", "Topi", "Celana", "Gelas"];
+  } else if (category === "Board Game") {
+    subCategories = ["All", "Monopoly", "Ular Tangga"];
+  }
+
+  subFilter.innerHTML = '<div class="flex flex-wrap gap-2">' +
+    subCategories.map(sub => 
+      `<button onclick="filterBySubCategory('${category}', '${sub}')" 
+        class="sub-filter-btn px-4 py-2 text-sm rounded-lg bg-white border border-gray-300 text-gray-700 hover:border-indigo-600 hover:text-indigo-600 transition">
+        ${sub}
+      </button>`
+    ).join('') +
+    '</div>';
+}
+
+function filterBySubCategory(category, subCategory) {
+  console.log("🔍 Filtering by subcategory:", subCategory);
+  
+  const cards = document.querySelectorAll(".product-card");
+
+  cards.forEach((card) => {
+    if (subCategory === "All") {
+      if (card.dataset.category === category) {
+        card.style.display = "flex";
+      }
+    } else {
+      if (card.dataset.category === category && card.dataset.subcategory === subCategory) {
+        card.style.display = "flex";
+      } else {
+        card.style.display = "none";
+      }
+    }
+  });
+}
+
+// 🔧 FIX: Product Modal Functions (ADDED)
+let currentProduct = null;
+
+function openProductModal(product) {
+  console.log("🛍️ Opening product modal:", product.product_name);
+  
+  currentProduct = product;
+  const modal = document.getElementById("productModal");
+  if (!modal) {
+    console.error("Product modal not found");
+    return;
+  }
+
+  // Update modal content
+  const modalImage = document.getElementById("modalImage");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalDescription = document.getElementById("modalDescription");
+  const modalCategory = document.getElementById("modalCategory");
+  const modalDiscount = document.getElementById("modalDiscount");
+  const modalPriceSection = document.getElementById("modalPriceSection");
+  const modalStock = document.getElementById("modalStock");
+
+  if (modalImage) {
+    modalImage.src = "uploads/marketplace/" + product.image;
+    modalImage.alt = product.product_name;
+  }
+  if (modalTitle) modalTitle.textContent = product.product_name;
+  if (modalDescription) modalDescription.textContent = product.description;
+  if (modalCategory) modalCategory.textContent = product.subcategory;
+
+  // Price section with discount
+  const hasDiscount = product.original_price && product.original_price > product.price;
+  
+  if (hasDiscount) {
+    const discount = Math.round(((product.original_price - product.price) / product.original_price) * 100);
+    if (modalDiscount) {
+      modalDiscount.textContent = `-${discount}%`;
+      modalDiscount.classList.remove("hidden");
+    }
+
+    if (modalPriceSection) {
+      modalPriceSection.innerHTML = `
+        <div class="flex items-baseline gap-3">
+          <span class="text-3xl font-bold text-indigo-600">
+            Rp ${parseInt(product.price).toLocaleString("id-ID")}
+          </span>
+          <span class="text-lg text-gray-400 line-through">
+            Rp ${parseInt(product.original_price).toLocaleString("id-ID")}
+          </span>
+        </div>
+      `;
+    }
+  } else {
+    if (modalDiscount) modalDiscount.classList.add("hidden");
+    if (modalPriceSection) {
+      modalPriceSection.innerHTML = `
+        <span class="text-3xl font-bold text-indigo-600">
+          Rp ${parseInt(product.price).toLocaleString("id-ID")}
+        </span>
+      `;
+    }
+  }
+
+  // Stock status
+  if (modalStock) {
+    const stockHtml = product.stock > 0
+      ? `<span class="text-green-600 font-medium">✓ In Stock (${product.stock} available)</span>`
+      : `<span class="text-red-600 font-medium">✗ Out of Stock</span>`;
+    modalStock.innerHTML = stockHtml;
+  }
+
+  // Show modal
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  document.body.style.overflow = "hidden";
+}
+
+function closeProductModal() {
+  console.log("❌ Closing product modal");
+  
+  const modal = document.getElementById("productModal");
+  if (!modal) return;
+  
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+  document.body.style.overflow = "auto";
+  currentProduct = null;
+}
+
+function buyNowProduct() {
+  if (!currentProduct) {
+    console.error("No product selected");
+    return;
+  }
+
+  console.log("💰 Buy now:", currentProduct.product_name);
+  
+  const message = `Hi, saya tertarik dengan produk:\n\n` +
+    `📦 ${currentProduct.product_name}\n` +
+    `💰 Rp ${parseInt(currentProduct.price).toLocaleString("id-ID")}\n\n` +
+    `Apakah produk ini masih tersedia?`;
+
+  const instagramUrl = `https://www.instagram.com/kulinohouse.merchant/`;
+  window.open(instagramUrl, "_blank");
+
+  setTimeout(() => {
+    Swal.fire({
+      icon: "info",
+      title: "Redirecting to Instagram",
+      html: `
+        <p>Please send this message to complete your purchase:</p>
+        <div class="bg-gray-100 p-4 rounded-lg mt-3 text-left">
+          <p class="text-sm text-gray-700 whitespace-pre-line">${message}</p>
+        </div>
+      `,
+      confirmButtonText: "Got it!",
+      confirmButtonColor: "#667eea",
+    });
+  }, 500);
+}
+
+// ==================== VISITOR TRACKING ====================
+function trackVisitor() {
+  // Simple visitor tracking
+  fetch('track.php?add=1', {
+    method: 'GET',
+    credentials: 'same-origin'
+  }).catch(err => console.log('Tracking failed:', err));
+  
+  // Update visitor count display
+  fetch('track.php')
+    .then(res => res.json())
+    .then(data => {
+      const countEl = document.getElementById('visitorCount');
+      if (countEl && data.today) {
+        countEl.textContent = data.today;
+      }
+    })
+    .catch(err => console.log('Count fetch failed:', err));
 }
 
 // ==================== INITIALIZATION ====================
@@ -524,215 +785,25 @@ function waitForLibraries() {
       }
     }, 100);
 
-    // Timeout after 10 seconds
     setTimeout(() => {
       clearInterval(checkInterval);
-      console.error("❌ Libraries failed to load");
+      console.error("❌ Required libraries failed to load");
       resolve();
     }, 10000);
   });
 }
-
-// Marketplace Filter Functions
-function filterMarketplace(category) {
-  const cards = document.querySelectorAll(".product-card");
-  const filterBtns = document.querySelectorAll(".marketplace-filter-btn");
-
-  // Update active button
-  filterBtns.forEach((btn) => {
-    btn.classList.remove(
-      "active",
-      "from-indigo-600",
-      "to-purple-600",
-      "text-white"
-    );
-    btn.classList.add("bg-gray-100", "text-gray-700");
-  });
-
-  event.target.classList.add(
-    "active",
-    "from-indigo-600",
-    "to-purple-600",
-    "text-white"
-  );
-  event.target.classList.remove("bg-gray-100", "text-gray-700");
-
-  // Show/hide sub-category filter
-  const subFilter = document.getElementById("subCategoryFilter");
-  if (category !== "all") {
-    showSubCategories(category);
-    subFilter.classList.remove("hidden");
-  } else {
-    subFilter.classList.add("hidden");
-  }
-
-  // Filter cards
-  cards.forEach((card) => {
-    if (category === "all" || card.dataset.category === category) {
-      card.style.display = "flex";
-    } else {
-      card.style.display = "none";
-    }
-  });
-}
-
-function showSubCategories(category) {
-  const subFilter = document.getElementById("subCategoryFilter");
-  let subCategories = [];
-
-  if (category === "Aksesoris") {
-    subCategories = ["All", "Baju", "Ganci", "Topi", "Celana", "Gelas"];
-  } else if (category === "Board Game") {
-    subCategories = ["All", "Monopoly", "Ular Tangga"];
-  }
-
-  subFilter.innerHTML =
-    '<div class="flex flex-wrap gap-2">' +
-    subCategories
-      .map(
-        (sub) =>
-          `<button onclick="filterBySubCategory('${category}', '${sub}')" 
-              class="sub-filter-btn px-4 py-2 text-sm rounded-lg bg-white border border-gray-300 text-gray-700 hover:border-indigo-600 hover:text-indigo-600 transition">
-        ${sub}
-      </button>`
-      )
-      .join("") +
-    "</div>";
-}
-
-function filterBySubCategory(category, subCategory) {
-  const cards = document.querySelectorAll(".product-card");
-
-  cards.forEach((card) => {
-    if (subCategory === "All") {
-      if (card.dataset.category === category) {
-        card.style.display = "flex";
-      }
-    } else {
-      if (
-        card.dataset.category === category &&
-        card.dataset.subcategory === subCategory
-      ) {
-        card.style.display = "flex";
-      } else {
-        card.style.display = "none";
-      }
-    }
-  });
-}
-
-// Product Modal Functions
-let currentProduct = null;
-
-function openProductModal(product) {
-  currentProduct = product;
-  const modal = document.getElementById("productModal");
-
-  document.getElementById("modalImage").src =
-    "uploads/marketplace/" + product.image;
-  document.getElementById("modalImage").alt = product.product_name;
-  document.getElementById("modalTitle").textContent = product.product_name;
-  document.getElementById("modalDescription").textContent = product.description;
-  document.getElementById("modalCategory").textContent = product.subcategory;
-
-  // Price section
-  const hasDiscount =
-    product.original_price && product.original_price > product.price;
-  if (hasDiscount) {
-    const discount = Math.round(
-      ((product.original_price - product.price) / product.original_price) * 100
-    );
-    document.getElementById("modalDiscount").textContent = `-${discount}%`;
-    document.getElementById("modalDiscount").classList.remove("hidden");
-
-    document.getElementById("modalPriceSection").innerHTML = `
-      <div class="flex items-baseline gap-3">
-        <span class="text-3xl font-bold text-indigo-600">
-          Rp ${parseInt(product.price).toLocaleString("id-ID")}
-        </span>
-        <span class="text-lg text-gray-400 line-through">
-          Rp ${parseInt(product.original_price).toLocaleString("id-ID")}
-        </span>
-      </div>
-    `;
-  } else {
-    document.getElementById("modalDiscount").classList.add("hidden");
-    document.getElementById("modalPriceSection").innerHTML = `
-      <span class="text-3xl font-bold text-indigo-600">
-        Rp ${parseInt(product.price).toLocaleString("id-ID")}
-      </span>
-    `;
-  }
-
-  // Stock
-  const stockHtml =
-    product.stock > 0
-      ? `<span class="text-green-600 font-medium">✓ In Stock (${product.stock} available)</span>`
-      : `<span class="text-red-600 font-medium">✗ Out of Stock</span>`;
-  document.getElementById("modalStock").innerHTML = stockHtml;
-
-  modal.classList.remove("hidden");
-  modal.classList.add("flex");
-  document.body.style.overflow = "hidden";
-}
-
-function closeProductModal() {
-  const modal = document.getElementById("productModal");
-  modal.classList.add("hidden");
-  modal.classList.remove("flex");
-  document.body.style.overflow = "auto";
-  currentProduct = null;
-}
-
-function buyNowProduct() {
-  if (currentProduct) {
-    const message =
-      `Hi, saya tertarik dengan produk:\n\n` +
-      `📦 ${currentProduct.product_name}\n` +
-      `💰 Rp ${parseInt(currentProduct.price).toLocaleString("id-ID")}\n\n` +
-      `Apakah produk ini masih tersedia?`;
-
-    const encodedMessage = encodeURIComponent(message);
-    const instagramUrl = `https://www.instagram.com/kulinohouse.merchant/`;
-
-    window.open(instagramUrl, "_blank");
-
-    setTimeout(() => {
-      Swal.fire({
-        icon: "info",
-        title: "Redirecting to Instagram",
-        html: `
-          <p>Please send this message to complete your purchase:</p>
-          <div class="bg-gray-100 p-4 rounded-lg mt-3 text-left">
-            <p class="text-sm text-gray-700 whitespace-pre-line">${message}</p>
-          </div>
-        `,
-        confirmButtonText: "Got it!",
-        confirmButtonColor: "#667eea",
-      });
-    }, 500);
-  }
-}
-
-// Close modal when clicking outside
-document.getElementById("productModal").addEventListener("click", function (e) {
-  if (e.target === this) {
-    closeProductModal();
-  }
-});
-
 
 async function initializeApp() {
   console.log("⏳ Waiting for libraries...");
   await waitForLibraries();
 
   if (typeof solanaWeb3 === "undefined") {
-    console.error("❌ Solana Web3 not loaded!");
+    console.error("❌ Solana Web3 library not loaded!");
     return;
   }
 
   if (typeof Swal === "undefined") {
-    console.error("❌ SweetAlert2 not loaded!");
+    console.error("❌ SweetAlert2 library not loaded!");
     return;
   }
 
@@ -742,43 +813,28 @@ async function initializeApp() {
   // Track visitor
   trackVisitor();
 
-  // Setup buttons with proper event listeners
-  const connectBtn = document.getElementById("connectBtn");
-  const connectBtnMobile = document.getElementById("connectBtnMobile");
+  // Setup connect buttons
+  const setupButton = (btnId) => {
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      console.log(`✅ Found button: ${btnId}`);
+      btn.removeAttribute("onclick");
+      btn.addEventListener("click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log(`🖱️ ${btnId} clicked`);
+        connectWallet();
+      }, { passive: false });
+    }
+  };
+
+  setupButton("connectBtn");
+  setupButton("connectBtnMobile");
+
+  // Setup disconnect button
   const disconnectBtn = document.getElementById("disconnectBtn");
-
-  if (connectBtn) {
-    console.log("✅ Desktop button found");
-    connectBtn.removeAttribute("onclick"); // Remove any inline onclick
-    connectBtn.addEventListener(
-      "click",
-      function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log("🖱️ Desktop button clicked");
-        connectWallet();
-      },
-      { passive: false }
-    );
-  }
-
-  if (connectBtnMobile) {
-    console.log("✅ Mobile button found");
-    connectBtnMobile.removeAttribute("onclick");
-    connectBtnMobile.addEventListener(
-      "click",
-      function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log("🖱️ Mobile button clicked");
-        connectWallet();
-      },
-      { passive: false }
-    );
-  }
-
   if (disconnectBtn) {
-    disconnectBtn.addEventListener("click", function (e) {
+    disconnectBtn.addEventListener("click", function(e) {
       e.preventDefault();
       e.stopPropagation();
       showDisconnectDialog();
@@ -788,13 +844,13 @@ async function initializeApp() {
   // Setup refresh balance button
   const refreshBtn = document.getElementById("refreshBalanceBtn");
   if (refreshBtn) {
-    refreshBtn.addEventListener("click", function (e) {
+    refreshBtn.addEventListener("click", function(e) {
       e.preventDefault();
       updateBalanceDisplay();
     });
   }
 
-  // Video hover effects
+  // Setup video hover effects
   document.querySelectorAll(".featured-card").forEach((card) => {
     const video = card.querySelector("video");
     if (video) {
@@ -806,7 +862,7 @@ async function initializeApp() {
     }
   });
 
-  // Mobile menu toggle
+  // Setup mobile menu toggle
   const menuToggle = document.getElementById("menuToggle");
   const mobileMenu = document.getElementById("mobileMenu");
   if (menuToggle && mobileMenu) {
@@ -816,7 +872,17 @@ async function initializeApp() {
     });
   }
 
-  // Auto-connect
+  // Setup product modal close on outside click
+  const productModal = document.getElementById("productModal");
+  if (productModal) {
+    productModal.addEventListener("click", function(e) {
+      if (e.target === this) {
+        closeProductModal();
+      }
+    });
+  }
+
+  // Auto-connect wallet after delay
   setTimeout(() => {
     autoConnectWallet();
   }, 1000);
@@ -824,17 +890,25 @@ async function initializeApp() {
   console.log("✅ Kulino Ready!");
 }
 
-// Start when DOM is ready
+// Start initialization when DOM is ready
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", initializeApp);
 } else {
   initializeApp();
 }
 
-// Expose functions globally
+// ==================== EXPOSE FUNCTIONS GLOBALLY ====================
 window.connectWallet = connectWallet;
 window.disconnectWallet = disconnectWallet;
+window.showDisconnectDialog = showDisconnectDialog;
 window.playGame = playGame;
 window.scrollSlider = scrollSlider;
 window.updateBalanceDisplay = updateBalanceDisplay;
-window.showDisconnectDialog = showDisconnectDialog;
+window.filterMarketplace = filterMarketplace;
+window.showSubCategories = showSubCategories;
+window.filterBySubCategory = filterBySubCategory;
+window.openProductModal = openProductModal;
+window.closeProductModal = closeProductModal;
+window.buyNowProduct = buyNowProduct;
+
+console.log("✅ Script loaded successfully");
