@@ -58,26 +58,31 @@
     </header>
 
     <main class="max-w-6xl mx-auto px-4 py-10 space-y-8">
+      <!-- Connection Status -->
+      <div id="connectionStatus" class="hidden bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <p class="text-yellow-800 text-sm">⚠️ <span id="statusMessage"></span></p>
+      </div>
+
       <!-- Stats -->
       <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="bg-white p-6 rounded-2xl shadow">
           <h2 class="text-lg font-semibold">Total Visits</h2>
           <p id="totalVisits" class="text-4xl font-bold text-indigo-600 mt-2">
-            0
+            -
           </p>
         </div>
 
         <div class="bg-white p-6 rounded-2xl shadow">
           <h2 class="text-lg font-semibold">Unique Visitors</h2>
           <p id="totalUnique" class="text-4xl font-bold text-green-600 mt-2">
-            0
+            -
           </p>
         </div>
 
         <div class="bg-white p-6 rounded-2xl shadow">
           <h2 class="text-lg font-semibold">Active Visitors (10 menit)</h2>
           <p id="activeVisitor" class="text-4xl font-bold text-rose-600 mt-2">
-            0
+            -
           </p>
         </div>
       </section>
@@ -141,27 +146,52 @@
       let chartInstance = null;
 
       async function loadRecap(date = "") {
+        const statusDiv = document.getElementById('connectionStatus');
+        const statusMsg = document.getElementById('statusMessage');
+        
         try {
-          const url = date ? `track.php?date=${date}` : "track.php";
-          const res = await fetch(url);
+          const url = date ? `../track.php?date=${date}` : "../track.php";
+          console.log('📡 Fetching data from:', url);
+          
+          const res = await fetch(url, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+              'Accept': 'application/json'
+            }
+          });
+
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+
           const data = await res.json();
+          console.log('✅ Data received:', data);
+
+          if (data.error) {
+            throw new Error(data.error);
+          }
+
+          // Hide error message
+          statusDiv.classList.add('hidden');
 
           // update angka
-          document.getElementById("totalVisits").innerText = data.today; // total kunjungan
-          document.getElementById("totalUnique").innerText = data.unique; // unique visitor
-          document.getElementById("activeVisitor").innerText = data.active; // active visitor
+          document.getElementById("totalVisits").innerText = data.today || 0;
+          document.getElementById("totalUnique").innerText = data.unique || 0;
+          document.getElementById("activeVisitor").innerText = data.active || 0;
 
           // update chart
           const ctx = document.getElementById("weeklyChart").getContext("2d");
           if (chartInstance) chartInstance.destroy();
+          
           chartInstance = new Chart(ctx, {
             type: "line",
             data: {
-              labels: data.labels,
+              labels: data.labels || [],
               datasets: [
                 {
                   label: "Visitor",
-                  data: data.weekly,
+                  data: data.weekly || [],
                   borderColor: "#4f46e5",
                   backgroundColor: "rgba(79,70,229,0.2)",
                   fill: true,
@@ -181,37 +211,59 @@
           // update tabel aktivitas
           const tbody = document.getElementById("activityTable");
           tbody.innerHTML = "";
-          data.activity.forEach((row) => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-          <td class="border px-3 py-2">${row.time}</td>
-          <td class="border px-3 py-2">${row.ip}</td>
-          <td class="border px-3 py-2">${row.device}</td>
-        `;
-            tbody.appendChild(tr);
-          });
+          
+          if (data.activity && data.activity.length > 0) {
+            data.activity.forEach((row) => {
+              const tr = document.createElement("tr");
+              tr.innerHTML = `
+                <td class="border px-3 py-2">${row.time}</td>
+                <td class="border px-3 py-2">${row.ip}</td>
+                <td class="border px-3 py-2">${row.device}</td>
+              `;
+              tbody.appendChild(tr);
+            });
+          } else {
+            tbody.innerHTML = '<tr><td colspan="3" class="border px-3 py-2 text-center text-gray-500">Tidak ada aktivitas</td></tr>';
+          }
 
           // update tabel frekuensi
           const freqTbody = document.getElementById("freqTable");
           freqTbody.innerHTML = "";
-          data.frequency.forEach((row) => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-          <td class="border px-3 py-2">${row.date}</td>
-          <td class="border px-3 py-2">${row.ip}</td>
-          <td class="border px-3 py-2">${row.device}</td>
-          <td class="border px-3 py-2 font-semibold text-indigo-600">${row.visits}</td>
-        `;
-            freqTbody.appendChild(tr);
-          });
+          
+          if (data.frequency && data.frequency.length > 0) {
+            data.frequency.forEach((row) => {
+              const tr = document.createElement("tr");
+              tr.innerHTML = `
+                <td class="border px-3 py-2">${row.date}</td>
+                <td class="border px-3 py-2">${row.ip}</td>
+                <td class="border px-3 py-2">${row.device}</td>
+                <td class="border px-3 py-2 font-semibold text-indigo-600">${row.visits}</td>
+              `;
+              freqTbody.appendChild(tr);
+            });
+          } else {
+            freqTbody.innerHTML = '<tr><td colspan="4" class="border px-3 py-2 text-center text-gray-500">Tidak ada data</td></tr>';
+          }
+
         } catch (e) {
-          console.error("Gagal load recap:", e);
+          console.error("❌ Gagal load recap:", e);
+          
+          // Show error message
+          statusDiv.classList.remove('hidden');
+          statusMsg.textContent = `Error: ${e.message}. Periksa koneksi database dan file track.php`;
+          
+          // Set default values
+          document.getElementById("totalVisits").innerText = "Error";
+          document.getElementById("totalUnique").innerText = "Error";
+          document.getElementById("activeVisitor").innerText = "Error";
         }
       }
 
       // load pertama + refresh tiap 10 detik
       window.onload = () => {
+        console.log('🚀 Dashboard loaded');
         loadRecap();
+        
         setInterval(() => {
           const date = document.getElementById("dateFilter").value;
           loadRecap(date);
