@@ -996,23 +996,244 @@
       </div>
     </section>
 
+    <!-- Marketplace Section -->
+    <section class="mb-12 fade-in">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h3 class="text-2xl font-bold text-gray-800">🛍️ Marketplace</h3>
+          <p class="text-sm text-gray-500 mt-1">Shop exclusive Kulino merchandise</p>
+        </div>
+      </div>
+
+      <!-- Filter Categories -->
+      <div class="mb-6 bg-white rounded-2xl shadow-md p-4">
+        <div class="flex flex-wrap gap-3">
+          <button onclick="filterMarketplace('all')"
+            class="marketplace-filter-btn active px-5 py-2.5 rounded-xl font-medium transition-all duration-300 bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+            All Products
+          </button>
+          <button onclick="filterMarketplace('Aksesoris')"
+            class="marketplace-filter-btn px-5 py-2.5 rounded-xl font-medium transition-all duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200">
+            Aksesoris
+          </button>
+          <button onclick="filterMarketplace('Board Game')"
+            class="marketplace-filter-btn px-5 py-2.5 rounded-xl font-medium transition-all duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200">
+            Board Game
+          </button>
+        </div>
+
+        <!-- Sub-category Filter -->
+        <div id="subCategoryFilter" class="mt-3 hidden">
+          <div class="flex flex-wrap gap-2">
+            <!-- Sub-categories will be populated by JavaScript -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Products Grid/Slider -->
+      <div class="relative">
+        <div id="marketplaceSlider" class="flex overflow-x-auto gap-6 scroll-smooth no-scrollbar pb-4">
+
+          <?php
+          $sqlMarket = mysqli_query($koneksi, "SELECT * FROM tb_marketplace WHERE is_active = 1 ORDER BY created_at DESC");
+
+          if (mysqli_num_rows($sqlMarket) > 0) {
+            while ($product = mysqli_fetch_assoc($sqlMarket)) {
+              $hasDiscount = !empty($product['original_price']) && $product['original_price'] > $product['price'];
+              $discountPercent = $hasDiscount ? round((($product['original_price'] - $product['price']) / $product['original_price']) * 100) : 0;
+          ?>
+
+              <!-- Product Card -->
+              <article class="product-card bg-white rounded-2xl shadow-lg min-w-[280px] md:min-w-[320px] overflow-hidden group flex flex-col"
+                data-category="<?= htmlspecialchars($product['category']) ?>"
+                data-subcategory="<?= htmlspecialchars($product['subcategory']) ?>"
+                data-id="<?= $product['id'] ?>">
+
+                <!-- Product Image -->
+                <div class="relative overflow-hidden h-80 bg-gray-100">
+                  <img src="uploads/marketplace/<?= htmlspecialchars($product['image']) ?>"
+                    alt="<?= htmlspecialchars($product['product_name']) ?>"
+                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+
+                  <!-- Discount Badge -->
+                  <?php if ($hasDiscount): ?>
+                    <span class="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                      -<?= $discountPercent ?>%
+                    </span>
+                  <?php endif; ?>
+
+                  <!-- Category Badge -->
+                  <span class="absolute top-3 left-3 bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                    <?= htmlspecialchars($product['subcategory']) ?>
+                  </span>
+                </div>
+
+                <!-- Product Info -->
+                <div class="p-5 flex-1 flex flex-col">
+                  <h4 class="font-bold text-lg text-gray-800 mb-2 line-clamp-2">
+                    <?= htmlspecialchars($product['product_name']) ?>
+                  </h4>
+
+                  <p class="text-sm text-gray-600 mb-4 line-clamp-2 flex-1">
+                    <?= htmlspecialchars($product['description']) ?>
+                  </p>
+
+                  <!-- Price -->
+                  <div class="mb-4">
+                    <?php if ($hasDiscount): ?>
+                      <div class="flex items-center gap-2">
+                        <span class="text-2xl font-bold text-indigo-600">
+                          Rp <?= number_format($product['price'], 0, ',', '.') ?>
+                        </span>
+                        <span class="text-sm text-gray-400 line-through">
+                          Rp <?= number_format($product['original_price'], 0, ',', '.') ?>
+                        </span>
+                      </div>
+                    <?php else: ?>
+                      <span class="text-2xl font-bold text-indigo-600">
+                        Rp <?= number_format($product['price'], 0, ',', '.') ?>
+                      </span>
+                    <?php endif; ?>
+                  </div>
+
+                  <!-- Stock Info -->
+                  <div class="mb-4">
+                    <?php if ($product['stock'] > 0): ?>
+                      <span class="text-sm text-green-600 font-medium">
+                        ✓ In Stock (<?= $product['stock'] ?> available)
+                      </span>
+                    <?php else: ?>
+                      <span class="text-sm text-red-600 font-medium">
+                        ✗ Out of Stock
+                      </span>
+                    <?php endif; ?>
+                  </div>
+
+                  <!-- Buy Button -->
+                  <button onclick='openProductModal(<?= json_encode($product) ?>)'
+                    <?= $product['stock'] <= 0 ? 'disabled' : '' ?>
+                    class="btn-gaming btn-play w-full px-4 py-3 text-white rounded-xl inline-flex items-center justify-center gap-2 <?= $product['stock'] <= 0 ? 'opacity-50 cursor-not-allowed' : '' ?>">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    Add Buy
+                  </button>
+                </div>
+              </article>
+
+            <?php
+            }
+          } else {
+            ?>
+            <div class="w-full text-center py-12">
+              <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+              </svg>
+              <p class="text-gray-500 font-semibold">No products available</p>
+            </div>
+          <?php } ?>
+
+        </div>
+
+        <!-- Navigation Buttons -->
+        <button onclick="scrollSlider('marketplaceSlider', -1)"
+          class="nav-btn hidden lg:block absolute top-1/2 -left-5 transform -translate-y-1/2 rounded-full p-3">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+        <button onclick="scrollSlider('marketplaceSlider', 1)"
+          class="nav-btn hidden lg:block absolute top-1/2 -right-5 transform -translate-y-1/2 rounded-full p-3">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- Product Detail Modal -->
+    <div id="productModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+      <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div class="relative">
+          <!-- Close Button -->
+          <button onclick="closeProductModal()"
+            class="absolute top-4 right-4 z-10 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition">
+            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+
+          <!-- Product Image -->
+          <div class="relative h-96 bg-gray-100">
+            <img id="modalImage" src="" alt="" class="w-full h-full object-cover">
+            <span id="modalDiscount" class="hidden absolute top-4 left-4 bg-red-500 text-white px-4 py-2 rounded-full font-bold"></span>
+          </div>
+
+          <!-- Product Details -->
+          <div class="p-6">
+            <div class="mb-4">
+              <span id="modalCategory" class="inline-block bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-semibold mb-3"></span>
+              <h3 id="modalTitle" class="text-2xl font-bold text-gray-800 mb-2"></h3>
+              <p id="modalDescription" class="text-gray-600"></p>
+            </div>
+
+            <!-- Price Section -->
+            <div class="mb-6 pb-6 border-b border-gray-200">
+              <div id="modalPriceSection"></div>
+              <p id="modalStock" class="text-sm mt-2"></p>
+            </div>
+
+            <!-- Product Info -->
+            <div class="mb-6 space-y-3">
+              <div class="flex items-center gap-3 text-sm text-gray-600">
+                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span>Authentic Kulino Product</span>
+              </div>
+              <div class="flex items-center gap-3 text-sm text-gray-600">
+                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>Secure Payment via Instagram Direct</span>
+              </div>
+              <div class="flex items-center gap-3 text-sm text-gray-600">
+                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                </svg>
+                <span>Fast Shipping Available</span>
+              </div>
+            </div>
+
+            <!-- Buy Now Button -->
+            <button onclick="buyNowProduct()"
+              class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+              </svg>
+              Buy Now on Instagram
+            </button>
+
+            <p class="text-xs text-gray-500 text-center mt-3">
+              You will be redirected to our Instagram merchant page
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </main>
+
+
 
   <!-- Sponsor -->
   <?php include("./includes/sponsor.php"); ?>
 
   <!-- Footer -->
   <?php include("./includes/footer.php"); ?>
-
-  <!-- Solana Web3.js -->
-  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-
-  <!-- bs58 for signature encoding -->
-  <script src="https://cdn.jsdelivr.net/npm/bs58/dist/index.min.js"></script>
-
+  
   <!-- Kulino Token Balance Checker -->
   <script>
-
     function formatKulinoBalance(balance) {
       if (balance >= 1000) {
         return (balance / 1000).toFixed(2) + 'K';
@@ -1025,4 +1246,4 @@
 
 </body>
 
-</html>x
+</html>
