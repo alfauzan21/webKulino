@@ -750,25 +750,68 @@ function buyNowProduct() {
   }, 500);
 }
 
-// ==================== VISITOR TRACKING ====================
+// ==================== VISITOR TRACKING (IMPROVED) ====================
 function trackVisitor() {
-  // Simple visitor tracking
+  console.log('📊 Tracking visitor...');
+  
+  // Track visitor dengan retry mechanism
   fetch('track.php?add=1', {
     method: 'GET',
-    credentials: 'same-origin'
-  }).catch(err => console.log('Tracking failed:', err));
+    credentials: 'same-origin',
+    headers: {
+      'Accept': 'application/json'
+    }
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    if (data.success) {
+      console.log('✅ Visitor tracked successfully:', data);
+    } else {
+      console.error('❌ Tracking failed:', data.error);
+    }
+  })
+  .catch(err => {
+    console.error('❌ Tracking request failed:', err);
+    // Retry setelah 2 detik
+    setTimeout(() => {
+      fetch('track.php?add=1', { method: 'GET', credentials: 'same-origin' })
+        .catch(e => console.error('Retry failed:', e));
+    }, 2000);
+  });
   
   // Update visitor count display
-  fetch('track.php')
-    .then(res => res.json())
-    .then(data => {
-      const countEl = document.getElementById('visitorCount');
-      if (countEl && data.today) {
-        countEl.textContent = data.today;
-      }
-    })
-    .catch(err => console.log('Count fetch failed:', err));
+  updateVisitorCount();
 }
+
+function updateVisitorCount() {
+  fetch('track.php', {
+    method: 'GET',
+    credentials: 'same-origin',
+    headers: {
+      'Accept': 'application/json'
+    }
+  })
+  .then(res => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  })
+  .then(data => {
+    const countEl = document.getElementById('visitorCount');
+    if (countEl && data.today !== undefined) {
+      countEl.textContent = data.today;
+      console.log('📊 Visitor count updated:', data.today);
+    }
+  })
+  .catch(err => console.error('❌ Count fetch failed:', err));
+}
+
+// Auto-refresh visitor count setiap 30 detik
+setInterval(updateVisitorCount, 30000);
 
 // ==================== INITIALIZATION ====================
 function waitForLibraries() {
