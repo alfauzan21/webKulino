@@ -36,6 +36,58 @@ function getRealIP() {
     return trim($ip);
 }
 
+// Fungsi untuk mendapatkan lokasi dari IP menggunakan API gratis
+function getLocationFromIP($ip) {
+    // Skip untuk localhost
+    if ($ip == '127.0.0.1' || $ip == '::1' || strpos($ip, '192.168.') === 0) {
+        return [
+            'city' => 'Localhost',
+            'region' => 'Local',
+            'country' => 'Local',
+            'country_code' => 'LC'
+        ];
+    }
+    
+    try {
+        // Gunakan ip-api.com (gratis, 45 requests/minute)
+        $url = "http://ip-api.com/json/{$ip}?fields=status,country,countryCode,region,city";
+        
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => 3,
+                'ignore_errors' => true
+            ]
+        ]);
+        
+        $response = @file_get_contents($url, false, $context);
+        
+        if ($response === false) {
+            throw new Exception("API request failed");
+        }
+        
+        $data = json_decode($response, true);
+        
+        if ($data && $data['status'] === 'success') {
+            return [
+                'city' => $data['city'] ?? 'Unknown',
+                'region' => $data['region'] ?? 'Unknown',
+                'country' => $data['country'] ?? 'Unknown',
+                'country_code' => $data['countryCode'] ?? 'XX'
+            ];
+        }
+    } catch (Exception $e) {
+        error_log("Location API error: " . $e->getMessage());
+    }
+    
+    // Default jika gagal
+    return [
+        'city' => 'Unknown',
+        'region' => 'Unknown',
+        'country' => 'Unknown',
+        'country_code' => 'XX'
+    ];
+}
+
 $ip     = getRealIP();
 $ua     = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
 $today  = date("Y-m-d");
@@ -79,7 +131,10 @@ $device = detectDevice($ua);
 // ====== TAMBAH KUNJUNGAN BARU ======
 if (isset($_GET['add']) && $_GET['add'] == "1") {
     try {
-        $stmt = $conn->prepare("INSERT INTO visitors (ip_address, device, visited_at) VALUES (?, ?, NOW())");
+        // Dapatkan lokasi
+        $location = getLocationFromIP($ip);
+        
+        $stmt = $conn->prepare("INSERT INTO visitors (ip_address, device, city, region, country, country_code, visited_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
         
         if (!$stmt) {
             error_log("Prepare failed: " . $conn->error);
@@ -87,7 +142,14 @@ if (isset($_GET['add']) && $_GET['add'] == "1") {
             exit;
         }
         
-        $stmt->bind_param("ss", $ip, $device);
+        $stmt->bind_param("ssssss", 
+            $ip, 
+            $device, 
+            $location['city'], 
+            $location['region'], 
+            $location['country'],
+            $location['country_code']
+        );
         
         if (!$stmt->execute()) {
             error_log("Execute failed: " . $stmt->error);
@@ -98,14 +160,15 @@ if (isset($_GET['add']) && $_GET['add'] == "1") {
         $stmt->close();
         
         // Log untuk debugging
-        error_log("Visitor tracked: IP=$ip, Device=$device");
+        error_log("Visitor tracked: IP=$ip, Device=$device, Location={$location['city']}, {$location['country']}");
         
         // Return success response
         echo json_encode([
             "success" => true,
             "message" => "Visitor tracked",
             "ip" => $ip,
-            "device" => $device
+            "device" => $device,
+            "location" => $location
         ]);
         exit;
         
@@ -157,12 +220,31 @@ try {
         $weeklyData[] = (int)$row['total'];
     }
 
-    // Frekuensi kunjungan per visitor
+    // Statistik Negara (untuk grafik)
+    $resCountry = $conn->query("
+        SELECT country, country_code, COUNT(*) as total 
+        FROM visitors 
+        WHERE visited_at >= NOW() - INTERVAL 7 DAY 
+          AND country IS NOT NULL 
+          AND country != ''
+        GROUP BY country, country_code 
+        ORDER BY total DESC 
+        LIMIT 10
+    ");
+    
+    $countryData = [];
+    $countryLabels = [];
+    while ($row = $resCountry->fetch_assoc()) {
+        $countryLabels[] = $row['country'];
+        $countryData[] = (int)$row['total'];
+    }
+
+    // Frekuensi kunjungan per visitor (dengan lokasi)
     $resVisitorFreq = $conn->query("
-        SELECT ip_address, device, DATE(visited_at) as d, COUNT(*) as visits
+        SELECT ip_address, device, city, region, country, DATE(visited_at) as d, COUNT(*) as visits
         FROM visitors
         WHERE visited_at >= NOW() - INTERVAL 7 DAY
-        GROUP BY ip_address, device, DATE(visited_at)
+        GROUP BY ip_address, device, city, region, country, DATE(visited_at)
         ORDER BY d DESC, visits DESC
         LIMIT 100
     ");
@@ -172,23 +254,53 @@ try {
         $visitorFrequency[] = [
             "ip" => $row['ip_address'],
             "device" => $row['device'],
+            "city" => $row['city'] ?? 'Unknown',
+            "region" => $row['region'] ?? 'Unknown',
+            "country" => $row['country'] ?? 'Unknown',
             "date" => $row['d'],
             "visits" => (int)$row['visits']
         ];
     }
 
-    // Log aktivitas
-    $resActivity = $conn->query("SELECT TIME(visited_at) as t, ip_address, device 
-                                 FROM visitors 
-                                 WHERE DATE(visited_at)='$filterDate' 
-                                 ORDER BY visited_at DESC 
-                                 LIMIT 50");
+    // Log aktivitas (dengan lokasi)
+    $resActivity = $conn->query("
+        SELECT TIME(visited_at) as t, ip_address, device, city, country
+        FROM visitors 
+        WHERE DATE(visited_at)='$filterDate' 
+        ORDER BY visited_at DESC 
+        LIMIT 50
+    ");
+    
     $activity = [];
     while ($row = $resActivity->fetch_assoc()) {
         $activity[] = [
             "time"   => $row['t'],
             "ip"     => $row['ip_address'],
-            "device" => $row['device']
+            "device" => $row['device'],
+            "city"   => $row['city'] ?? 'Unknown',
+            "country" => $row['country'] ?? 'Unknown'
+        ];
+    }
+
+    // Detail lokasi untuk tabel
+    $resLocations = $conn->query("
+        SELECT city, region, country, country_code, COUNT(*) as total
+        FROM visitors
+        WHERE DATE(visited_at)='$filterDate'
+          AND country IS NOT NULL
+        GROUP BY city, region, country, country_code
+        ORDER BY total DESC
+        LIMIT 50
+    ");
+    
+    $locations = [];
+    while ($row = $resLocations->fetch_assoc()) {
+        $locations[] = [
+            "city" => $row['city'] ?? 'Unknown',
+            "region" => $row['region'] ?? 'Unknown',
+            "country" => $row['country'] ?? 'Unknown',
+            "country_code" => $row['country_code'] ?? 'XX',
+            "total" => (int)$row['total']
         ];
     }
 
@@ -200,8 +312,11 @@ try {
         "active"    => (int)$activeVisitor,
         "weekly"    => $weeklyData,
         "labels"    => $weeklyLabels,
+        "country_data" => $countryData,
+        "country_labels" => $countryLabels,
         "activity"  => $activity,
-        "frequency" => $visitorFrequency
+        "frequency" => $visitorFrequency,
+        "locations" => $locations
     ]);
 
 } catch (Exception $e) {
@@ -213,8 +328,11 @@ try {
         "active" => 0,
         "weekly" => [],
         "labels" => [],
+        "country_data" => [],
+        "country_labels" => [],
         "activity" => [],
-        "frequency" => []
+        "frequency" => [],
+        "locations" => []
     ]);
 }
 
