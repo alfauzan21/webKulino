@@ -503,11 +503,140 @@
       background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
       color: #333;
     }
+
+    /* Location Block Overlay */
+    #locationBlockOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #locationBlockOverlay.active {
+      display: flex;
+    }
+
+    .location-block-content {
+      background: white;
+      border-radius: 24px;
+      padding: 3rem;
+      max-width: 500px;
+      text-align: center;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.5s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(50px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .location-icon {
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 1.5rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.05);
+      }
+    }
+
+    .retry-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 1.5rem;
+    }
+
+    .retry-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Main content hidden initially */
+    #mainContent {
+      display: none;
+    }
+
+    #mainContent.active {
+      display: block;
+    }
   </style>
 </head>
 
 
 <body class="bg-gradient-to-br from-gray-50 via-gray-100 to-indigo-50">
+  <div id="locationBlockOverlay">
+    <div class="location-block-content">
+      <div class="location-icon">
+        <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </div>
+
+      <h2 class="text-2xl font-bold text-gray-800 mb-3">Aktifkan Lokasi Anda</h2>
+      <p class="text-gray-600 mb-4">
+        Untuk mengakses Kulino Game Hub, kami memerlukan akses lokasi Anda untuk memberikan pengalaman terbaik dan keamanan.
+      </p>
+
+      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+        <p class="text-sm text-yellow-800">
+          <strong>⚠️ Penting:</strong> Halaman ini tidak akan ditampilkan sampai Anda mengizinkan akses lokasi.
+        </p>
+      </div>
+
+      <div class="text-left bg-gray-50 rounded-lg p-4 mb-4">
+        <p class="text-sm font-semibold text-gray-700 mb-2">Cara mengaktifkan:</p>
+        <ol class="text-sm text-gray-600 space-y-1 ml-4 list-decimal">
+          <li>Klik tombol "Izinkan Lokasi" di bawah</li>
+          <li>Izinkan akses lokasi pada popup browser</li>
+          <li>Tunggu hingga lokasi terdeteksi</li>
+          <li>Halaman akan otomatis ditampilkan</li>
+        </ol>
+      </div>
+
+      <button onclick="requestLocationPermission()" class="retry-btn">
+        📍 Izinkan Lokasi
+      </button>
+
+      <p class="text-xs text-gray-500 mt-4">
+        Lokasi Anda hanya digunakan untuk analitik dan keamanan
+      </p>
+    </div>
+  </div>
 
   <!-- Top Bar with Visitor Counter -->
   <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
@@ -917,32 +1046,6 @@
       </div>
     </section>
 
-    <!-- Unity Preview Section -->
-    <section class="mb-12 fade-in">
-      <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-200">
-        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
-          <h3 class="text-xl font-bold text-white flex items-center gap-2">
-            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-            </svg>
-            Unity Game Preview
-          </h3>
-          <p class="text-white/80 text-sm mt-1">Click Play on any game to load it here</p>
-        </div>
-        <div id="unityWrap" class="p-6 bg-gray-50">
-          <div id="unityContainer" class="w-full h-[500px] bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl flex items-center justify-center">
-            <div id="unityPlaceholder" class="text-center">
-              <svg class="w-20 h-20 text-gray-600 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
-              </svg>
-              <p class="text-gray-500 font-semibold">Unity Preview Not Loaded</p>
-              <p class="text-gray-400 text-sm mt-2">Select a game and click Play to start</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- News Section -->
     <section class="mb-12 fade-in">
       <div class="flex items-center justify-between mb-6">
@@ -1231,7 +1334,7 @@
 
   <!-- Footer -->
   <?php include("./includes/footer.php"); ?>
-  
+
   <!-- Kulino Token Balance Checker -->
   <script>
     function formatKulinoBalance(balance) {
