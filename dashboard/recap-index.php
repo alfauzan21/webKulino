@@ -1,452 +1,15 @@
+<?php
+// ==================== PHP LOGIC ONLY ====================
+session_start();
+if (!isset($_SESSION['login'])) {
+    header("Location: ../auth/login.php");
+    exit;
+}
+
+include("../includes/koneksi.php");
+?>
 <!DOCTYPE html>
 <html lang="id">
-<?php
-// recap-index.php - Updated with GPS location support
-
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-
-// Database connection
-$conn = new mysqli('localhost', 'username', 'password', 'database_name');
-
-if ($conn->connect_error) {
-  echo json_encode(['error' => 'Database connection failed']);
-  exit;
-}
-
-// Get timezone parameter (default: Asia/Jakarta)
-$requestedTz = $_GET['tz'] ?? 'Asia/Jakarta';
-$filterDate = $_GET['date'] ?? date('Y-m-d');
-
-try {
-  $tz = new DateTimeZone($requestedTz);
-} catch (Exception $e) {
-  $tz = new DateTimeZone('Asia/Jakarta');
-  $requestedTz = 'Asia/Jakarta';
-}
-
-// Function to get timezone display name
-function getTimezoneName($tzString)
-{
-  $tzMap = [
-    'Asia/Jakarta' => 'WIB (UTC+7)',
-    'Asia/Makassar' => 'WITA (UTC+8)',
-    'Asia/Jayapura' => 'WIT (UTC+9)',
-    'Asia/Singapore' => 'SGT (UTC+8)',
-    'Asia/Kuala_Lumpur' => 'MYT (UTC+8)',
-    'Asia/Bangkok' => 'ICT (UTC+7)',
-    'Asia/Manila' => 'PHT (UTC+8)',
-    'Asia/Ho_Chi_Minh' => 'ICT (UTC+7)',
-    'Asia/Tokyo' => 'JST (UTC+9)',
-    'Asia/Seoul' => 'KST (UTC+9)',
-    'Asia/Shanghai' => 'CST (UTC+8)',
-    'Asia/Hong_Kong' => 'HKT (UTC+8)',
-    'Asia/Kolkata' => 'IST (UTC+5:30)',
-    'Asia/Dubai' => 'GST (UTC+4)',
-    'America/New_York' => 'EST (UTC-5)',
-    'America/Chicago' => 'CST (UTC-6)',
-    'America/Los_Angeles' => 'PST (UTC-8)',
-    'Europe/London' => 'GMT (UTC+0)',
-    'Europe/Paris' => 'CET (UTC+1)',
-    'Europe/Moscow' => 'MSK (UTC+3)',
-    'Australia/Sydney' => 'AEDT (UTC+11)',
-    'Pacific/Auckland' => 'NZDT (UTC+13)'
-  ];
-  return $tzMap[$tzString] ?? $tzString;
-}
-
-// ========================================
-// 1. BASIC STATS
-// ========================================
-
-// Total visits today
-$resTotal = $conn->query("
-    SELECT COUNT(*) as cnt 
-    FROM visitors 
-    WHERE DATE(visited_at)='$filterDate'
-");
-$totalVisits = $resTotal->fetch_assoc()['cnt'] ?? 0;
-
-// Unique visitors
-$resUnique = $conn->query("
-    SELECT COUNT(DISTINCT ip_address) as cnt 
-    FROM visitors 
-    WHERE DATE(visited_at)='$filterDate'
-");
-$uniqueVisitors = $resUnique->fetch_assoc()['cnt'] ?? 0;
-
-// Active visitors (last 10 minutes)
-$resActive = $conn->query("
-    SELECT COUNT(DISTINCT ip_address) as cnt 
-    FROM visitors 
-    WHERE visited_at >= NOW() - INTERVAL 10 MINUTE
-");
-$activeVisitors = $resActive->fetch_assoc()['cnt'] ?? 0;
-
-// ========================================
-// 2. WEEKLY CHART DATA (7 days)
-// ========================================
-
-$resWeekly = $conn->query("
-    SELECT DATE(visited_at) as d, COUNT(*) as cnt 
-    FROM visitors 
-    WHERE visited_at >= NOW() - INTERVAL 7 DAY
-    GROUP BY DATE(visited_at) 
-    ORDER BY d ASC
-");
-
-$weeklyLabels = [];
-$weeklyData = [];
-while ($row = $resWeekly->fetch_assoc()) {
-  $weeklyLabels[] = date('D, j M', strtotime($row['d']));
-  $weeklyData[] = (int)$row['cnt'];
-}
-
-// ========================================
-// 3. TOP 10 COUNTRIES (7 days)
-// ========================================
-
-$resCountry = $conn->query("
-    SELECT country, COUNT(*) as cnt 
-    FROM visitors 
-    WHERE visited_at >= NOW() - INTERVAL 7 DAY 
-      AND country IS NOT NULL
-    GROUP BY country 
-    ORDER BY cnt DESC 
-    LIMIT 10
-");
-
-$countryLabels = [];
-$countryData = [];
-while ($row = $resCountry->fetch_assoc()) {
-  $countryLabels[] = $row['country'];
-  $countryData[] = (int)$row['cnt'];
-}
-
-// ========================================
-// 4. TOP 10 BROWSERS/DEVICES (7 days)
-// ========================================
-
-$resBrowser = $conn->query("
-    SELECT device, COUNT(*) as cnt 
-    FROM visitors 
-    WHERE visited_at >= NOW() - INTERVAL 7 DAY
-    GROUP BY device 
-    ORDER BY cnt DESC 
-    LIMIT 10
-");
-
-$browsers = [];
-while ($row = $resBrowser->fetch_assoc()) {
-  $browsers[] = [
-    "device" => $row['device'],
-    "total" => (int)$row['cnt']
-  ];
-}
-
-// ========================================
-// 5. LOCATION TABLE - WITH GPS DETAILS
-// ========================================
-
-$resLocations = $conn->query("
-    SELECT 
-        street_address,
-        city, 
-        region, 
-        country, 
-        country_code, 
-        postal_code,
-        full_address,
-        timezone, 
-        COUNT(*) as total,
-        MAX(latitude) as lat,
-        MAX(longitude) as lon,
-        MAX(location_accuracy) as accuracy
-    FROM visitors
-    WHERE DATE(visited_at)='$filterDate'
-      AND country IS NOT NULL
-    GROUP BY street_address, city, region, country, country_code, postal_code, full_address, timezone
-    ORDER BY total DESC
-    LIMIT 50
-");
-
-$locations = [];
-while ($row = $resLocations->fetch_assoc()) {
-  $hasDetailedAddress = !empty($row['street_address']) || !empty($row['postal_code']);
-
-  $locations[] = [
-    "street_address" => $row['street_address'] ?? '',
-    "city" => $row['city'] ?? 'Unknown',
-    "region" => $row['region'] ?? 'Unknown',
-    "country" => $row['country'] ?? 'Unknown',
-    "country_code" => $row['country_code'] ?? 'XX',
-    "postal_code" => $row['postal_code'] ?? '',
-    "full_address" => $row['full_address'] ?? '',
-    "timezone" => getTimezoneName($row['timezone'] ?? 'Asia/Jakarta'),
-    "total" => (int)$row['total'],
-    "has_gps" => $hasDetailedAddress,
-    "latitude" => $row['lat'] ?? null,
-    "longitude" => $row['lon'] ?? null,
-    "accuracy" => $row['accuracy'] ?? 0
-  ];
-}
-
-// ========================================
-// 6. VISITOR FREQUENCY (7 days) - WITH GPS
-// ========================================
-
-$resVisitorFreq = $conn->query("
-    SELECT 
-        ip_address, 
-        device, 
-        street_address,
-        city, 
-        region, 
-        country, 
-        postal_code,
-        timezone, 
-        DATE(visited_at) as d, 
-        COUNT(*) as visits,
-        MAX(latitude) as lat,
-        MAX(longitude) as lon
-    FROM visitors
-    WHERE visited_at >= NOW() - INTERVAL 7 DAY
-    GROUP BY ip_address, device, street_address, city, region, country, postal_code, timezone, DATE(visited_at)
-    ORDER BY d DESC, visits DESC
-    LIMIT 100
-");
-
-$visitorFrequency = [];
-while ($row = $resVisitorFreq->fetch_assoc()) {
-  $hasGPS = !empty($row['street_address']) || !empty($row['lat']);
-
-  $locationText = ($row['city'] ?? 'Unknown') . ', ' . ($row['country'] ?? 'Unknown');
-  if ($hasGPS && !empty($row['street_address'])) {
-    $locationText = $row['street_address'] . ', ' . $locationText;
-  }
-
-  $visitorFrequency[] = [
-    "ip" => $row['ip_address'],
-    "device" => $row['device'],
-    "location" => $locationText,
-    "street" => $row['street_address'] ?? '',
-    "city" => $row['city'] ?? 'Unknown',
-    "region" => $row['region'] ?? 'Unknown',
-    "country" => $row['country'] ?? 'Unknown',
-    "postal_code" => $row['postal_code'] ?? '',
-    "timezone" => getTimezoneName($row['timezone'] ?? 'Asia/Jakarta'),
-    "date" => $row['d'],
-    "visits" => (int)$row['visits'],
-    "has_gps" => $hasGPS
-  ];
-}
-
-// ========================================
-// 7. ACTIVITY LOG - WITH GPS DETAILS
-// ========================================
-
-$resActivity = $conn->query("
-    SELECT 
-        visited_at, 
-        ip_address, 
-        device, 
-        street_address,
-        city, 
-        country,
-        postal_code,
-        full_address,
-        timezone,
-        latitude,
-        longitude
-    FROM visitors 
-    WHERE DATE(visited_at)='$filterDate' 
-    ORDER BY visited_at DESC 
-    LIMIT 50
-");
-
-$activity = [];
-while ($row = $resActivity->fetch_assoc()) {
-  // Convert to requested timezone
-  $dt = new DateTime($row['visited_at']);
-  $dt->setTimezone($tz);
-
-  $hasGPS = !empty($row['street_address']) || !empty($row['latitude']);
-
-  $locationText = $row['city'] . ', ' . $row['country'];
-  if ($hasGPS && !empty($row['street_address'])) {
-    $locationText = $row['street_address'] . ', ' . $locationText;
-  }
-
-  $activity[] = [
-    "time"     => $dt->format('H:i:s'),
-    "datetime" => $dt->format('Y-m-d H:i:s'),
-    "ip"       => $row['ip_address'],
-    "device"   => $row['device'],
-    "location" => $locationText,
-    "street"   => $row['street_address'] ?? '',
-    "city"     => $row['city'] ?? 'Unknown',
-    "country"  => $row['country'] ?? 'Unknown',
-    "postal_code" => $row['postal_code'] ?? '',
-    "full_address" => $row['full_address'] ?? '',
-    "timezone" => getTimezoneName($row['timezone'] ?? 'Asia/Jakarta'),
-    "has_gps"  => $hasGPS,
-    "latitude" => $row['latitude'] ?? null,
-    "longitude" => $row['longitude'] ?? null
-  ];
-}
-
-// ========================================
-// 8. PREPARE JSON RESPONSE
-// ========================================
-
-$response = [
-  "success" => true,
-  "today" => $totalVisits,
-  "unique" => $uniqueVisitors,
-  "active" => $activeVisitors,
-  "display_timezone" => getTimezoneName($requestedTz),
-  "labels" => $weeklyLabels,
-  "weekly" => $weeklyData,
-  "country_labels" => $countryLabels,
-  "country_data" => $countryData,
-  "browsers" => $browsers,
-  "locations" => $locations,
-  "frequency" => $visitorFrequency,
-  "activity" => $activity,
-  "filter_date" => $filterDate,
-  "requested_timezone" => $requestedTz
-];
-
-// ==================== TAMBAH KUNJUNGAN BARU (UPDATE SECTION) ====================
-if (isset($_GET['add']) && $_GET['add'] == "1") {
-  try {
-    // Check if GPS coordinates provided
-    $hasGPS = isset($_GET['latitude']) && isset($_GET['longitude']);
-
-    if ($hasGPS) {
-      // User provided GPS coordinates - use detailed location
-      $latitude = floatval($_GET['latitude']);
-      $longitude = floatval($_GET['longitude']);
-      $street = isset($_GET['street']) ? $conn->real_escape_string($_GET['street']) : '';
-      $houseNumber = isset($_GET['house_number']) ? $conn->real_escape_string($_GET['house_number']) : '';
-      $city = isset($_GET['city']) ? $conn->real_escape_string($_GET['city']) : 'Unknown';
-      $region = isset($_GET['region']) ? $conn->real_escape_string($_GET['region']) : '';
-      $country = isset($_GET['country']) ? $conn->real_escape_string($_GET['country']) : 'Unknown';
-      $countryCode = isset($_GET['country_code']) ? $conn->real_escape_string($_GET['country_code']) : 'XX';
-      $postalCode = isset($_GET['postal_code']) ? $conn->real_escape_string($_GET['postal_code']) : '';
-      $fullAddress = isset($_GET['full_address']) ? $conn->real_escape_string($_GET['full_address']) : '';
-      $accuracy = isset($_GET['accuracy']) ? floatval($_GET['accuracy']) : 0;
-
-      // Build street address
-      $streetAddress = trim($houseNumber . ' ' . $street);
-
-      $location = [
-        'city' => $city,
-        'region' => $region,
-        'country' => $country,
-        'country_code' => $countryCode,
-        'timezone' => 'Asia/Jakarta' // Default, bisa disesuaikan
-      ];
-
-      error_log("📍 GPS Location: lat=$latitude, lon=$longitude, address=$streetAddress, $city");
-    } else {
-      // No GPS - fallback to IP-based location
-      $location = getLocationFromIP($ip);
-      $latitude = null;
-      $longitude = null;
-      $streetAddress = null;
-      $city = $location['city'];
-      $region = $location['region'];
-      $country = $location['country'];
-      $countryCode = $location['country_code'];
-      $postalCode = '';
-      $fullAddress = '';
-      $accuracy = 0;
-
-      error_log("📍 IP Location: $city, $country");
-    }
-
-    // Hitung waktu berdasarkan timezone pengunjung
-    $timezone = new DateTimeZone($location['timezone']);
-    $datetime = new DateTime('now', $timezone);
-    $localTime = $datetime->format('Y-m-d H:i:s');
-
-    // Prepare statement dengan semua field location detail
-    $stmt = $conn->prepare("
-            INSERT INTO visitors 
-            (ip_address, device, latitude, longitude, street_address, city, region, country, country_code, 
-             postal_code, full_address, location_accuracy, timezone, visited_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-
-    if (!$stmt) {
-      error_log("Prepare failed: " . $conn->error);
-      echo json_encode(["error" => "Database prepare failed"]);
-      exit;
-    }
-
-    $stmt->bind_param(
-      "ssddsssssssdss",
-      $ip,
-      $device,
-      $latitude,
-      $longitude,
-      $streetAddress,
-      $city,
-      $region,
-      $country,
-      $countryCode,
-      $postalCode,
-      $fullAddress,
-      $accuracy,
-      $location['timezone'],
-      $localTime
-    );
-
-    if (!$stmt->execute()) {
-      error_log("Execute failed: " . $stmt->error);
-      echo json_encode(["error" => "Insert failed"]);
-      exit;
-    }
-
-    $stmt->close();
-
-    $responseData = [
-      "success" => true,
-      "message" => "Visitor tracked",
-      "ip" => $ip,
-      "device" => $device,
-      "location" => $location,
-      "local_time" => $localTime,
-      "has_gps" => $hasGPS
-    ];
-
-    if ($hasGPS) {
-      $responseData["gps"] = [
-        "latitude" => $latitude,
-        "longitude" => $longitude,
-        "street" => $streetAddress,
-        "city" => $city,
-        "accuracy" => $accuracy
-      ];
-    }
-
-    error_log("✅ Visitor tracked: IP=$ip, Device=$device, GPS=" . ($hasGPS ? 'Yes' : 'No'));
-
-    echo json_encode($responseData);
-    exit;
-  } catch (Exception $e) {
-    error_log("Exception: " . $e->getMessage());
-    echo json_encode(["error" => $e->getMessage()]);
-    exit;
-  }
-}
-
-$conn->close();
-
-echo json_encode($response, JSON_PRETTY_PRINT);
-?>
-
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -457,9 +20,6 @@ echo json_encode($response, JSON_PRETTY_PRINT);
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- ========================================
-         CUSTOM CSS SECTION
-         ======================================== -->
   <style>
     * {
       margin: 0;
@@ -522,17 +82,9 @@ echo json_encode($response, JSON_PRETTY_PRINT);
       margin-bottom: 0.5rem;
     }
 
-    .stats-card.visits .value {
-      color: #667eea;
-    }
-
-    .stats-card.unique .value {
-      color: #10b981;
-    }
-
-    .stats-card.active .value {
-      color: #f43f5e;
-    }
+    .stats-card.visits .value { color: #667eea; }
+    .stats-card.unique .value { color: #10b981; }
+    .stats-card.active .value { color: #f43f5e; }
 
     .stats-card .label {
       font-size: 0.875rem;
@@ -730,15 +282,8 @@ echo json_encode($response, JSON_PRETTY_PRINT);
     }
 
     @keyframes pulse {
-
-      0%,
-      100% {
-        opacity: 1;
-      }
-
-      50% {
-        opacity: 0.5;
-      }
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
     }
 
     .loading {
@@ -748,9 +293,7 @@ echo json_encode($response, JSON_PRETTY_PRINT);
 </head>
 
 <body>
-  <!-- ========================================
-         HEADER SECTION
-         ======================================== -->
+  <!-- Header -->
   <header class="sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
@@ -774,9 +317,7 @@ echo json_encode($response, JSON_PRETTY_PRINT);
     </div>
   </header>
 
-  <!-- ========================================
-         MAIN CONTENT
-         ======================================== -->
+  <!-- Main Content -->
   <main class="max-w-7xl mx-auto px-4 py-8">
 
     <!-- Connection Status -->
@@ -800,30 +341,6 @@ echo json_encode($response, JSON_PRETTY_PRINT);
             <option value="Asia/Bangkok">Thailand (UTC+7)</option>
             <option value="Asia/Manila">Philippines (UTC+8)</option>
             <option value="Asia/Ho_Chi_Minh">Vietnam (UTC+7)</option>
-          </optgroup>
-          <optgroup label="Asia Timur">
-            <option value="Asia/Tokyo">Japan (UTC+9)</option>
-            <option value="Asia/Seoul">Korea (UTC+9)</option>
-            <option value="Asia/Shanghai">China (UTC+8)</option>
-            <option value="Asia/Hong_Kong">Hong Kong (UTC+8)</option>
-          </optgroup>
-          <optgroup label="Asia Selatan">
-            <option value="Asia/Kolkata">India (UTC+5:30)</option>
-            <option value="Asia/Dubai">UAE (UTC+4)</option>
-          </optgroup>
-          <optgroup label="Amerika">
-            <option value="America/New_York">EST (UTC-5)</option>
-            <option value="America/Chicago">CST (UTC-6)</option>
-            <option value="America/Los_Angeles">PST (UTC-8)</option>
-          </optgroup>
-          <optgroup label="Eropa">
-            <option value="Europe/London">GMT (UTC+0)</option>
-            <option value="Europe/Paris">CET (UTC+1)</option>
-            <option value="Europe/Moscow">Moscow (UTC+3)</option>
-          </optgroup>
-          <optgroup label="Oceania">
-            <option value="Australia/Sydney">Sydney (UTC+11)</option>
-            <option value="Pacific/Auckland">New Zealand (UTC+13)</option>
           </optgroup>
         </select>
       </div>
@@ -883,31 +400,11 @@ echo json_encode($response, JSON_PRETTY_PRINT);
     <!-- Location Table -->
     <section class="table-container mb-8">
       <h2 class="text-lg font-bold text-gray-900 mb-4">📍 Lokasi Pengunjung Hari Ini</h2>
-
-      <!-- Legend -->
-      <div class="mb-4 flex flex-wrap gap-3 text-sm">
-        <div class="flex items-center bg-green-50 px-3 py-2 rounded-lg border border-green-200">
-          <svg class="w-4 h-4 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
-          </svg>
-          <span class="text-green-700 font-semibold">GPS Aktif</span>
-          <span class="text-green-600 ml-2">- Alamat Detail</span>
-        </div>
-        <div class="flex items-center bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-          <svg class="w-4 h-4 text-gray-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M4.083 9h1.946c.089-1.546.383-2.97.837-4.118A6.004 6.004 0 004.083 9zM10 2a8 8 0 100 16 8 8 0 000-16zm0 2c-.076 0-.232.032-.465.262-.238.234-.497.623-.737 1.182-.389.907-.673 2.142-.766 3.556h3.936c-.093-1.414-.377-2.649-.766-3.556-.24-.56-.5-.948-.737-1.182C10.232 4.032 10.076 4 10 4zm3.971 5c-.089-1.546-.383-2.97-.837-4.118A6.004 6.004 0 0115.917 9h-1.946zm-2.003 2H8.032c.093 1.414.377 2.649.766 3.556.24.56.5.948.737 1.182.233.23.389.262.465.262.076 0 .232-.032.465-.262.238-.234.498-.623.737-1.182.389-.907.673-2.142.766-3.556zm1.166 4.118c.454-1.147.748-2.572.837-4.118h1.946a6.004 6.004 0 01-2.783 4.118zm-6.268 0C6.412 13.97 6.118 12.546 6.03 11H4.083a6.004 6.004 0 002.783 4.118z" clip-rule="evenodd"></path>
-          </svg>
-          <span class="text-gray-700 font-semibold">IP Only</span>
-          <span class="text-gray-600 ml-2">- Kota & Negara</span>
-        </div>
-      </div>
-
       <div class="table-wrapper">
         <table>
           <thead>
             <tr>
               <th>Negara</th>
-              <th>Alamat Detail</th>
               <th>Kota/Region</th>
               <th>Timezone</th>
               <th>Total Kunjungan</th>
@@ -915,7 +412,7 @@ echo json_encode($response, JSON_PRETTY_PRINT);
           </thead>
           <tbody id="locationTable">
             <tr>
-              <td colspan="5" class="text-center text-gray-500">Memuat data...</td>
+              <td colspan="4" class="text-center text-gray-500">Memuat data...</td>
             </tr>
           </tbody>
         </table>
@@ -946,7 +443,6 @@ echo json_encode($response, JSON_PRETTY_PRINT);
       </div>
     </section>
 
-
     <!-- Activity Log -->
     <section class="table-container">
       <h2 class="text-lg font-bold text-gray-900 mb-4">📋 Log Aktivitas</h2>
@@ -976,35 +472,17 @@ echo json_encode($response, JSON_PRETTY_PRINT);
     <p class="text-white text-sm opacity-90">📊 Dashboard Recap Visitor — Kulino Project</p>
   </footer>
 
-  <!-- ========================================
-         JAVASCRIPT SECTION
-         ======================================== -->
+  <!-- JavaScript -->
   <script>
     let weeklyChartInstance = null;
     let countryChartInstance = null;
     let browserChartInstance = null;
 
     const countryFlags = {
-      'ID': '🇮🇩',
-      'US': '🇺🇸',
-      'SG': '🇸🇬',
-      'MY': '🇲🇾',
-      'TH': '🇹🇭',
-      'PH': '🇵🇭',
-      'VN': '🇻🇳',
-      'JP': '🇯🇵',
-      'KR': '🇰🇷',
-      'CN': '🇨🇳',
-      'IN': '🇮🇳',
-      'AU': '🇦🇺',
-      'GB': '🇬🇧',
-      'DE': '🇩🇪',
-      'FR': '🇫🇷',
-      'NL': '🇳🇱',
-      'BR': '🇧🇷',
-      'IT': '🇮🇹',
-      'ES': '🇪🇸',
-      'CA': '🇨🇦'
+      'ID': '🇮🇩', 'US': '🇺🇸', 'SG': '🇸🇬', 'MY': '🇲🇾', 'TH': '🇹🇭',
+      'PH': '🇵🇭', 'VN': '🇻🇳', 'JP': '🇯🇵', 'KR': '🇰🇷', 'CN': '🇨🇳',
+      'IN': '🇮🇳', 'AU': '🇦🇺', 'GB': '🇬🇧', 'DE': '🇩🇪', 'FR': '🇫🇷',
+      'NL': '🇳🇱', 'BR': '🇧🇷', 'IT': '🇮🇹', 'ES': '🇪🇸', 'CA': '🇨🇦'
     };
 
     function getCountryFlag(countryCode) {
@@ -1022,6 +500,7 @@ echo json_encode($response, JSON_PRETTY_PRINT);
       const statusMsg = document.getElementById('statusMessage');
 
       try {
+        // 🔧 FIX: Correct path to track.php
         let url = `../track.php?tz=${encodeURIComponent(timezone)}`;
         if (date) url += `&date=${date}`;
 
@@ -1030,9 +509,7 @@ echo json_encode($response, JSON_PRETTY_PRINT);
         const res = await fetch(url, {
           method: 'GET',
           credentials: 'same-origin',
-          headers: {
-            'Accept': 'application/json'
-          }
+          headers: { 'Accept': 'application/json' }
         });
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1098,9 +575,7 @@ echo json_encode($response, JSON_PRETTY_PRINT);
           responsive: true,
           maintainAspectRatio: true,
           plugins: {
-            legend: {
-              display: false
-            },
+            legend: { display: false },
             tooltip: {
               backgroundColor: 'rgba(0, 0, 0, 0.8)',
               padding: 12,
@@ -1110,18 +585,10 @@ echo json_encode($response, JSON_PRETTY_PRINT);
           scales: {
             y: {
               beginAtZero: true,
-              ticks: {
-                precision: 0
-              },
-              grid: {
-                color: 'rgba(0, 0, 0, 0.05)'
-              }
+              ticks: { precision: 0 },
+              grid: { color: 'rgba(0, 0, 0, 0.05)' }
             },
-            x: {
-              grid: {
-                display: false
-              }
-            }
+            x: { grid: { display: false } }
           }
         }
       });
@@ -1155,9 +622,7 @@ echo json_encode($response, JSON_PRETTY_PRINT);
         options: {
           responsive: true,
           plugins: {
-            legend: {
-              display: false
-            },
+            legend: { display: false },
             tooltip: {
               backgroundColor: 'rgba(0, 0, 0, 0.8)',
               padding: 12,
@@ -1167,18 +632,10 @@ echo json_encode($response, JSON_PRETTY_PRINT);
           scales: {
             y: {
               beginAtZero: true,
-              ticks: {
-                precision: 0
-              },
-              grid: {
-                color: 'rgba(0, 0, 0, 0.05)'
-              }
+              ticks: { precision: 0 },
+              grid: { color: 'rgba(0, 0, 0, 0.05)' }
             },
-            x: {
-              grid: {
-                display: false
-              }
-            }
+            x: { grid: { display: false } }
           }
         }
       });
@@ -1210,9 +667,7 @@ echo json_encode($response, JSON_PRETTY_PRINT);
         options: {
           responsive: true,
           plugins: {
-            legend: {
-              position: 'right'
-            },
+            legend: { position: 'right' },
             tooltip: {
               backgroundColor: 'rgba(0, 0, 0, 0.8)',
               padding: 12,
@@ -1223,8 +678,6 @@ echo json_encode($response, JSON_PRETTY_PRINT);
       });
     }
 
-    // ==================== UPDATE FUNCTION updateLocationTable() ====================
-
     function updateLocationTable(locations) {
       const tbody = document.getElementById("locationTable");
       tbody.innerHTML = "";
@@ -1234,58 +687,21 @@ echo json_encode($response, JSON_PRETTY_PRINT);
           const tr = document.createElement("tr");
           const flag = getCountryFlag(row.country_code);
 
-          // Tentukan icon GPS
-          const gpsIcon = row.has_gps ?
-            '<span class="inline-flex items-center px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold ml-2"><svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg>GPS</span>' :
-            '<span class="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs ml-2"><svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.083 9h1.946c.089-1.546.383-2.97.837-4.118A6.004 6.004 0 004.083 9zM10 2a8 8 0 100 16 8 8 0 000-16zm0 2c-.076 0-.232.032-.465.262-.238.234-.497.623-.737 1.182-.389.907-.673 2.142-.766 3.556h3.936c-.093-1.414-.377-2.649-.766-3.556-.24-.56-.5-.948-.737-1.182C10.232 4.032 10.076 4 10 4zm3.971 5c-.089-1.546-.383-2.97-.837-4.118A6.004 6.004 0 0115.917 9h-1.946zm-2.003 2H8.032c.093 1.414.377 2.649.766 3.556.24.56.5.948.737 1.182.233.23.389.262.465.262.076 0 .232-.032.465-.262.238-.234.498-.623.737-1.182.389-.907.673-2.142.766-3.556zm1.166 4.118c.454-1.147.748-2.572.837-4.118h1.946a6.004 6.004 0 01-2.783 4.118zm-6.268 0C6.412 13.97 6.118 12.546 6.03 11H4.083a6.004 6.004 0 002.783 4.118z" clip-rule="evenodd"></path></svg>IP</span>';
-
-          // Format alamat
-          let addressHtml = '';
-          if (row.has_gps && row.street_address) {
-            addressHtml = `
-          <div class="space-y-1">
-            <div class="flex items-start">
-              <svg class="w-4 h-4 text-blue-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-              </svg>
-              <div>
-                <p class="font-semibold text-gray-800">${row.street_address}</p>
-                ${row.postal_code ? `<p class="text-xs text-gray-500">📮 ${row.postal_code}</p>` : ''}
-              </div>
-            </div>
-          </div>
-        `;
-          } else {
-            addressHtml = `<p class="text-sm text-gray-500 italic">Alamat tidak tersedia (IP only)</p>`;
-          }
-
           tr.innerHTML = `
-        <td>
-          <div class="flex items-center">
-            <span class="country-flag text-2xl">${flag}</span>
-            <div class="ml-2">
-              <strong class="text-gray-800">${row.country}</strong>
-              ${gpsIcon}
-            </div>
-          </div>
-        </td>
-        <td>
-          ${addressHtml}
-        </td>
-        <td>${row.city}, ${row.region}</td>
-        <td><code class="bg-gray-100 px-2 py-1 rounded text-xs">${row.timezone}</code></td>
-        <td>${getVisitBadge(row.total)}</td>
-      `;
+            <td>
+              <span class="country-flag">${flag}</span>
+              <strong>${row.country}</strong>
+            </td>
+            <td>${row.city}, ${row.region}</td>
+            <td><code class="bg-gray-100 px-2 py-1 rounded text-xs">${row.timezone}</code></td>
+            <td>${getVisitBadge(row.total)}</td>
+          `;
           tbody.appendChild(tr);
         });
       } else {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Tidak ada data</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500">Tidak ada data</td></tr>';
       }
     }
-
-    // ==================== UPDATE FUNCTION updateFrequencyTable() ====================
-    // Ganti function ini untuk menampilkan detail alamat:
 
     function updateFrequencyTable(frequency) {
       const tbody = document.getElementById("freqTable");
@@ -1296,36 +712,23 @@ echo json_encode($response, JSON_PRETTY_PRINT);
           const tr = document.createElement("tr");
           const flag = getCountryFlag(row.country.substring(0, 2));
 
-          const gpsIcon = row.has_gps ?
-            '<span class="text-green-600 ml-1">📍</span>' :
-            '<span class="text-gray-500 ml-1">🌐</span>';
-
-          let locationDisplay = row.location;
-          if (row.has_gps && row.postal_code) {
-            locationDisplay += ` (${row.postal_code})`;
-          }
-
           tr.innerHTML = `
-        <td>${row.date}</td>
-        <td><code class="bg-gray-100 px-2 py-1 rounded">${row.ip}</code></td>
-        <td>
-          <span class="country-flag">${flag}</span>
-          <span class="text-sm">${locationDisplay}</span>
-          ${gpsIcon}
-        </td>
-        <td><code class="bg-gray-100 px-2 py-1 rounded text-xs">${row.timezone}</code></td>
-        <td>${row.device}</td>
-        <td>${getVisitBadge(row.visits)}</td>
-      `;
+            <td>${row.date}</td>
+            <td><code class="bg-gray-100 px-2 py-1 rounded">${row.ip}</code></td>
+            <td>
+              <span class="country-flag">${flag}</span>
+              ${row.city}, ${row.country}
+            </td>
+            <td><code class="bg-gray-100 px-2 py-1 rounded text-xs">${row.timezone}</code></td>
+            <td>${row.device}</td>
+            <td>${getVisitBadge(row.visits)}</td>
+          `;
           tbody.appendChild(tr);
         });
       } else {
         tbody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">Tidak ada data</td></tr>';
       }
     }
-
-    // ==================== UPDATE FUNCTION updateActivityTable() ====================
-    // Ganti function ini untuk menampilkan detail alamat di activity log:
 
     function updateActivityTable(activity) {
       const tbody = document.getElementById("activityTable");
@@ -1336,39 +739,16 @@ echo json_encode($response, JSON_PRETTY_PRINT);
           const tr = document.createElement("tr");
           const flag = getCountryFlag(row.country.substring(0, 2));
 
-          // GPS indicator
-          const gpsIcon = row.has_gps ?
-            '<span class="text-xs text-green-600 font-semibold ml-1">📍</span>' :
-            '<span class="text-xs text-gray-500 ml-1">🌐</span>';
-
-          // Format location display
-          let locationDisplay = '';
-          if (row.has_gps && row.street) {
-            locationDisplay = `
-          <div class="text-sm">
-            <p class="font-semibold">${row.street}</p>
-            <p class="text-xs text-gray-500">${row.city}, ${row.country}</p>
-          </div>
-        `;
-          } else {
-            locationDisplay = `<span class="text-sm">${row.city}, ${row.country}</span>`;
-          }
-
           tr.innerHTML = `
-        <td><strong>${row.time}</strong></td>
-        <td><code class="bg-gray-100 px-2 py-1 rounded">${row.ip}</code></td>
-        <td>
-          <div class="flex items-start">
-            <span class="country-flag">${flag}</span>
-            <div class="ml-2">
-              ${locationDisplay}
-              ${gpsIcon}
-            </div>
-          </div>
-        </td>
-        <td><code class="bg-gray-100 px-2 py-1 rounded text-xs">${row.timezone}</code></td>
-        <td>${row.device}</td>
-      `;
+            <td><strong>${row.time}</strong></td>
+            <td><code class="bg-gray-100 px-2 py-1 rounded">${row.ip}</code></td>
+            <td>
+              <span class="country-flag">${flag}</span>
+              ${row.city}, ${row.country}
+            </td>
+            <td><code class="bg-gray-100 px-2 py-1 rounded text-xs">${row.timezone}</code></td>
+            <td>${row.device}</td>
+          `;
           tbody.appendChild(tr);
         });
       } else {
@@ -1398,5 +778,4 @@ echo json_encode($response, JSON_PRETTY_PRINT);
     };
   </script>
 </body>
-
 </html>
