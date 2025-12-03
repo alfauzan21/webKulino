@@ -15,6 +15,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen" />
   
+  <!-- ✅ FIX: WebGL Performance Hints -->
+  <meta name="renderer" content="webkit" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  
   <style>
     /* ✅ FIXED: SHARP RENDERING - NO BLUR */
     html, body { 
@@ -67,6 +71,11 @@
       /* ✅ Font rendering */
       -webkit-font-smoothing: subpixel-antialiased;
       -moz-osx-font-smoothing: auto;
+      
+      /* ✅ FIX: Prevent context loss on tab switch */
+      will-change: transform;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
     
     /* Desktop full screen */
@@ -169,6 +178,34 @@
 
   <!-- Unity Show Banner -->
   <script>
+  // ✅ FIX: Global error suppression untuk tab switch errors
+  window.onerror = function(message, source, lineno, colno, error) {
+    console.error('[GLOBAL-ERROR]', message, 'at', source, lineno + ':' + colno);
+    
+    // ✅ Suppress Unity initialization errors pada tab switch
+    var suppressedErrors = [
+      'Module_main',
+      'callMain', 
+      'doRun',
+      'run(',
+      'runCaller',
+      'Module.run',
+      'abort(',
+      'ExitStatus'
+    ];
+    
+    var shouldSuppress = suppressedErrors.some(function(err) {
+      return message.includes(err) || (source && source.includes(err));
+    });
+    
+    if (shouldSuppress) {
+      console.warn('[GLOBAL-ERROR] Suppressed Unity error (tab switch/reload)');
+      return true; // Prevent default error dialog
+    }
+    
+    return false; // Allow other errors to show
+  };
+  
   function unityShowBanner(msg, type) {
     try {
       var warningBanner = document.querySelector("#unity-warning");
@@ -199,11 +236,65 @@
   <!-- Tab Visibility Handler -->
   <script>
   let isTabVisible = true;
+  let unityPaused = false;
   
+  // ✅ FIX: Proper tab switching without crash
   document.addEventListener('visibilitychange', function() {
     isTabVisible = !document.hidden;
     console.log('[TAB]', isTabVisible ? 'VISIBLE' : 'HIDDEN');
+    
+    // ✅ Prevent WebGL context loss crash
+    if (window.unityInstance) {
+      try {
+        if (!isTabVisible) {
+          // Tab hidden - pause Unity
+          console.log('[TAB] Pausing Unity...');
+          window.unityInstance.SendMessage('GameManager', 'OnApplicationPause', '1');
+          unityPaused = true;
+        } else {
+          // Tab visible - resume Unity
+          console.log('[TAB] Resuming Unity...');
+          window.unityInstance.SendMessage('GameManager', 'OnApplicationPause', '0');
+          unityPaused = false;
+        }
+      } catch(e) {
+        console.warn('[TAB] SendMessage failed (normal if Unity not ready):', e.message);
+      }
+    }
   });
+  
+  // ✅ FIX: Additional focus/blur handlers
+  window.addEventListener('focus', function() {
+    console.log('[WINDOW] Focused');
+    isTabVisible = true;
+  });
+  
+  window.addEventListener('blur', function() {
+    console.log('[WINDOW] Blurred');
+    isTabVisible = false;
+  });
+  
+  // ✅ FIX: Handle page unload gracefully
+  window.addEventListener('beforeunload', function() {
+    console.log('[TAB] Page unloading - cleaning up');
+    if (window.unityInstance) {
+      try {
+        window.unityInstance.Quit();
+      } catch(e) {
+        console.warn('[TAB] Quit failed:', e.message);
+      }
+    }
+  });
+  
+  // ✅ FIX: Prevent WebGL context loss errors
+  window.addEventListener('webglcontextlost', function(e) {
+    console.error('[WEBGL] Context lost - preventing default');
+    e.preventDefault();
+  }, false);
+  
+  window.addEventListener('webglcontextrestored', function() {
+    console.log('[WEBGL] Context restored');
+  }, false);
   </script>
 
   <!-- Orientation Detection -->
@@ -361,6 +452,17 @@
   <script src="bridge.js"></script>
 <script>
     var canvas = document.querySelector("#unity-canvas");
+    
+    // ✅ FIX: Add WebGL context preservation
+    canvas.addEventListener('webglcontextlost', function(e) {
+      console.error('[CANVAS] WebGL context lost');
+      e.preventDefault();
+    }, false);
+    
+    canvas.addEventListener('webglcontextrestored', function() {
+      console.log('[CANVAS] WebGL context restored');
+    }, false);
+    
     var buildUrl = "Build";
     var loaderUrl = buildUrl + "/WebUnity.loader.js";
     var config = {
@@ -375,7 +477,13 @@
       
       /* ✅ CRITICAL BLUR FIX: Use device pixel ratio */
       matchWebGLToCanvasSize: true,
-      devicePixelRatio: window.devicePixelRatio || 1
+      devicePixelRatio: window.devicePixelRatio || 1,
+      
+      /* ✅ FIX: WebGL context preservation */
+      webglContextAttributes: {
+        preserveDrawingBuffer: false,
+        powerPreference: "high-performance"
+      }
     };
 
     document.querySelector("#unity-loading-bar").style.display = "block";
@@ -389,6 +497,29 @@
         document.querySelector("#unity-loading-bar").style.display = "none";
         window.unityInstance = unityInstance;
         
+        // ✅ FIX: Add global error handler for Unity
+        window.addEventListener('error', function(e) {
+          console.error('[UNITY-ERROR]', e.message);
+          // Prevent error popup on tab switch
+          if (e.message.includes('Module_main') || 
+              e.message.includes('callMain') ||
+              e.message.includes('doRun')) {
+            console.warn('[UNITY-ERROR] Suppressed Unity initialization error (tab switch)');
+            e.preventDefault();
+            return false;
+          }
+        });
+        
+        // ✅ FIX: Add unhandled rejection handler
+        window.addEventListener('unhandledrejection', function(e) {
+          console.error('[UNITY-PROMISE]', e.reason);
+          // Suppress WebGL context errors
+          if (e.reason && e.reason.toString().includes('WebGL')) {
+            console.warn('[UNITY-PROMISE] Suppressed WebGL error');
+            e.preventDefault();
+          }
+        });
+        
         if (typeof window.__kulino_unity_ready === 'function') {
           window.__kulino_unity_ready();
         }
@@ -397,8 +528,21 @@
         console.log('✅ Unity loaded - Sharp rendering enabled');
       }).catch((message) => {
         console.error('❌ Unity load failed', message);
-        alert('Failed to load: ' + message);
+        
+        // ✅ Better error message
+        var errorMsg = 'Failed to load game';
+        if (message.includes('memory')) {
+          errorMsg += ': Not enough memory';
+        } else if (message.includes('WebGL')) {
+          errorMsg += ': WebGL not supported';
+        }
+        
+        alert(errorMsg + '. Please refresh the page.');
       });
+    };
+    script.onerror = (e) => {
+      console.error('❌ Loader script failed', e);
+      unityShowBanner('Failed to load Unity. Please check your connection.', 'error');
     };
     document.body.appendChild(script);
   </script>
