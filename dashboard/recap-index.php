@@ -2,14 +2,15 @@
 // ==================== PHP LOGIC ONLY ====================
 session_start();
 if (!isset($_SESSION['login'])) {
-    header("Location: ../auth/login.php");
-    exit;
+  header("Location: ../auth/login.php");
+  exit;
 }
 
 include("../includes/koneksi.php");
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -82,9 +83,17 @@ include("../includes/koneksi.php");
       margin-bottom: 0.5rem;
     }
 
-    .stats-card.visits .value { color: #667eea; }
-    .stats-card.unique .value { color: #10b981; }
-    .stats-card.active .value { color: #f43f5e; }
+    .stats-card.visits .value {
+      color: #667eea;
+    }
+
+    .stats-card.unique .value {
+      color: #10b981;
+    }
+
+    .stats-card.active .value {
+      color: #f43f5e;
+    }
 
     .stats-card .label {
       font-size: 0.875rem;
@@ -282,12 +291,71 @@ include("../includes/koneksi.php");
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
     }
 
     .loading {
       animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    /* Additional styles for enhanced location table */
+    .table-wrapper {
+      max-height: 600px;
+      overflow-y: auto;
+    }
+
+    .table-wrapper::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb {
+      background: #667eea;
+      border-radius: 10px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb:hover {
+      background: #764ba2;
+    }
+
+    /* Hover effect for table rows */
+    tbody tr {
+      transition: all 0.2s ease;
+    }
+
+    tbody tr:hover {
+      background-color: #f8f9ff;
+      transform: scale(1.01);
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Loading animation */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    tbody tr {
+      animation: fadeIn 0.3s ease;
     }
   </style>
 </head>
@@ -399,24 +467,78 @@ include("../includes/koneksi.php");
 
     <!-- Location Table -->
     <section class="table-container mb-8">
-      <h2 class="text-lg font-bold text-gray-900 mb-4">📍 Lokasi Pengunjung Hari Ini</h2>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-gray-900">📍 Lokasi Pengunjung Hari Ini</h2>
+
+        <!-- Limit Filter -->
+        <div class="flex items-center gap-3">
+          <label for="locationLimit" class="text-sm font-semibold text-gray-700">Show:</label>
+          <select id="locationLimit"
+            class="border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-600 transition">
+            <option value="5">5 entries</option>
+            <option value="10" selected>10 entries</option>
+            <option value="15">15 entries</option>
+            <option value="20">20 entries</option>
+            <option value="50">50 entries</option>
+            <option value="100">100 entries</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Statistics Summary -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
+          <p class="text-xs text-blue-600 font-semibold mb-1">Total Locations</p>
+          <p id="totalLocations" class="text-2xl font-bold text-blue-700">-</p>
+        </div>
+        <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200">
+          <p class="text-xs text-green-600 font-semibold mb-1">Total Countries</p>
+          <p id="totalCountries" class="text-2xl font-bold text-green-700">-</p>
+        </div>
+        <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-xl border border-purple-200">
+          <p class="text-xs text-purple-600 font-semibold mb-1">Total Cities</p>
+          <p id="totalCities" class="text-2xl font-bold text-purple-700">-</p>
+        </div>
+        <div class="bg-gradient-to-br from-orange-50 to-yellow-50 p-4 rounded-xl border border-orange-200">
+          <p class="text-xs text-orange-600 font-semibold mb-1">Timezones</p>
+          <p id="totalTimezones" class="text-2xl font-bold text-orange-700">-</p>
+        </div>
+      </div>
+
       <div class="table-wrapper">
         <table>
           <thead>
             <tr>
-              <th>Negara</th>
-              <th>Kota/Region</th>
-              <th>Timezone</th>
-              <th>Total Kunjungan</th>
+              <th width="5%">No</th>
+              <th width="25%">Negara</th>
+              <th width="30%">Kota/Region</th>
+              <th width="20%">Timezone</th>
+              <th width="20%">Total Kunjungan</th>
             </tr>
           </thead>
           <tbody id="locationTable">
             <tr>
-              <td colspan="4" class="text-center text-gray-500">Memuat data...</td>
+              <td colspan="5" class="text-center text-gray-500">
+                <div class="py-8">
+                  <div class="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                  <p>Memuat data lokasi...</p>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination Info -->
+      <div class="mt-4 flex items-center justify-between text-sm text-gray-600">
+        <div id="locationInfo">
+          Showing <span id="showingCount">0</span> of <span id="totalLocationCount">0</span> locations
+        </div>
+        <div id="locationPagination" class="flex gap-2">
+          <!-- Pagination buttons will be added here if needed -->
+        </div>
+      </div>
+
     </section>
 
     <!-- Frequency Table -->
@@ -479,10 +601,26 @@ include("../includes/koneksi.php");
     let browserChartInstance = null;
 
     const countryFlags = {
-      'ID': '🇮🇩', 'US': '🇺🇸', 'SG': '🇸🇬', 'MY': '🇲🇾', 'TH': '🇹🇭',
-      'PH': '🇵🇭', 'VN': '🇻🇳', 'JP': '🇯🇵', 'KR': '🇰🇷', 'CN': '🇨🇳',
-      'IN': '🇮🇳', 'AU': '🇦🇺', 'GB': '🇬🇧', 'DE': '🇩🇪', 'FR': '🇫🇷',
-      'NL': '🇳🇱', 'BR': '🇧🇷', 'IT': '🇮🇹', 'ES': '🇪🇸', 'CA': '🇨🇦'
+      'ID': '🇮🇩',
+      'US': '🇺🇸',
+      'SG': '🇸🇬',
+      'MY': '🇲🇾',
+      'TH': '🇹🇭',
+      'PH': '🇵🇭',
+      'VN': '🇻🇳',
+      'JP': '🇯🇵',
+      'KR': '🇰🇷',
+      'CN': '🇨🇳',
+      'IN': '🇮🇳',
+      'AU': '🇦🇺',
+      'GB': '🇬🇧',
+      'DE': '🇩🇪',
+      'FR': '🇫🇷',
+      'NL': '🇳🇱',
+      'BR': '🇧🇷',
+      'IT': '🇮🇹',
+      'ES': '🇪🇸',
+      'CA': '🇨🇦'
     };
 
     function getCountryFlag(countryCode) {
@@ -509,7 +647,9 @@ include("../includes/koneksi.php");
         const res = await fetch(url, {
           method: 'GET',
           credentials: 'same-origin',
-          headers: { 'Accept': 'application/json' }
+          headers: {
+            'Accept': 'application/json'
+          }
         });
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -575,7 +715,9 @@ include("../includes/koneksi.php");
           responsive: true,
           maintainAspectRatio: true,
           plugins: {
-            legend: { display: false },
+            legend: {
+              display: false
+            },
             tooltip: {
               backgroundColor: 'rgba(0, 0, 0, 0.8)',
               padding: 12,
@@ -585,10 +727,18 @@ include("../includes/koneksi.php");
           scales: {
             y: {
               beginAtZero: true,
-              ticks: { precision: 0 },
-              grid: { color: 'rgba(0, 0, 0, 0.05)' }
+              ticks: {
+                precision: 0
+              },
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+              }
             },
-            x: { grid: { display: false } }
+            x: {
+              grid: {
+                display: false
+              }
+            }
           }
         }
       });
@@ -622,7 +772,9 @@ include("../includes/koneksi.php");
         options: {
           responsive: true,
           plugins: {
-            legend: { display: false },
+            legend: {
+              display: false
+            },
             tooltip: {
               backgroundColor: 'rgba(0, 0, 0, 0.8)',
               padding: 12,
@@ -632,10 +784,18 @@ include("../includes/koneksi.php");
           scales: {
             y: {
               beginAtZero: true,
-              ticks: { precision: 0 },
-              grid: { color: 'rgba(0, 0, 0, 0.05)' }
+              ticks: {
+                precision: 0
+              },
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+              }
             },
-            x: { grid: { display: false } }
+            x: {
+              grid: {
+                display: false
+              }
+            }
           }
         }
       });
@@ -667,7 +827,9 @@ include("../includes/koneksi.php");
         options: {
           responsive: true,
           plugins: {
-            legend: { position: 'right' },
+            legend: {
+              position: 'right'
+            },
             tooltip: {
               backgroundColor: 'rgba(0, 0, 0, 0.8)',
               padding: 12,
@@ -776,6 +938,145 @@ include("../includes/koneksi.php");
         loadRecap(e.target.value, tz);
       });
     };
+
+    // Enhanced Location Table Update Function
+    let allLocationsData = []; // Store all data
+    let currentLimit = 10; // Default limit
+
+    function updateLocationTable(locations) {
+      console.log('📍 Updating location table with', locations.length, 'entries');
+
+      // Store all data
+      allLocationsData = locations || [];
+
+      // Update statistics
+      const uniqueCountries = [...new Set(allLocationsData.map(loc => loc.country))].length;
+      const uniqueCities = [...new Set(allLocationsData.map(loc => loc.city))].length;
+      const uniqueTimezones = [...new Set(allLocationsData.map(loc => loc.timezone))].length;
+
+      document.getElementById('totalLocations').textContent = allLocationsData.length;
+      document.getElementById('totalCountries').textContent = uniqueCountries;
+      document.getElementById('totalCities').textContent = uniqueCities;
+      document.getElementById('totalTimezones').textContent = uniqueTimezones;
+
+      // Apply limit
+      renderLocationTable();
+    }
+
+    function renderLocationTable() {
+      const tbody = document.getElementById("locationTable");
+      const limit = parseInt(document.getElementById("locationLimit").value);
+      currentLimit = limit;
+
+      // Get limited data
+      const limitedData = allLocationsData.slice(0, limit);
+
+      tbody.innerHTML = "";
+
+      if (limitedData.length > 0) {
+        limitedData.forEach((row, index) => {
+          const tr = document.createElement("tr");
+          const flag = getCountryFlag(row.country_code);
+
+          tr.innerHTML = `
+        <td class="font-semibold text-gray-700">${index + 1}</td>
+        <td>
+          <div class="flex items-center gap-3">
+            <span class="country-flag text-3xl">${flag}</span>
+            <div>
+              <strong class="text-gray-800">${row.country}</strong>
+              <p class="text-xs text-gray-500">${row.country_code}</p>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <div>
+              <strong class="text-gray-800">${row.city}</strong>
+              <p class="text-xs text-gray-500">${row.region}</p>
+            </div>
+          </div>
+        </td>
+        <td>
+          <code class="bg-gradient-to-r from-blue-50 to-indigo-50 px-3 py-2 rounded-lg text-xs font-semibold text-blue-700 border border-blue-200">
+            ${row.timezone}
+          </code>
+        </td>
+        <td>
+          <div class="flex items-center justify-center">
+            ${getVisitBadge(row.total)}
+          </div>
+        </td>
+      `;
+          tbody.appendChild(tr);
+        });
+
+        // Update info
+        document.getElementById('showingCount').textContent = limitedData.length;
+        document.getElementById('totalLocationCount').textContent = allLocationsData.length;
+
+      } else {
+        tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center text-gray-500 py-8">
+          <svg class="w-16 h-16 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <p class="font-semibold">Tidak ada data lokasi</p>
+          <p class="text-sm text-gray-400 mt-1">Belum ada pengunjung hari ini</p>
+        </td>
+      </tr>
+    `;
+
+        document.getElementById('showingCount').textContent = 0;
+        document.getElementById('totalLocationCount').textContent = 0;
+      }
+    }
+
+    // Enhanced visit badge with gradient
+    function getVisitBadge(count) {
+      let badgeClass = '';
+      let icon = '';
+
+      if (count >= 50) {
+        badgeClass = 'bg-gradient-to-r from-red-500 to-pink-500 text-white';
+        icon = '🔥';
+      } else if (count >= 20) {
+        badgeClass = 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white';
+        icon = '⚡';
+      } else if (count >= 10) {
+        badgeClass = 'bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900';
+        icon = '⭐';
+      } else if (count >= 5) {
+        badgeClass = 'bg-gradient-to-r from-blue-400 to-indigo-500 text-white';
+        icon = '📊';
+      } else {
+        badgeClass = 'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-800';
+        icon = '📍';
+      }
+
+      return `
+    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow-lg ${badgeClass}">
+      <span>${icon}</span>
+      <span>${count} visit${count > 1 ? 's' : ''}</span>
+    </span>
+  `;
+    }
+
+    // Event listener for limit change
+    document.getElementById('locationLimit').addEventListener('change', function() {
+      console.log('📊 Limit changed to:', this.value);
+      renderLocationTable();
+    });
+
+    // Update fungsi loadRecap untuk memanggil updateLocationTable
+    // Tambahkan di bagian response handling:
+    // updateLocationTable(data.locations || []);
   </script>
 </body>
+
 </html>
