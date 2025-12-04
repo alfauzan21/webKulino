@@ -73,7 +73,6 @@ function detectDeviceAndBrowser($ua) {
     } elseif (preg_match('/Windows/i', $ua)) {
         $device = "Windows PC";
     } elseif (preg_match('/Android/i', $ua)) {
-        // Deteksi brand Android
         if (preg_match('/Samsung/i', $ua)) {
             $device = "Samsung Android";
         } elseif (preg_match('/Xiaomi|Mi /i', $ua)) {
@@ -104,20 +103,23 @@ function detectDeviceAndBrowser($ua) {
 
 // Get Location from IP with Timezone
 function getLocationFromIP($ip) {
-    // Skip untuk localhost
     if ($ip == '127.0.0.1' || $ip == '::1' || strpos($ip, '192.168.') === 0) {
         return [
+            'street' => '',
+            'house_number' => '',
+            'district' => 'Local',
+            'subdistrict' => '',
             'city' => 'Localhost',
             'region' => 'Local',
             'country' => 'Local',
             'country_code' => 'LC',
-            'timezone' => 'Asia/Jakarta', // Default WIB
+            'postal_code' => '',
+            'timezone' => 'Asia/Jakarta',
             'offset' => '+07:00'
         ];
     }
     
     try {
-        // Gunakan ip-api.com dengan timezone field
         $url = "http://ip-api.com/json/{$ip}?fields=status,country,countryCode,region,city,timezone,offset";
         
         $context = stream_context_create([
@@ -137,10 +139,15 @@ function getLocationFromIP($ip) {
         
         if ($data && $data['status'] === 'success') {
             return [
+                'street' => '',
+                'house_number' => '',
+                'district' => '',
+                'subdistrict' => '',
                 'city' => $data['city'] ?? 'Unknown',
                 'region' => $data['region'] ?? 'Unknown',
                 'country' => $data['country'] ?? 'Unknown',
                 'country_code' => $data['countryCode'] ?? 'XX',
+                'postal_code' => '',
                 'timezone' => $data['timezone'] ?? 'Asia/Jakarta',
                 'offset' => $data['offset'] ?? '+07:00'
             ];
@@ -149,12 +156,16 @@ function getLocationFromIP($ip) {
         error_log("Location API error: " . $e->getMessage());
     }
     
-    // Default jika gagal (WIB timezone)
     return [
+        'street' => '',
+        'house_number' => '',
+        'district' => '',
+        'subdistrict' => '',
         'city' => 'Unknown',
         'region' => 'Unknown',
         'country' => 'Unknown',
         'country_code' => 'XX',
+        'postal_code' => '',
         'timezone' => 'Asia/Jakarta',
         'offset' => '+07:00'
     ];
@@ -174,6 +185,7 @@ function getTimezoneName($timezone) {
         'Asia/Seoul' => 'KST (UTC+9)',
         'America/New_York' => 'EST (UTC-5)',
         'America/Los_Angeles' => 'PST (UTC-8)',
+        'America/Chicago' => 'CST (UTC-6)',
         'Europe/London' => 'GMT (UTC+0)',
         'Europe/Paris' => 'CET (UTC+1)',
         'Australia/Sydney' => 'AEDT (UTC+11)',
@@ -191,15 +203,46 @@ $device = detectDeviceAndBrowser($ua);
 // ==================== TAMBAH KUNJUNGAN BARU ====================
 if (isset($_GET['add']) && $_GET['add'] == "1") {
     try {
-        // Dapatkan lokasi dengan timezone
-        $location = getLocationFromIP($ip);
+        // Ambil data dari GET parameters (prioritas dari GPS/browser)
+        $latitude = isset($_GET['latitude']) && !empty($_GET['latitude']) ? floatval($_GET['latitude']) : null;
+        $longitude = isset($_GET['longitude']) && !empty($_GET['longitude']) ? floatval($_GET['longitude']) : null;
+        $street = isset($_GET['street']) ? $conn->real_escape_string($_GET['street']) : '';
+        $house_number = isset($_GET['house_number']) ? $conn->real_escape_string($_GET['house_number']) : '';
+        $district = isset($_GET['district']) ? $conn->real_escape_string($_GET['district']) : '';
+        $subdistrict = isset($_GET['subdistrict']) ? $conn->real_escape_string($_GET['subdistrict']) : '';
+        $city = isset($_GET['city']) ? $conn->real_escape_string($_GET['city']) : '';
+        $region = isset($_GET['region']) ? $conn->real_escape_string($_GET['region']) : '';
+        $country = isset($_GET['country']) ? $conn->real_escape_string($_GET['country']) : '';
+        $country_code = isset($_GET['country_code']) ? $conn->real_escape_string($_GET['country_code']) : '';
+        $postal_code = isset($_GET['postal_code']) ? $conn->real_escape_string($_GET['postal_code']) : '';
+        $full_address = isset($_GET['full_address']) ? $conn->real_escape_string($_GET['full_address']) : '';
+        $accuracy = isset($_GET['accuracy']) && !empty($_GET['accuracy']) ? floatval($_GET['accuracy']) : null;
         
-        // Hitung waktu berdasarkan timezone pengunjung
-        $timezone = new DateTimeZone($location['timezone']);
-        $datetime = new DateTime('now', $timezone);
+        // Jika tidak ada GPS data dari browser, gunakan IP geolocation sebagai fallback
+        if (empty($city) || empty($country)) {
+            $location = getLocationFromIP($ip);
+            $city = $city ?: $location['city'];
+            $region = $region ?: $location['region'];
+            $country = $country ?: $location['country'];
+            $country_code = $country_code ?: $location['country_code'];
+            $timezone = $location['timezone'];
+        } else {
+            // Gunakan timezone dari parameter atau default
+            $timezone = isset($_GET['timezone']) ? $_GET['timezone'] : 'Asia/Jakarta';
+        }
+        
+        // Hitung waktu berdasarkan timezone
+        $tz = new DateTimeZone($timezone);
+        $datetime = new DateTime('now', $tz);
         $localTime = $datetime->format('Y-m-d H:i:s');
         
-        $stmt = $conn->prepare("INSERT INTO visitors (ip_address, device, city, region, country, country_code, timezone, visited_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        // Insert ke database dengan semua field
+        $stmt = $conn->prepare("
+            INSERT INTO visitors 
+            (ip_address, device, latitude, longitude, street, house_number, district, subdistrict, 
+             city, region, country, country_code, postal_code, full_address, location_accuracy, timezone, visited_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
         
         if (!$stmt) {
             error_log("Prepare failed: " . $conn->error);
@@ -207,35 +250,55 @@ if (isset($_GET['add']) && $_GET['add'] == "1") {
             exit;
         }
         
-        $stmt->bind_param("ssssssss", 
+        $stmt->bind_param("ssddssssssssssdss", 
             $ip, 
             $device, 
-            $location['city'], 
-            $location['region'], 
-            $location['country'],
-            $location['country_code'],
-            $location['timezone'],
+            $latitude,
+            $longitude,
+            $street,
+            $house_number,
+            $district,
+            $subdistrict,
+            $city, 
+            $region, 
+            $country,
+            $country_code,
+            $postal_code,
+            $full_address,
+            $accuracy,
+            $timezone,
             $localTime
         );
         
         if (!$stmt->execute()) {
             error_log("Execute failed: " . $stmt->error);
-            echo json_encode(["error" => "Insert failed"]);
+            echo json_encode(["error" => "Insert failed: " . $stmt->error]);
             exit;
         }
         
         $stmt->close();
         
-        error_log("Visitor tracked: IP=$ip, Device=$device, Location={$location['city']}, TZ={$location['timezone']}");
+        error_log("Visitor tracked: IP=$ip, Device=$device, Location=$street $house_number, $district, $city, TZ=$timezone");
         
         echo json_encode([
             "success" => true,
-            "message" => "Visitor tracked",
+            "message" => "Visitor tracked with detailed location",
             "ip" => $ip,
             "device" => $device,
-            "location" => $location,
+            "location" => [
+                'street' => $street,
+                'house_number' => $house_number,
+                'district' => $district,
+                'subdistrict' => $subdistrict,
+                'city' => $city,
+                'region' => $region,
+                'country' => $country,
+                'country_code' => $country_code,
+                'postal_code' => $postal_code,
+                'timezone' => $timezone
+            ],
             "local_time" => $localTime,
-            "timezone_name" => getTimezoneName($location['timezone'])
+            "timezone_name" => getTimezoneName($timezone)
         ]);
         exit;
         
@@ -248,11 +311,9 @@ if (isset($_GET['add']) && $_GET['add'] == "1") {
 
 // ==================== GET STATISTICS ====================
 try {
-    // Timezone untuk display (default WIB)
     $displayTimezone = isset($_GET['tz']) ? $_GET['tz'] : 'Asia/Jakarta';
     $tz = new DateTimeZone($displayTimezone);
     
-    // Filter tanggal
     $filterDate = isset($_GET['date']) && $_GET['date'] != "" ? $_GET['date'] : $today;
     $filterDate = $conn->real_escape_string($filterDate);
 
@@ -310,12 +371,20 @@ try {
         $countryData[] = (int)$row['total'];
     }
 
-    // Frekuensi kunjungan per visitor (dengan timezone)
+    // Frekuensi kunjungan per visitor (dengan detail alamat)
     $resVisitorFreq = $conn->query("
-        SELECT ip_address, device, city, region, country, timezone, DATE(visited_at) as d, COUNT(*) as visits
+        SELECT ip_address, device, 
+               CONCAT_WS(', ', 
+                   NULLIF(CONCAT(house_number, ' ', street), ' '),
+                   NULLIF(subdistrict, ''),
+                   NULLIF(district, ''),
+                   city
+               ) as full_location,
+               city, region, country, timezone, 
+               DATE(visited_at) as d, COUNT(*) as visits
         FROM visitors
         WHERE visited_at >= NOW() - INTERVAL 7 DAY
-        GROUP BY ip_address, device, city, region, country, timezone, DATE(visited_at)
+        GROUP BY ip_address, device, full_location, city, region, country, timezone, DATE(visited_at)
         ORDER BY d DESC, visits DESC
         LIMIT 100
     ");
@@ -325,6 +394,7 @@ try {
         $visitorFrequency[] = [
             "ip" => $row['ip_address'],
             "device" => $row['device'],
+            "full_location" => $row['full_location'] ?: ($row['city'] ?? 'Unknown'),
             "city" => $row['city'] ?? 'Unknown',
             "region" => $row['region'] ?? 'Unknown',
             "country" => $row['country'] ?? 'Unknown',
@@ -334,9 +404,11 @@ try {
         ];
     }
 
-    // Log aktivitas dengan timezone conversion
+    // Log aktivitas dengan timezone conversion dan detail alamat
     $resActivity = $conn->query("
-        SELECT visited_at, ip_address, device, city, country, timezone
+        SELECT visited_at, ip_address, device, 
+               street, house_number, district, subdistrict,
+               city, country, timezone
         FROM visitors 
         WHERE DATE(visited_at)='$filterDate' 
         ORDER BY visited_at DESC 
@@ -345,42 +417,70 @@ try {
     
     $activity = [];
     while ($row = $resActivity->fetch_assoc()) {
-        // Convert ke timezone yang diminta
         $dt = new DateTime($row['visited_at']);
         $dt->setTimezone($tz);
+        
+        // Format alamat lengkap
+        $addressParts = array_filter([
+            $row['house_number'] && $row['street'] ? $row['house_number'] . ' ' . $row['street'] : $row['street'],
+            $row['subdistrict'] ? 'Kel. ' . $row['subdistrict'] : '',
+            $row['district'] ? 'Kec. ' . $row['district'] : '',
+            $row['city']
+        ]);
+        $fullLocation = implode(', ', $addressParts) ?: ($row['city'] ?? 'Unknown');
         
         $activity[] = [
             "time"     => $dt->format('H:i:s'),
             "datetime" => $dt->format('Y-m-d H:i:s'),
             "ip"       => $row['ip_address'],
             "device"   => $row['device'],
+            "full_location" => $fullLocation,
             "city"     => $row['city'] ?? 'Unknown',
             "country"  => $row['country'] ?? 'Unknown',
             "timezone" => getTimezoneName($row['timezone'] ?? 'Asia/Jakarta')
         ];
     }
 
-    // Detail lokasi untuk tabel
+    // Detail lokasi untuk tabel dengan alamat lengkap
     $resLocations = $conn->query("
-        SELECT city, region, country, country_code, timezone, COUNT(*) as total
+        SELECT 
+            street, house_number, district, subdistrict,
+            city, region, country, country_code, timezone, 
+            postal_code, full_address,
+            COUNT(*) as total
         FROM visitors
         WHERE DATE(visited_at)='$filterDate'
-          AND country IS NOT NULL
-        GROUP BY city, region, country, country_code, timezone
+        GROUP BY street, house_number, district, subdistrict, 
+                 city, region, country, country_code, timezone, postal_code, full_address
         ORDER BY total DESC
         LIMIT 50
     ");
     
     $locations = [];
-    while ($row = $resLocations->fetch_assoc()) {
-        $locations[] = [
-            "city" => $row['city'] ?? 'Unknown',
-            "region" => $row['region'] ?? 'Unknown',
-            "country" => $row['country'] ?? 'Unknown',
-            "country_code" => $row['country_code'] ?? 'XX',
-            "timezone" => getTimezoneName($row['timezone'] ?? 'Asia/Jakarta'),
-            "total" => (int)$row['total']
-        ];
+    if ($resLocations) {
+        while ($row = $resLocations->fetch_assoc()) {
+            // Build street address from components
+            $streetParts = [];
+            if (!empty($row['house_number'])) $streetParts[] = $row['house_number'];
+            if (!empty($row['street'])) $streetParts[] = $row['street'];
+            $streetAddress = implode(' ', $streetParts);
+            
+            $locations[] = [
+                "street" => $row['street'] ?? '',
+                "house_number" => $row['house_number'] ?? '',
+                "district" => $row['district'] ?? '',
+                "subdistrict" => $row['subdistrict'] ?? '',
+                "street_address" => $streetAddress,
+                "city" => $row['city'] ?? 'Unknown',
+                "region" => $row['region'] ?? 'Unknown',
+                "country" => $row['country'] ?? 'Unknown',
+                "country_code" => $row['country_code'] ?? 'XX',
+                "postal_code" => $row['postal_code'] ?? '',
+                "full_address" => $row['full_address'] ?? '',
+                "timezone" => getTimezoneName($row['timezone'] ?? 'Asia/Jakarta'),
+                "total" => (int)$row['total']
+            ];
+        }
     }
 
     // Browser Statistics

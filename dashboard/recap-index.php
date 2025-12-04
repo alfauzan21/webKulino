@@ -510,9 +510,9 @@ include("../includes/koneksi.php");
           <thead>
             <tr>
               <th width="5%">No</th>
-              <th width="25%">Negara</th>
-              <th width="30%">Kota/Region</th>
-              <th width="20%">Timezone</th>
+              <th width="20%">Negara</th>
+              <th width="40%">Alamat Lengkap</th>
+              <th width="15%">Timezone</th>
               <th width="20%">Total Kunjungan</th>
             </tr>
           </thead>
@@ -596,6 +596,41 @@ include("../includes/koneksi.php");
 
   <!-- JavaScript -->
   <script>
+    // Debug: Log raw response dari API
+    async function debugLoadRecap() {
+      try {
+        const response = await fetch('track.php', {
+          method: 'GET',
+          credentials: 'same-origin',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+        console.log('🔍 DEBUG - Full API Response:', data);
+        console.log('📍 DEBUG - Locations Data:', data.locations);
+        console.log('📊 DEBUG - Locations Count:', data.locations?.length || 0);
+
+        // Check if locations is empty
+        if (!data.locations || data.locations.length === 0) {
+          console.warn('⚠️ No location data returned from API');
+          console.log('💡 Check database: SELECT * FROM visitors WHERE DATE(visited_at) = CURDATE()');
+        }
+
+        return data;
+      } catch (error) {
+        console.error('❌ Debug API Error:', error);
+      }
+    }
+
+    // Run debug on page load
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        debugLoadRecap();
+      }, 2000);
+    });
+
     let weeklyChartInstance = null;
     let countryChartInstance = null;
     let browserChartInstance = null;
@@ -638,8 +673,7 @@ include("../includes/koneksi.php");
       const statusMsg = document.getElementById('statusMessage');
 
       try {
-        // 🔧 FIX: Correct path to track.php
-        let url = `../track.php?tz=${encodeURIComponent(timezone)}`;
+        let url = `track.php?tz=${encodeURIComponent(timezone)}`;
         if (date) url += `&date=${date}`;
 
         console.log('📡 Fetching:', url);
@@ -655,7 +689,11 @@ include("../includes/koneksi.php");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const data = await res.json();
-        console.log('✅ Data:', data);
+        console.log('✅ Data received:', data);
+
+        // 🔍 DEBUG LOCATIONS
+        console.log('📍 Locations array:', data.locations);
+        console.log('📍 Locations length:', data.locations?.length || 0);
 
         if (data.error) throw new Error(data.error);
 
@@ -674,7 +712,11 @@ include("../includes/koneksi.php");
         updateWeeklyChart(data.labels || [], data.weekly || []);
         updateCountryChart(data.country_labels || [], data.country_data || []);
         updateBrowserChart(data.browsers || []);
+
+        // 🔍 CRITICAL: Make sure this is called
+        console.log('🔄 Calling updateLocationTable with:', data.locations?.length || 0, 'items');
         updateLocationTable(data.locations || []);
+
         updateFrequencyTable(data.frequency || []);
         updateActivityTable(data.activity || []);
 
@@ -841,109 +883,6 @@ include("../includes/koneksi.php");
     }
 
     function updateLocationTable(locations) {
-      const tbody = document.getElementById("locationTable");
-      tbody.innerHTML = "";
-
-      if (locations && locations.length > 0) {
-        locations.forEach((row) => {
-          const tr = document.createElement("tr");
-          const flag = getCountryFlag(row.country_code);
-
-          tr.innerHTML = `
-            <td>
-              <span class="country-flag">${flag}</span>
-              <strong>${row.country}</strong>
-            </td>
-            <td>${row.city}, ${row.region}</td>
-            <td><code class="bg-gray-100 px-2 py-1 rounded text-xs">${row.timezone}</code></td>
-            <td>${getVisitBadge(row.total)}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } else {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500">Tidak ada data</td></tr>';
-      }
-    }
-
-    function updateFrequencyTable(frequency) {
-      const tbody = document.getElementById("freqTable");
-      tbody.innerHTML = "";
-
-      if (frequency && frequency.length > 0) {
-        frequency.forEach((row) => {
-          const tr = document.createElement("tr");
-          const flag = getCountryFlag(row.country.substring(0, 2));
-
-          tr.innerHTML = `
-            <td>${row.date}</td>
-            <td><code class="bg-gray-100 px-2 py-1 rounded">${row.ip}</code></td>
-            <td>
-              <span class="country-flag">${flag}</span>
-              ${row.city}, ${row.country}
-            </td>
-            <td><code class="bg-gray-100 px-2 py-1 rounded text-xs">${row.timezone}</code></td>
-            <td>${row.device}</td>
-            <td>${getVisitBadge(row.visits)}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } else {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">Tidak ada data</td></tr>';
-      }
-    }
-
-    function updateActivityTable(activity) {
-      const tbody = document.getElementById("activityTable");
-      tbody.innerHTML = "";
-
-      if (activity && activity.length > 0) {
-        activity.forEach((row) => {
-          const tr = document.createElement("tr");
-          const flag = getCountryFlag(row.country.substring(0, 2));
-
-          tr.innerHTML = `
-            <td><strong>${row.time}</strong></td>
-            <td><code class="bg-gray-100 px-2 py-1 rounded">${row.ip}</code></td>
-            <td>
-              <span class="country-flag">${flag}</span>
-              ${row.city}, ${row.country}
-            </td>
-            <td><code class="bg-gray-100 px-2 py-1 rounded text-xs">${row.timezone}</code></td>
-            <td>${row.device}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } else {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Tidak ada data</td></tr>';
-      }
-    }
-
-    window.onload = () => {
-      console.log('🚀 Dashboard loaded');
-      loadRecap();
-
-      setInterval(() => {
-        const date = document.getElementById("dateFilter").value;
-        const tz = document.getElementById("timezoneFilter").value;
-        loadRecap(date, tz);
-      }, 30000);
-
-      document.getElementById("timezoneFilter").addEventListener("change", (e) => {
-        const date = document.getElementById("dateFilter").value;
-        loadRecap(date, e.target.value);
-      });
-
-      document.getElementById("dateFilter").addEventListener("change", (e) => {
-        const tz = document.getElementById("timezoneFilter").value;
-        loadRecap(e.target.value, tz);
-      });
-    };
-
-    // Enhanced Location Table Update Function
-    let allLocationsData = []; // Store all data
-    let currentLimit = 10; // Default limit
-
-    function updateLocationTable(locations) {
       console.log('📍 Updating location table with', locations.length, 'entries');
 
       // Store all data
@@ -978,6 +917,39 @@ include("../includes/koneksi.php");
           const tr = document.createElement("tr");
           const flag = getCountryFlag(row.country_code);
 
+          // Format alamat lengkap
+          let fullAddressHTML = '';
+
+          // Street address dengan nomor rumah
+          if (row.street || row.house_number) {
+            fullAddressHTML += '<strong class="text-gray-800">';
+            if (row.house_number) fullAddressHTML += row.house_number + ' ';
+            if (row.street) fullAddressHTML += row.street;
+            fullAddressHTML += '</strong><br>';
+          }
+
+          // Kelurahan/Subdistrict
+          if (row.subdistrict) {
+            fullAddressHTML += '<span class="text-sm text-gray-600">Kel. ' + row.subdistrict + '</span><br>';
+          }
+
+          // Kecamatan/District
+          if (row.district) {
+            fullAddressHTML += '<span class="text-sm text-gray-600">Kec. ' + row.district + '</span><br>';
+          }
+
+          // Kota dan Provinsi (selalu tampil)
+          fullAddressHTML += '<span class="text-gray-700">' + row.city;
+          if (row.region && row.region !== 'Unknown') {
+            fullAddressHTML += ', ' + row.region;
+          }
+          fullAddressHTML += '</span>';
+
+          // Kode pos jika ada
+          if (row.postal_code) {
+            fullAddressHTML += '<br><span class="text-xs text-gray-500">Kode Pos: ' + row.postal_code + '</span>';
+          }
+
           tr.innerHTML = `
         <td class="font-semibold text-gray-700">${index + 1}</td>
         <td>
@@ -990,14 +962,13 @@ include("../includes/koneksi.php");
           </div>
         </td>
         <td>
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="flex items-start gap-2">
+            <svg class="w-4 h-4 text-gray-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
-            <div>
-              <strong class="text-gray-800">${row.city}</strong>
-              <p class="text-xs text-gray-500">${row.region}</p>
+            <div class="text-left">
+              ${fullAddressHTML || '<span class="text-gray-500 italic">Alamat tidak tersedia</span>'}
             </div>
           </div>
         </td>
@@ -1021,19 +992,82 @@ include("../includes/koneksi.php");
 
       } else {
         tbody.innerHTML = `
-      <tr>
-        <td colspan="5" class="text-center text-gray-500 py-8">
-          <svg class="w-16 h-16 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-          <p class="font-semibold">Tidak ada data lokasi</p>
-          <p class="text-sm text-gray-400 mt-1">Belum ada pengunjung hari ini</p>
-        </td>
-      </tr>
+          <tr>
+      <td colspan="5" class="text-center text-gray-500 py-8">
+        <svg class="w-16 h-16 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p class="font-semibold">Tidak ada data lokasi untuk hari ini</p>
+        <p class="text-sm text-gray-400 mt-1">Total data diterima: ${allLocationsData.length}</p>
+        <button onclick="debugLoadRecap()" class="mt-3 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600">
+          🔍 Debug API
+        </button>
+      </td>
+    </tr>
+
     `;
 
         document.getElementById('showingCount').textContent = 0;
         document.getElementById('totalLocationCount').textContent = 0;
+      }
+    }
+
+    // Enhanced Frequency Table dengan alamat detail
+    function updateFrequencyTable(frequency) {
+      const tbody = document.getElementById("freqTable");
+      tbody.innerHTML = "";
+
+      if (frequency && frequency.length > 0) {
+        frequency.forEach((row) => {
+          const tr = document.createElement("tr");
+          const flag = getCountryFlag(row.country.substring(0, 2));
+
+          tr.innerHTML = `
+        <td>${row.date}</td>
+        <td><code class="bg-gray-100 px-2 py-1 rounded">${row.ip}</code></td>
+        <td>
+          <span class="country-flag">${flag}</span>
+          <div class="text-sm">
+            ${row.full_location || row.city + ', ' + row.country}
+          </div>
+        </td>
+        <td><code class="bg-gray-100 px-2 py-1 rounded text-xs">${row.timezone}</code></td>
+        <td>${row.device}</td>
+        <td>${getVisitBadge(row.visits)}</td>
+      `;
+          tbody.appendChild(tr);
+        });
+      } else {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">Tidak ada data</td></tr>';
+      }
+    }
+
+    // Enhanced Activity Table dengan alamat detail
+    function updateActivityTable(activity) {
+      const tbody = document.getElementById("activityTable");
+      tbody.innerHTML = "";
+
+      if (activity && activity.length > 0) {
+        activity.forEach((row) => {
+          const tr = document.createElement("tr");
+          const flag = getCountryFlag(row.country.substring(0, 2));
+
+          tr.innerHTML = `
+        <td><strong>${row.time}</strong></td>
+        <td><code class="bg-gray-100 px-2 py-1 rounded">${row.ip}</code></td>
+        <td>
+          <span class="country-flag">${flag}</span>
+          <div class="text-sm">
+            ${row.full_location || row.city + ', ' + row.country}
+          </div>
+        </td>
+        <td><code class="bg-gray-100 px-2 py-1 rounded text-xs">${row.timezone}</code></td>
+        <td>${row.device}</td>
+      `;
+          tbody.appendChild(tr);
+        });
+      } else {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Tidak ada data</td></tr>';
       }
     }
 

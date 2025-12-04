@@ -314,10 +314,12 @@ async function trackVisitorWithLocation(location) {
 
   const trackData = {
     add: 1,
-    latitude: location.latitude,
-    longitude: location.longitude,
+    latitude: location.latitude || 0,
+    longitude: location.longitude || 0,
     street: location.street || "",
     house_number: location.houseNumber || "",
+    district: location.district || "",
+    subdistrict: location.subdistrict || "",
     city: location.city || "Unknown",
     region: location.region || "",
     country: location.country || "Unknown",
