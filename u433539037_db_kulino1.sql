@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Dec 04, 2025 at 04:30 AM
+-- Generation Time: Dec 04, 2025 at 05:29 AM
 -- Server version: 11.8.3-MariaDB-log
 -- PHP Version: 7.2.34
 
@@ -176,7 +176,8 @@ CREATE TABLE `visitors` (
 --
 
 INSERT INTO `visitors` (`id`, `ip_address`, `device`, `latitude`, `longitude`, `street_address`, `city`, `region`, `country`, `country_code`, `postal_code`, `full_address`, `location_accuracy`, `timezone`, `visited_at`, `street`, `house_number`, `district`, `subdistrict`) VALUES
-(1, '103.47.134.122', 'Windows 10 - Chrome', -7.25750000, 112.75210000, NULL, 'Jember', 'Jawa Timur', 'Indonesia', 'ID', NULL, NULL, NULL, 'Asia/Jakarta', '2025-12-04 04:29:28', 'Jalan Kapten Sarjpan', '123', 'Tamanasari', 'Kelurahan Tamanasari');
+(1, '103.47.134.122', 'Windows 10 - Chrome', -7.25750000, 112.75210000, NULL, 'Jember', 'Jawa Timur', 'Indonesia', 'ID', NULL, NULL, NULL, 'Asia/Jakarta', '2025-12-04 04:29:28', 'Jalan Kapten Sarjpan', '123', 'Tamanasari', 'Kelurahan Tamanasari'),
+(2, '103.47.134.122', 'Windows 10 - Google Chrome', NULL, NULL, NULL, 'Jakarta', 'JK', 'Indonesia', 'ID', '', '', NULL, 'Asia/Jakarta', '2025-12-04 12:02:15', '', '', '', '');
 
 --
 -- Indexes for dumped tables
@@ -264,7 +265,7 @@ ALTER TABLE `tb_user`
 -- AUTO_INCREMENT for table `visitors`
 --
 ALTER TABLE `visitors`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
