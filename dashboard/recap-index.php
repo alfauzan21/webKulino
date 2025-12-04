@@ -731,6 +731,32 @@ include("../includes/koneksi.php");
       }
     }
 
+    // ==================== EVENT LISTENERS ====================
+    document.addEventListener('DOMContentLoaded', () => {
+      // Set date filter ke hari ini
+      const dateFilter = document.getElementById('dateFilter');
+      const today = new Date().toISOString().split('T')[0];
+      dateFilter.value = today;
+
+      // Event listeners untuk filter
+      document.getElementById('timezoneFilter').addEventListener('change', function() {
+        loadRecap(dateFilter.value, this.value);
+      });
+
+      dateFilter.addEventListener('change', function() {
+        const tz = document.getElementById('timezoneFilter').value;
+        loadRecap(this.value, tz);
+      });
+
+      // Event listeners untuk pagination
+      document.getElementById('locationLimit').addEventListener('change', renderLocationTable);
+      document.getElementById('frequencyLimit').addEventListener('change', renderFrequencyTable);
+      document.getElementById('activityLimit').addEventListener('change', renderActivityTable);
+
+      // Initial load
+      loadRecap(today, 'Asia/Jakarta');
+    });
+
     function updateWeeklyChart(labels, data) {
       const ctx = document.getElementById("weeklyChart").getContext("2d");
       if (weeklyChartInstance) weeklyChartInstance.destroy();
@@ -882,10 +908,9 @@ include("../includes/koneksi.php");
       });
     }
 
+    // ==================== LOCATION TABLE ====================
     function updateLocationTable(locations) {
       console.log('📍 Updating location table with', locations.length, 'entries');
-
-      // Store all data
       allLocationsData = locations || [];
 
       // Update statistics
@@ -898,16 +923,12 @@ include("../includes/koneksi.php");
       document.getElementById('totalCities').textContent = uniqueCities;
       document.getElementById('totalTimezones').textContent = uniqueTimezones;
 
-      // Apply limit
       renderLocationTable();
     }
 
     function renderLocationTable() {
       const tbody = document.getElementById("locationTable");
       const limit = parseInt(document.getElementById("locationLimit").value);
-      currentLimit = limit;
-
-      // Get limited data
       const limitedData = allLocationsData.slice(0, limit);
 
       tbody.innerHTML = "";
@@ -920,7 +941,6 @@ include("../includes/koneksi.php");
           // Format alamat lengkap
           let fullAddressHTML = '';
 
-          // Street address dengan nomor rumah
           if (row.street || row.house_number) {
             fullAddressHTML += '<strong class="text-gray-800">';
             if (row.house_number) fullAddressHTML += row.house_number + ' ';
@@ -928,24 +948,20 @@ include("../includes/koneksi.php");
             fullAddressHTML += '</strong><br>';
           }
 
-          // Kelurahan/Subdistrict
           if (row.subdistrict) {
             fullAddressHTML += '<span class="text-sm text-gray-600">Kel. ' + row.subdistrict + '</span><br>';
           }
 
-          // Kecamatan/District
           if (row.district) {
             fullAddressHTML += '<span class="text-sm text-gray-600">Kec. ' + row.district + '</span><br>';
           }
 
-          // Kota dan Provinsi (selalu tampil)
           fullAddressHTML += '<span class="text-gray-700">' + row.city;
           if (row.region && row.region !== 'Unknown') {
             fullAddressHTML += ', ' + row.region;
           }
           fullAddressHTML += '</span>';
 
-          // Kode pos jika ada
           if (row.postal_code) {
             fullAddressHTML += '<br><span class="text-xs text-gray-500">Kode Pos: ' + row.postal_code + '</span>';
           }
@@ -986,39 +1002,41 @@ include("../includes/koneksi.php");
           tbody.appendChild(tr);
         });
 
-        // Update info
         document.getElementById('showingCount').textContent = limitedData.length;
         document.getElementById('totalLocationCount').textContent = allLocationsData.length;
-
       } else {
         tbody.innerHTML = `
-          <tr>
-      <td colspan="5" class="text-center text-gray-500 py-8">
-        <svg class="w-16 h-16 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-        <p class="font-semibold">Tidak ada data lokasi untuk hari ini</p>
-        <p class="text-sm text-gray-400 mt-1">Total data diterima: ${allLocationsData.length}</p>
-        <button onclick="debugLoadRecap()" class="mt-3 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600">
-          🔍 Debug API
-        </button>
-      </td>
-    </tr>
-
+      <tr>
+        <td colspan="5" class="text-center text-gray-500 py-8">
+          <svg class="w-16 h-16 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <p class="font-semibold">Tidak ada data lokasi untuk hari ini</p>
+        </td>
+      </tr>
     `;
-
         document.getElementById('showingCount').textContent = 0;
         document.getElementById('totalLocationCount').textContent = 0;
       }
     }
 
-    // Enhanced Frequency Table dengan alamat detail
+
+    // ==================== FREQUENCY TABLE ====================
     function updateFrequencyTable(frequency) {
+      console.log('📊 Updating frequency table with', frequency.length, 'entries');
+      allFrequencyData = frequency || [];
+      renderFrequencyTable();
+    }
+
+    function renderFrequencyTable() {
       const tbody = document.getElementById("freqTable");
+      const limit = parseInt(document.getElementById("frequencyLimit").value);
+      const limitedData = allFrequencyData.slice(0, limit);
+
       tbody.innerHTML = "";
 
-      if (frequency && frequency.length > 0) {
-        frequency.forEach((row) => {
+      if (limitedData.length > 0) {
+        limitedData.forEach((row) => {
           const tr = document.createElement("tr");
           const flag = getCountryFlag(row.country.substring(0, 2));
 
@@ -1027,9 +1045,7 @@ include("../includes/koneksi.php");
         <td><code class="bg-gray-100 px-2 py-1 rounded">${row.ip}</code></td>
         <td>
           <span class="country-flag">${flag}</span>
-          <div class="text-sm">
-            ${row.full_location || row.city + ', ' + row.country}
-          </div>
+          <div class="text-sm">${row.full_location || row.city + ', ' + row.country}</div>
         </td>
         <td><code class="bg-gray-100 px-2 py-1 rounded text-xs">${row.timezone}</code></td>
         <td>${row.device}</td>
@@ -1037,18 +1053,32 @@ include("../includes/koneksi.php");
       `;
           tbody.appendChild(tr);
         });
+
+        document.getElementById('freqShowingCount').textContent = limitedData.length;
+        document.getElementById('freqTotalCount').textContent = allFrequencyData.length;
       } else {
         tbody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">Tidak ada data</td></tr>';
+        document.getElementById('freqShowingCount').textContent = 0;
+        document.getElementById('freqTotalCount').textContent = 0;
       }
     }
 
-    // Enhanced Activity Table dengan alamat detail
+    // ==================== ACTIVITY TABLE ====================
     function updateActivityTable(activity) {
+      console.log('📋 Updating activity table with', activity.length, 'entries');
+      allActivityData = activity || [];
+      renderActivityTable();
+    }
+
+    function renderActivityTable() {
       const tbody = document.getElementById("activityTable");
+      const limit = parseInt(document.getElementById("activityLimit").value);
+      const limitedData = allActivityData.slice(0, limit);
+
       tbody.innerHTML = "";
 
-      if (activity && activity.length > 0) {
-        activity.forEach((row) => {
+      if (limitedData.length > 0) {
+        limitedData.forEach((row) => {
           const tr = document.createElement("tr");
           const flag = getCountryFlag(row.country.substring(0, 2));
 
@@ -1057,17 +1087,20 @@ include("../includes/koneksi.php");
         <td><code class="bg-gray-100 px-2 py-1 rounded">${row.ip}</code></td>
         <td>
           <span class="country-flag">${flag}</span>
-          <div class="text-sm">
-            ${row.full_location || row.city + ', ' + row.country}
-          </div>
+          <div class="text-sm">${row.full_location || row.city + ', ' + row.country}</div>
         </td>
         <td><code class="bg-gray-100 px-2 py-1 rounded text-xs">${row.timezone}</code></td>
         <td>${row.device}</td>
       `;
           tbody.appendChild(tr);
         });
+
+        document.getElementById('activityShowingCount').textContent = limitedData.length;
+        document.getElementById('activityTotalCount').textContent = allActivityData.length;
       } else {
         tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Tidak ada data</td></tr>';
+        document.getElementById('activityShowingCount').textContent = 0;
+        document.getElementById('activityTotalCount').textContent = 0;
       }
     }
 
