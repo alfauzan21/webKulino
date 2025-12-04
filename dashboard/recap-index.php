@@ -127,6 +127,27 @@ include("../includes/koneksi.php");
       overflow-x: auto;
       border-radius: 0.75rem;
       border: 1px solid #e5e7eb;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+
+    .table-wrapper::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb {
+      background: #667eea;
+      border-radius: 10px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb:hover {
+      background: #764ba2;
     }
 
     table {
@@ -136,6 +157,9 @@ include("../includes/koneksi.php");
 
     thead {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
 
     thead th {
@@ -150,39 +174,19 @@ include("../includes/koneksi.php");
 
     tbody tr {
       border-bottom: 1px solid #e5e7eb;
-      transition: background-color 0.2s ease;
+      transition: all 0.2s ease;
+      animation: fadeIn 0.3s ease;
     }
 
     tbody tr:hover {
-      background-color: #f9fafb;
+      background-color: #f8f9ff;
+      transform: scale(1.01);
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
     }
 
     tbody td {
       padding: 1rem;
       font-size: 0.875rem;
-      color: #374151;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 0.25rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-
-    .badge-high {
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .badge-medium {
-      background: #dbeafe;
-      color: #1e40af;
-    }
-
-    .badge-low {
-      background: #e5e7eb;
       color: #374151;
     }
 
@@ -258,6 +262,20 @@ include("../includes/koneksi.php");
       margin-right: 0.5rem;
     }
 
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .pagination-info {
+      color: #6b7280;
+      font-size: 0.875rem;
+    }
+
     @media (max-width: 768px) {
       .stats-card .value {
         font-size: 2rem;
@@ -288,6 +306,23 @@ include("../includes/koneksi.php");
       .filter-item input {
         width: 100%;
       }
+
+      .pagination-controls {
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     @keyframes pulse {
@@ -304,58 +339,6 @@ include("../includes/koneksi.php");
 
     .loading {
       animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-
-    /* Additional styles for enhanced location table */
-    .table-wrapper {
-      max-height: 600px;
-      overflow-y: auto;
-    }
-
-    .table-wrapper::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    .table-wrapper::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 10px;
-    }
-
-    .table-wrapper::-webkit-scrollbar-thumb {
-      background: #667eea;
-      border-radius: 10px;
-    }
-
-    .table-wrapper::-webkit-scrollbar-thumb:hover {
-      background: #764ba2;
-    }
-
-    /* Hover effect for table rows */
-    tbody tr {
-      transition: all 0.2s ease;
-    }
-
-    tbody tr:hover {
-      background-color: #f8f9ff;
-      transform: scale(1.01);
-      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
-    }
-
-    /* Loading animation */
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    tbody tr {
-      animation: fadeIn 0.3s ease;
     }
   </style>
 </head>
@@ -470,7 +453,6 @@ include("../includes/koneksi.php");
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-bold text-gray-900">📍 Lokasi Pengunjung Hari Ini</h2>
 
-        <!-- Limit Filter -->
         <div class="flex items-center gap-3">
           <label for="locationLimit" class="text-sm font-semibold text-gray-700">Show:</label>
           <select id="locationLimit"
@@ -529,21 +511,29 @@ include("../includes/koneksi.php");
         </table>
       </div>
 
-      <!-- Pagination Info -->
-      <div class="mt-4 flex items-center justify-between text-sm text-gray-600">
-        <div id="locationInfo">
+      <div class="pagination-controls">
+        <div class="pagination-info">
           Showing <span id="showingCount">0</span> of <span id="totalLocationCount">0</span> locations
         </div>
-        <div id="locationPagination" class="flex gap-2">
-          <!-- Pagination buttons will be added here if needed -->
-        </div>
       </div>
-
     </section>
 
     <!-- Frequency Table -->
     <section class="table-container mb-8">
-      <h2 class="text-lg font-bold text-gray-900 mb-4">🔄 Frekuensi Kunjungan (7 Hari Terakhir)</h2>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-gray-900">🔄 Frekuensi Kunjungan (7 Hari Terakhir)</h2>
+        <div class="flex items-center gap-3">
+          <label for="frequencyLimit" class="text-sm font-semibold text-gray-700">Show:</label>
+          <select id="frequencyLimit"
+            class="border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-600 transition">
+            <option value="10" selected>10 entries</option>
+            <option value="20">20 entries</option>
+            <option value="50">50 entries</option>
+            <option value="100">100 entries</option>
+          </select>
+        </div>
+      </div>
+
       <div class="table-wrapper">
         <table>
           <thead>
@@ -563,11 +553,30 @@ include("../includes/koneksi.php");
           </tbody>
         </table>
       </div>
+
+      <div class="pagination-controls">
+        <div class="pagination-info">
+          Showing <span id="freqShowingCount">0</span> of <span id="freqTotalCount">0</span> entries
+        </div>
+      </div>
     </section>
 
     <!-- Activity Log -->
     <section class="table-container">
-      <h2 class="text-lg font-bold text-gray-900 mb-4">📋 Log Aktivitas</h2>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-gray-900">📋 Log Aktivitas</h2>
+        <div class="flex items-center gap-3">
+          <label for="activityLimit" class="text-sm font-semibold text-gray-700">Show:</label>
+          <select id="activityLimit"
+            class="border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-600 transition">
+            <option value="10" selected>10 entries</option>
+            <option value="20">20 entries</option>
+            <option value="50">50 entries</option>
+            <option value="100">100 entries</option>
+          </select>
+        </div>
+      </div>
+
       <div class="table-wrapper">
         <table>
           <thead>
@@ -586,6 +595,12 @@ include("../includes/koneksi.php");
           </tbody>
         </table>
       </div>
+
+      <div class="pagination-controls">
+        <div class="pagination-info">
+          Showing <span id="activityShowingCount">0</span> of <span id="activityTotalCount">0</span> entries
+        </div>
+      </div>
     </section>
 
   </main>
@@ -596,44 +611,14 @@ include("../includes/koneksi.php");
 
   <!-- JavaScript -->
   <script>
-    // Debug: Log raw response dari API
-    async function debugLoadRecap() {
-      try {
-        const response = await fetch('track.php', {
-          method: 'GET',
-          credentials: 'same-origin',
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-
-        const data = await response.json();
-        console.log('🔍 DEBUG - Full API Response:', data);
-        console.log('📍 DEBUG - Locations Data:', data.locations);
-        console.log('📊 DEBUG - Locations Count:', data.locations?.length || 0);
-
-        // Check if locations is empty
-        if (!data.locations || data.locations.length === 0) {
-          console.warn('⚠️ No location data returned from API');
-          console.log('💡 Check database: SELECT * FROM visitors WHERE DATE(visited_at) = CURDATE()');
-        }
-
-        return data;
-      } catch (error) {
-        console.error('❌ Debug API Error:', error);
-      }
-    }
-
-    // Run debug on page load
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        debugLoadRecap();
-      }, 2000);
-    });
-
+    // ==================== GLOBAL STATE ====================
     let weeklyChartInstance = null;
     let countryChartInstance = null;
     let browserChartInstance = null;
+
+    let allLocationsData = [];
+    let allFrequencyData = [];
+    let allActivityData = [];
 
     const countryFlags = {
       'ID': '🇮🇩',
@@ -650,12 +635,7 @@ include("../includes/koneksi.php");
       'AU': '🇦🇺',
       'GB': '🇬🇧',
       'DE': '🇩🇪',
-      'FR': '🇫🇷',
-      'NL': '🇳🇱',
-      'BR': '🇧🇷',
-      'IT': '🇮🇹',
-      'ES': '🇪🇸',
-      'CA': '🇨🇦'
+      'FR': '🇫🇷'
     };
 
     function getCountryFlag(countryCode) {
@@ -663,11 +643,35 @@ include("../includes/koneksi.php");
     }
 
     function getVisitBadge(count) {
-      if (count >= 10) return '<span class="badge badge-high">' + count + ' kunjungan</span>';
-      if (count >= 5) return '<span class="badge badge-medium">' + count + ' kunjungan</span>';
-      return '<span class="badge badge-low">' + count + ' kunjungan</span>';
+      let badgeClass = '';
+      let icon = '';
+
+      if (count >= 50) {
+        badgeClass = 'bg-gradient-to-r from-red-500 to-pink-500 text-white';
+        icon = '🔥';
+      } else if (count >= 20) {
+        badgeClass = 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white';
+        icon = '⚡';
+      } else if (count >= 10) {
+        badgeClass = 'bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900';
+        icon = '⭐';
+      } else if (count >= 5) {
+        badgeClass = 'bg-gradient-to-r from-blue-400 to-indigo-500 text-white';
+        icon = '📊';
+      } else {
+        badgeClass = 'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-800';
+        icon = '📍';
+      }
+
+      return `
+        <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow-lg ${badgeClass}">
+          <span>${icon}</span>
+          <span>${count} visit${count > 1 ? 's' : ''}</span>
+        </span>
+      `;
     }
 
+    // ==================== LOAD DATA ====================
     async function loadRecap(date = "", timezone = "Asia/Jakarta") {
       const statusDiv = document.getElementById('connectionStatus');
       const statusMsg = document.getElementById('statusMessage');
@@ -691,10 +695,6 @@ include("../includes/koneksi.php");
         const data = await res.json();
         console.log('✅ Data received:', data);
 
-        // 🔍 DEBUG LOCATIONS
-        console.log('📍 Locations array:', data.locations);
-        console.log('📍 Locations length:', data.locations?.length || 0);
-
         if (data.error) throw new Error(data.error);
 
         statusDiv.classList.add('hidden');
@@ -704,7 +704,6 @@ include("../includes/koneksi.php");
         document.getElementById("totalUnique").innerText = data.unique || 0;
         document.getElementById("activeVisitor").innerText = data.active || 0;
 
-        // Update timezone display
         if (data.display_timezone) {
           document.getElementById("currentTimezone").innerText = data.display_timezone;
         }
@@ -713,10 +712,7 @@ include("../includes/koneksi.php");
         updateCountryChart(data.country_labels || [], data.country_data || []);
         updateBrowserChart(data.browsers || []);
 
-        // 🔍 CRITICAL: Make sure this is called
-        console.log('🔄 Calling updateLocationTable with:', data.locations?.length || 0, 'items');
         updateLocationTable(data.locations || []);
-
         updateFrequencyTable(data.frequency || []);
         updateActivityTable(data.activity || []);
 
@@ -731,32 +727,7 @@ include("../includes/koneksi.php");
       }
     }
 
-    // ==================== EVENT LISTENERS ====================
-    document.addEventListener('DOMContentLoaded', () => {
-      // Set date filter ke hari ini
-      const dateFilter = document.getElementById('dateFilter');
-      const today = new Date().toISOString().split('T')[0];
-      dateFilter.value = today;
-
-      // Event listeners untuk filter
-      document.getElementById('timezoneFilter').addEventListener('change', function() {
-        loadRecap(dateFilter.value, this.value);
-      });
-
-      dateFilter.addEventListener('change', function() {
-        const tz = document.getElementById('timezoneFilter').value;
-        loadRecap(this.value, tz);
-      });
-
-      // Event listeners untuk pagination
-      document.getElementById('locationLimit').addEventListener('change', renderLocationTable);
-      document.getElementById('frequencyLimit').addEventListener('change', renderFrequencyTable);
-      document.getElementById('activityLimit').addEventListener('change', renderActivityTable);
-
-      // Initial load
-      loadRecap(today, 'Asia/Jakarta');
-    });
-
+    // ==================== CHARTS ====================
     function updateWeeklyChart(labels, data) {
       const ctx = document.getElementById("weeklyChart").getContext("2d");
       if (weeklyChartInstance) weeklyChartInstance.destroy();
@@ -803,8 +774,9 @@ include("../includes/koneksi.php");
               }
             },
             x: {
-              grid: {
-                display: false
+              grid: // Lanjutan dari updateWeeklyChart - letakkan setelah x: { grid:
+              {
+                color: 'rgba(0, 0, 0, 0.05)'
               }
             }
           }
@@ -817,11 +789,16 @@ include("../includes/koneksi.php");
       if (countryChartInstance) countryChartInstance.destroy();
 
       const colors = [
-        'rgba(102, 126, 234, 0.8)', 'rgba(16, 185, 129, 0.8)',
-        'rgba(244, 63, 94, 0.8)', 'rgba(251, 146, 60, 0.8)',
-        'rgba(139, 92, 246, 0.8)', 'rgba(236, 72, 153, 0.8)',
-        'rgba(14, 165, 233, 0.8)', 'rgba(245, 158, 11, 0.8)',
-        'rgba(34, 197, 94, 0.8)', 'rgba(168, 85, 247, 0.8)'
+        'rgba(102, 126, 234, 0.8)',
+        'rgba(16, 185, 129, 0.8)',
+        'rgba(244, 63, 94, 0.8)',
+        'rgba(251, 191, 36, 0.8)',
+        'rgba(147, 51, 234, 0.8)',
+        'rgba(59, 130, 246, 0.8)',
+        'rgba(236, 72, 153, 0.8)',
+        'rgba(34, 197, 94, 0.8)',
+        'rgba(249, 115, 22, 0.8)',
+        'rgba(168, 85, 247, 0.8)'
       ];
 
       countryChartInstance = new Chart(ctx, {
@@ -829,9 +806,9 @@ include("../includes/koneksi.php");
         data: {
           labels: labels,
           datasets: [{
-            label: "Kunjungan",
+            label: "Visitors",
             data: data,
-            backgroundColor: colors.slice(0, labels.length),
+            backgroundColor: colors,
             borderColor: colors.map(c => c.replace('0.8', '1')),
             borderWidth: 2,
             borderRadius: 8
@@ -839,6 +816,7 @@ include("../includes/koneksi.php");
         },
         options: {
           responsive: true,
+          maintainAspectRatio: true,
           plugins: {
             legend: {
               display: false
@@ -873,8 +851,21 @@ include("../includes/koneksi.php");
       const ctx = document.getElementById("browserChart").getContext("2d");
       if (browserChartInstance) browserChartInstance.destroy();
 
-      const labels = browsers.map(b => b.device);
-      const data = browsers.map(b => b.total);
+      const labels = browsers.map(b => b.label || 'Unknown');
+      const data = browsers.map(b => b.count || 0);
+
+      const colors = [
+        'rgba(102, 126, 234, 0.8)',
+        'rgba(16, 185, 129, 0.8)',
+        'rgba(244, 63, 94, 0.8)',
+        'rgba(251, 191, 36, 0.8)',
+        'rgba(147, 51, 234, 0.8)',
+        'rgba(59, 130, 246, 0.8)',
+        'rgba(236, 72, 153, 0.8)',
+        'rgba(34, 197, 94, 0.8)',
+        'rgba(249, 115, 22, 0.8)',
+        'rgba(168, 85, 247, 0.8)'
+      ];
 
       browserChartInstance = new Chart(ctx, {
         type: "doughnut",
@@ -882,21 +873,23 @@ include("../includes/koneksi.php");
           labels: labels,
           datasets: [{
             data: data,
-            backgroundColor: [
-              'rgba(102, 126, 234, 0.8)', 'rgba(16, 185, 129, 0.8)',
-              'rgba(244, 63, 94, 0.8)', 'rgba(251, 146, 60, 0.8)',
-              'rgba(139, 92, 246, 0.8)', 'rgba(236, 72, 153, 0.8)',
-              'rgba(14, 165, 233, 0.8)', 'rgba(245, 158, 11, 0.8)',
-              'rgba(34, 197, 94, 0.8)', 'rgba(168, 85, 247, 0.8)'
-            ],
-            borderWidth: 2
+            backgroundColor: colors,
+            borderColor: '#fff',
+            borderWidth: 3
           }]
         },
         options: {
           responsive: true,
+          maintainAspectRatio: true,
           plugins: {
             legend: {
-              position: 'right'
+              position: 'right',
+              labels: {
+                padding: 15,
+                font: {
+                  size: 12
+                }
+              }
             },
             tooltip: {
               backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -908,241 +901,198 @@ include("../includes/koneksi.php");
       });
     }
 
-    // ==================== LOCATION TABLE ====================
+    // ==================== TABLES ====================
     function updateLocationTable(locations) {
-      console.log('📍 Updating location table with', locations.length, 'entries');
-      allLocationsData = locations || [];
+      allLocationsData = locations;
+      const limit = parseInt(document.getElementById('locationLimit').value);
+      const tbody = document.getElementById('locationTable');
+      const displayData = locations.slice(0, limit);
 
-      // Update statistics
-      const uniqueCountries = [...new Set(allLocationsData.map(loc => loc.country))].length;
-      const uniqueCities = [...new Set(allLocationsData.map(loc => loc.city))].length;
-      const uniqueTimezones = [...new Set(allLocationsData.map(loc => loc.timezone))].length;
+      if (locations.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-8">Tidak ada data lokasi</td></tr>';
+        updateLocationStats(0, 0, 0, 0);
+        document.getElementById('showingCount').textContent = '0';
+        document.getElementById('totalLocationCount').textContent = '0';
+        return;
+      }
 
-      document.getElementById('totalLocations').textContent = allLocationsData.length;
-      document.getElementById('totalCountries').textContent = uniqueCountries;
-      document.getElementById('totalCities').textContent = uniqueCities;
-      document.getElementById('totalTimezones').textContent = uniqueTimezones;
+      // Calculate statistics
+      const uniqueCountries = new Set(locations.map(loc => loc.country)).size;
+      const uniqueCities = new Set(locations.map(loc => loc.city)).size;
+      const uniqueTimezones = new Set(locations.map(loc => loc.timezone)).size;
 
-      renderLocationTable();
+      updateLocationStats(locations.length, uniqueCountries, uniqueCities, uniqueTimezones);
+
+      tbody.innerHTML = displayData.map((loc, idx) => `
+      <tr>
+        <td class="text-center">${idx + 1}</td>
+        <td>
+          <div class="flex items-center gap-2">
+            <span class="country-flag">${getCountryFlag(loc.country_code)}</span>
+            <span class="font-semibold">${loc.country || 'Unknown'}</span>
+          </div>
+        </td>
+        <td>
+          <div class="text-sm">
+            <div class="font-medium text-gray-900">${loc.city || 'Unknown'}</div>
+            <div class="text-gray-500">${loc.region || ''}</div>
+          </div>
+        </td>
+        <td>
+          <span class="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-xs font-semibold">
+            ${loc.timezone || 'Unknown'}
+          </span>
+        </td>
+        <td class="text-center">${getVisitBadge(loc.visit_count)}</td>
+      </tr>
+    `).join('');
+
+      document.getElementById('showingCount').textContent = displayData.length;
+      document.getElementById('totalLocationCount').textContent = locations.length;
     }
 
-    function renderLocationTable() {
-      const tbody = document.getElementById("locationTable");
-      const limit = parseInt(document.getElementById("locationLimit").value);
-      const limitedData = allLocationsData.slice(0, limit);
+    function updateLocationStats(total, countries, cities, timezones) {
+      document.getElementById('totalLocations').textContent = total;
+      document.getElementById('totalCountries').textContent = countries;
+      document.getElementById('totalCities').textContent = cities;
+      document.getElementById('totalTimezones').textContent = timezones;
+    }
 
-      tbody.innerHTML = "";
+    function updateFrequencyTable(frequency) {
+      allFrequencyData = frequency;
+      const limit = parseInt(document.getElementById('frequencyLimit').value);
+      const tbody = document.getElementById('freqTable');
+      const displayData = frequency.slice(0, limit);
 
-      if (limitedData.length > 0) {
-        limitedData.forEach((row, index) => {
-          const tr = document.createElement("tr");
-          const flag = getCountryFlag(row.country_code);
+      if (frequency.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500 py-8">Tidak ada data frekuensi</td></tr>';
+        document.getElementById('freqShowingCount').textContent = '0';
+        document.getElementById('freqTotalCount').textContent = '0';
+        return;
+      }
 
-          // Format alamat lengkap
-          let fullAddressHTML = '';
-
-          if (row.street || row.house_number) {
-            fullAddressHTML += '<strong class="text-gray-800">';
-            if (row.house_number) fullAddressHTML += row.house_number + ' ';
-            if (row.street) fullAddressHTML += row.street;
-            fullAddressHTML += '</strong><br>';
-          }
-
-          if (row.subdistrict) {
-            fullAddressHTML += '<span class="text-sm text-gray-600">Kel. ' + row.subdistrict + '</span><br>';
-          }
-
-          if (row.district) {
-            fullAddressHTML += '<span class="text-sm text-gray-600">Kec. ' + row.district + '</span><br>';
-          }
-
-          fullAddressHTML += '<span class="text-gray-700">' + row.city;
-          if (row.region && row.region !== 'Unknown') {
-            fullAddressHTML += ', ' + row.region;
-          }
-          fullAddressHTML += '</span>';
-
-          if (row.postal_code) {
-            fullAddressHTML += '<br><span class="text-xs text-gray-500">Kode Pos: ' + row.postal_code + '</span>';
-          }
-
-          tr.innerHTML = `
-        <td class="font-semibold text-gray-700">${index + 1}</td>
-        <td>
-          <div class="flex items-center gap-3">
-            <span class="country-flag text-3xl">${flag}</span>
-            <div>
-              <strong class="text-gray-800">${row.country}</strong>
-              <p class="text-xs text-gray-500">${row.country_code}</p>
-            </div>
-          </div>
-        </td>
-        <td>
-          <div class="flex items-start gap-2">
-            <svg class="w-4 h-4 text-gray-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
-            <div class="text-left">
-              ${fullAddressHTML || '<span class="text-gray-500 italic">Alamat tidak tersedia</span>'}
-            </div>
-          </div>
-        </td>
-        <td>
-          <code class="bg-gradient-to-r from-blue-50 to-indigo-50 px-3 py-2 rounded-lg text-xs font-semibold text-blue-700 border border-blue-200">
-            ${row.timezone}
-          </code>
-        </td>
-        <td>
-          <div class="flex items-center justify-center">
-            ${getVisitBadge(row.total)}
-          </div>
-        </td>
-      `;
-          tbody.appendChild(tr);
-        });
-
-        document.getElementById('showingCount').textContent = limitedData.length;
-        document.getElementById('totalLocationCount').textContent = allLocationsData.length;
-      } else {
-        tbody.innerHTML = `
+      tbody.innerHTML = displayData.map(item => `
       <tr>
-        <td colspan="5" class="text-center text-gray-500 py-8">
-          <svg class="w-16 h-16 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-          <p class="font-semibold">Tidak ada data lokasi untuk hari ini</p>
+        <td>${item.date || '-'}</td>
+        <td class="font-mono text-sm">${item.ip || '-'}</td>
+        <td>
+          <div class="flex items-center gap-2">
+            <span class="country-flag">${getCountryFlag(item.country_code)}</span>
+            <div class="text-sm">
+              <div class="font-medium">${item.city || 'Unknown'}</div>
+              <div class="text-gray-500">${item.country || ''}</div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <span class="inline-block px-3 py-1 bg-purple-100 text-purple-800 rounded-lg text-xs font-semibold">
+            ${item.timezone || 'Unknown'}
+          </span>
+        </td>
+        <td>
+          <div class="text-sm">
+            <div class="font-medium">${item.device || 'Unknown'}</div>
+            <div class="text-gray-500">${item.browser || 'Unknown'}</div>
+          </div>
+        </td>
+        <td class="text-center">
+          <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
+            <span>🔢</span>
+            <span>${item.count} visits</span>
+          </span>
         </td>
       </tr>
-    `;
-        document.getElementById('showingCount').textContent = 0;
-        document.getElementById('totalLocationCount').textContent = 0;
-      }
+    `).join('');
+
+      document.getElementById('freqShowingCount').textContent = displayData.length;
+      document.getElementById('freqTotalCount').textContent = frequency.length;
     }
 
-
-    // ==================== FREQUENCY TABLE ====================
-    function updateFrequencyTable(frequency) {
-      console.log('📊 Updating frequency table with', frequency.length, 'entries');
-      allFrequencyData = frequency || [];
-      renderFrequencyTable();
-    }
-
-    function renderFrequencyTable() {
-      const tbody = document.getElementById("freqTable");
-      const limit = parseInt(document.getElementById("frequencyLimit").value);
-      const limitedData = allFrequencyData.slice(0, limit);
-
-      tbody.innerHTML = "";
-
-      if (limitedData.length > 0) {
-        limitedData.forEach((row) => {
-          const tr = document.createElement("tr");
-          const flag = getCountryFlag(row.country.substring(0, 2));
-
-          tr.innerHTML = `
-        <td>${row.date}</td>
-        <td><code class="bg-gray-100 px-2 py-1 rounded">${row.ip}</code></td>
-        <td>
-          <span class="country-flag">${flag}</span>
-          <div class="text-sm">${row.full_location || row.city + ', ' + row.country}</div>
-        </td>
-        <td><code class="bg-gray-100 px-2 py-1 rounded text-xs">${row.timezone}</code></td>
-        <td>${row.device}</td>
-        <td>${getVisitBadge(row.visits)}</td>
-      `;
-          tbody.appendChild(tr);
-        });
-
-        document.getElementById('freqShowingCount').textContent = limitedData.length;
-        document.getElementById('freqTotalCount').textContent = allFrequencyData.length;
-      } else {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">Tidak ada data</td></tr>';
-        document.getElementById('freqShowingCount').textContent = 0;
-        document.getElementById('freqTotalCount').textContent = 0;
-      }
-    }
-
-    // ==================== ACTIVITY TABLE ====================
     function updateActivityTable(activity) {
-      console.log('📋 Updating activity table with', activity.length, 'entries');
-      allActivityData = activity || [];
-      renderActivityTable();
-    }
+      allActivityData = activity;
+      const limit = parseInt(document.getElementById('activityLimit').value);
+      const tbody = document.getElementById('activityTable');
+      const displayData = activity.slice(0, limit);
 
-    function renderActivityTable() {
-      const tbody = document.getElementById("activityTable");
-      const limit = parseInt(document.getElementById("activityLimit").value);
-      const limitedData = allActivityData.slice(0, limit);
+      if (activity.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-8">Tidak ada aktivitas terbaru</td></tr>';
+        document.getElementById('activityShowingCount').textContent = '0';
+        document.getElementById('activityTotalCount').textContent = '0';
+        return;
+      }
 
-      tbody.innerHTML = "";
-
-      if (limitedData.length > 0) {
-        limitedData.forEach((row) => {
-          const tr = document.createElement("tr");
-          const flag = getCountryFlag(row.country.substring(0, 2));
-
-          tr.innerHTML = `
-        <td><strong>${row.time}</strong></td>
-        <td><code class="bg-gray-100 px-2 py-1 rounded">${row.ip}</code></td>
+      tbody.innerHTML = displayData.map(item => `
+      <tr>
+        <td class="font-medium">${item.time || '-'}</td>
+        <td class="font-mono text-sm">${item.ip || '-'}</td>
         <td>
-          <span class="country-flag">${flag}</span>
-          <div class="text-sm">${row.full_location || row.city + ', ' + row.country}</div>
+          <div class="flex items-center gap-2">
+            <span class="country-flag">${getCountryFlag(item.country_code)}</span>
+            <div class="text-sm">
+              <div class="font-medium">${item.city || 'Unknown'}</div>
+              <div class="text-gray-500">${item.country || ''}</div>
+            </div>
+          </div>
         </td>
-        <td><code class="bg-gray-100 px-2 py-1 rounded text-xs">${row.timezone}</code></td>
-        <td>${row.device}</td>
-      `;
-          tbody.appendChild(tr);
-        });
+        <td>
+          <span class="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-lg text-xs font-semibold">
+            ${item.timezone || 'Unknown'}
+          </span>
+        </td>
+        <td>
+          <div class="text-sm">
+            <div class="font-medium">${item.device || 'Unknown'}</div>
+            <div class="text-gray-500">${item.browser || 'Unknown'}</div>
+          </div>
+        </td>
+      </tr>
+    `).join('');
 
-        document.getElementById('activityShowingCount').textContent = limitedData.length;
-        document.getElementById('activityTotalCount').textContent = allActivityData.length;
-      } else {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Tidak ada data</td></tr>';
-        document.getElementById('activityShowingCount').textContent = 0;
-        document.getElementById('activityTotalCount').textContent = 0;
-      }
+      document.getElementById('activityShowingCount').textContent = displayData.length;
+      document.getElementById('activityTotalCount').textContent = activity.length;
     }
 
-    // Enhanced visit badge with gradient
-    function getVisitBadge(count) {
-      let badgeClass = '';
-      let icon = '';
-
-      if (count >= 50) {
-        badgeClass = 'bg-gradient-to-r from-red-500 to-pink-500 text-white';
-        icon = '🔥';
-      } else if (count >= 20) {
-        badgeClass = 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white';
-        icon = '⚡';
-      } else if (count >= 10) {
-        badgeClass = 'bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900';
-        icon = '⭐';
-      } else if (count >= 5) {
-        badgeClass = 'bg-gradient-to-r from-blue-400 to-indigo-500 text-white';
-        icon = '📊';
-      } else {
-        badgeClass = 'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-800';
-        icon = '📍';
-      }
-
-      return `
-    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow-lg ${badgeClass}">
-      <span>${icon}</span>
-      <span>${count} visit${count > 1 ? 's' : ''}</span>
-    </span>
-  `;
-    }
-
-    // Event listener for limit change
-    document.getElementById('locationLimit').addEventListener('change', function() {
-      console.log('📊 Limit changed to:', this.value);
-      renderLocationTable();
+    // ==================== EVENT LISTENERS ====================
+    document.getElementById('timezoneFilter').addEventListener('change', function() {
+      const tz = this.value;
+      const date = document.getElementById('dateFilter').value;
+      loadRecap(date, tz);
     });
 
-    // Update fungsi loadRecap untuk memanggil updateLocationTable
-    // Tambahkan di bagian response handling:
-    // updateLocationTable(data.locations || []);
+    document.getElementById('dateFilter').addEventListener('change', function() {
+      const date = this.value;
+      const tz = document.getElementById('timezoneFilter').value;
+      loadRecap(date, tz);
+    });
+
+    document.getElementById('locationLimit').addEventListener('change', function() {
+      updateLocationTable(allLocationsData);
+    });
+
+    document.getElementById('frequencyLimit').addEventListener('change', function() {
+      updateFrequencyTable(allFrequencyData);
+    });
+
+    document.getElementById('activityLimit').addEventListener('change', function() {
+      updateActivityTable(allActivityData);
+    });
+
+    // ==================== INIT ====================
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set default date to today
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('dateFilter').value = today;
+
+      // Load initial data
+      loadRecap(today, 'Asia/Jakarta');
+
+      // Auto refresh every 30 seconds
+      setInterval(() => {
+        const date = document.getElementById('dateFilter').value;
+        const tz = document.getElementById('timezoneFilter').value;
+        loadRecap(date, tz);
+      }, 30000);
+    });
   </script>
 </body>
 
