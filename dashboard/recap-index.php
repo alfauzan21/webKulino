@@ -20,6 +20,8 @@ include("../includes/koneksi.php");
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- SheetJS for Excel Export -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
   <style>
     * {
@@ -276,6 +278,38 @@ include("../includes/koneksi.php");
       font-size: 0.875rem;
     }
 
+    /* Download Button Style */
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.75rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-download:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .btn-download:active {
+      transform: translateY(0);
+    }
+
+    .btn-download svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
     @media (max-width: 768px) {
       .stats-card .value {
         font-size: 2rem;
@@ -345,26 +379,54 @@ include("../includes/koneksi.php");
 
 <body>
   <!-- Header -->
-  <header class="sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="white" class="w-6 h-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-          </svg>
-        </div>
-        <div>
-          <h1 class="text-xl font-bold text-gray-900">Dashboard Recap Visitor</h1>
-          <p class="text-sm text-gray-600">Real-time Analytics with Timezone</p>
+  <header id="mainHeader" class="sticky top-0 z-40">
+    <div class="bg-white/95 backdrop-blur-xl shadow-lg border-b border-gray-200/80">
+      <div class="max-w-7xl mx-auto px-4 py-3">
+        <div class="flex items-center justify-between">
+
+          <!-- Logo & Title -->
+          <div class="flex items-center gap-3">
+            <div class="relative w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 p-2.5 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+              <img
+                src="../assets/icon/kulino-logo-blue.png"
+                alt="Kulino Logo"
+                class="w-full h-full object-contain drop-shadow-lg" />
+            </div>
+
+            <div class="flex flex-col">
+              <h1 class="text-lg sm:text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                Dashboard Recap Visitor
+              </h1>
+              <p class="text-xs text-gray-600 font-medium hidden sm:block">
+                Real-time Analytics with Timezone
+              </p>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center gap-2">
+            <!-- Download Report Button -->
+            <button
+              onclick="downloadExcelReport()"
+              class="btn-download"
+              title="Download Excel Report">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span class="hidden sm:inline">Download Report</span>
+              <span class="sm:hidden">Download</span>
+            </button>
+
+            <!-- Back Button -->
+            <a href="index.php" class="group relative overflow-hidden bg-gradient-to-r from-gray-700 to-gray-900 hover:from-gray-800 hover:to-black px-4 py-2.5 rounded-xl transition-all duration-300 inline-flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white transition-transform group-hover:rotate-12" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+              </svg>
+              <span class="hidden lg:inline font-semibold text-white">Kembali</span>
+            </a>
+          </div>
         </div>
       </div>
-
-      <a href="index.php" class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
-        <span class="font-semibold">Kembali</span>
-      </a>
     </div>
   </header>
 
@@ -619,6 +681,7 @@ include("../includes/koneksi.php");
     let allLocationsData = [];
     let allFrequencyData = [];
     let allActivityData = [];
+    let currentReportData = null; // Store current report data for export
 
     const countryFlags = {
       'ID': '🇮🇩',
@@ -671,6 +734,174 @@ include("../includes/koneksi.php");
       `;
     }
 
+    // ==================== EXCEL EXPORT FUNCTION ====================
+    function downloadExcelReport() {
+      if (!currentReportData) {
+        alert('Data belum tersedia. Mohon tunggu data selesai dimuat.');
+        return;
+      }
+
+      try {
+        console.log('📊 Generating Excel Report...');
+
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+
+        // Sheet 1: Summary
+        const summaryData = [
+          ['LAPORAN VISITOR KULINO GAME HUB'],
+          ['Tanggal Laporan:', new Date().toLocaleString('id-ID')],
+          ['Timezone:', currentReportData.display_timezone || 'WIB (UTC+7)'],
+          [''],
+          ['RINGKASAN'],
+          ['Total Kunjungan:', currentReportData.today || 0],
+          ['Unique Visitors:', currentReportData.unique || 0],
+          ['Active Visitors (10 min):', currentReportData.active || 0],
+        ];
+        const ws_summary = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, ws_summary, 'Summary');
+
+        // Sheet 2: Weekly Data
+        if (currentReportData.labels && currentReportData.weekly) {
+          const weeklyData = [
+            ['GRAFIK 7 HARI TERAKHIR'],
+            ['Tanggal', 'Jumlah Visitor']
+          ];
+          currentReportData.labels.forEach((date, index) => {
+            weeklyData.push([date, currentReportData.weekly[index] || 0]);
+          });
+          const ws_weekly = XLSX.utils.aoa_to_sheet(weeklyData);
+          XLSX.utils.book_append_sheet(wb, ws_weekly, 'Grafik 7 Hari');
+        }
+
+        // Sheet 3: Top 10 Countries
+        if (currentReportData.country_labels && currentReportData.country_data) {
+          const countryData = [
+            ['TOP 10 NEGARA (7 HARI TERAKHIR)'],
+            ['Negara', 'Jumlah Visitor']
+          ];
+          currentReportData.country_labels.forEach((country, index) => {
+            countryData.push([country, currentReportData.country_data[index] || 0]);
+          });
+          const ws_country = XLSX.utils.aoa_to_sheet(countryData);
+          XLSX.utils.book_append_sheet(wb, ws_country, 'Top 10 Negara');
+        }
+
+        // Sheet 4: Location Details
+        if (allLocationsData && allLocationsData.length > 0) {
+          const locationData = [
+            ['LOKASI PENGUNJUNG HARI INI'],
+            ['No', 'Negara', 'Kode Negara', 'Kota', 'Region', 'Jalan', 'No. Rumah', 'Timezone', 'Total Kunjungan']
+          ];
+          allLocationsData.forEach((loc, index) => {
+            locationData.push([
+              index + 1,
+              loc.country || 'Unknown',
+              loc.country_code || 'XX',
+              loc.city || 'Unknown',
+              loc.region || '',
+              loc.street || '',
+              loc.house_number || '',
+              loc.timezone || 'Unknown',
+              loc.total || 0
+            ]);
+          });
+          const ws_location = XLSX.utils.aoa_to_sheet(locationData);
+          XLSX.utils.book_append_sheet(wb, ws_location, 'Lokasi Pengunjung');
+        }
+
+        // Sheet 5: Frequency
+        if (allFrequencyData && allFrequencyData.length > 0) {
+          const freqData = [
+            ['FREKUENSI KUNJUNGAN (7 HARI TERAKHIR)'],
+            ['Tanggal', 'IP Address', 'Lokasi', 'Kota', 'Negara', 'Timezone', 'Device & Browser', 'Jumlah Kunjungan']
+          ];
+          allFrequencyData.forEach((item) => {
+            freqData.push([
+              item.date || '-',
+              item.ip || '-',
+              item.full_location || 'Unknown',
+              item.city || 'Unknown',
+              item.country || 'Unknown',
+              item.timezone || 'Unknown',
+              item.device || 'Unknown',
+              item.visits || 0
+            ]);
+          });
+          const ws_freq = XLSX.utils.aoa_to_sheet(freqData);
+          XLSX.utils.book_append_sheet(wb, ws_freq, 'Frekuensi');
+        }
+
+        // Sheet 6: Activity Log
+        if (allActivityData && allActivityData.length > 0) {
+          const activityData = [
+            ['LOG AKTIVITAS HARI INI'],
+            ['Waktu', 'IP Address', 'Lokasi', 'Kota', 'Negara', 'Timezone', 'Device & Browser']
+          ];
+          allActivityData.forEach((item) => {
+            activityData.push([
+              item.time || '-',
+              item.ip || '-',
+              item.full_location || 'Unknown',
+              item.city || 'Unknown',
+              item.country || 'Unknown',
+              item.timezone || 'Unknown',
+              item.device || 'Unknown'
+            ]);
+          });
+          const ws_activity = XLSX.utils.aoa_to_sheet(activityData);
+          XLSX.utils.book_append_sheet(wb, ws_activity, 'Log Aktivitas');
+        }
+
+        // Sheet 7: Browser Stats
+        if (currentReportData.browsers && currentReportData.browsers.length > 0) {
+          const browserData = [
+            ['TOP 10 BROWSER & DEVICE (7 HARI TERAKHIR)'],
+            ['Device & Browser', 'Jumlah']
+          ];
+          currentReportData.browsers.forEach((item) => {
+            browserData.push([item.device || 'Unknown', item.total || 0]);
+          });
+          const ws_browser = XLSX.utils.aoa_to_sheet(browserData);
+          XLSX.utils.book_append_sheet(wb, ws_browser, 'Browser & Device');
+        }
+
+        // Generate filename with date
+        const filename = `Laporan_Visitor_Kulino_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+        // Download
+        XLSX.writeFile(wb, filename);
+
+        console.log('✅ Excel report generated:', filename);
+
+        // Show success notification
+        showNotification('✅ Laporan berhasil diunduh!', 'success');
+
+      } catch (error) {
+        console.error('❌ Error generating Excel:', error);
+        alert('Gagal membuat laporan Excel. Silakan coba lagi.');
+      }
+    }
+
+    function showNotification(message, type = 'info') {
+      const colors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        info: 'bg-blue-500'
+      };
+
+      const notification = document.createElement('div');
+      notification.className = `fixed top-24 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-xl z-50 animate-fade-in`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transition = 'opacity 0.3s';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+
     // ==================== LOAD DATA ====================
     async function loadRecap(date = "", timezone = "Asia/Jakarta") {
       const statusDiv = document.getElementById('connectionStatus');
@@ -696,6 +927,9 @@ include("../includes/koneksi.php");
         console.log('✅ Data received:', data);
 
         if (data.error) throw new Error(data.error);
+
+        // Store data for export
+        currentReportData = data;
 
         statusDiv.classList.add('hidden');
 
@@ -774,8 +1008,7 @@ include("../includes/koneksi.php");
               }
             },
             x: {
-              grid: // Lanjutan dari updateWeeklyChart - letakkan setelah x: { grid:
-              {
+              grid: {
                 color: 'rgba(0, 0, 0, 0.05)'
               }
             }
@@ -851,8 +1084,8 @@ include("../includes/koneksi.php");
       const ctx = document.getElementById("browserChart").getContext("2d");
       if (browserChartInstance) browserChartInstance.destroy();
 
-      const labels = browsers.map(b => b.label || 'Unknown');
-      const data = browsers.map(b => b.count || 0);
+      const labels = browsers.map(b => b.device || 'Unknown');
+      const data = browsers.map(b => b.total || 0);
 
       const colors = [
         'rgba(102, 126, 234, 0.8)',
@@ -943,7 +1176,7 @@ include("../includes/koneksi.php");
             ${loc.timezone || 'Unknown'}
           </span>
         </td>
-        <td class="text-center">${getVisitBadge(loc.visit_count)}</td>
+        <td class="text-center">${getVisitBadge(loc.total)}</td>
       </tr>
     `).join('');
 
@@ -998,7 +1231,7 @@ include("../includes/koneksi.php");
         <td class="text-center">
           <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
             <span>🔢</span>
-            <span>${item.count} visits</span>
+            <span>${item.visits} visits</span>
           </span>
         </td>
       </tr>
