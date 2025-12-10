@@ -490,6 +490,18 @@ async function requestLocationPermission() {
   );
 }
 
+// Initialize on page load
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("🚀 Initializing location system...");
+
+  // Check if location already granted
+  if (!checkLocationStatus()) {
+    // Show location block overlay
+    document.getElementById("locationBlockOverlay").classList.add("active");
+    console.log("⚠️ Location not granted, showing overlay");
+  }
+});
+
 // ==================== BALANCE FUNCTIONS (FIXED) ====================
 async function getSOLBalance(walletAddress) {
   try {
