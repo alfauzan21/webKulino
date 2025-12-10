@@ -747,7 +747,7 @@ include("../includes/koneksi.php");
       console.log(`📡 Attempt ${loadAttempts}/${MAX_LOAD_ATTEMPTS}: Loading data...`);
 
       try {
-        let url = `track.php?tz=${encodeURIComponent(timezone)}`;
+        let url = `../track.php?tz=${encodeURIComponent(timezone)}`;
         if (date) url += `&date=${date}`;
 
         console.log('📡 Fetching:', url);
