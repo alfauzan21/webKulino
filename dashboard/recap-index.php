@@ -407,7 +407,8 @@ include("../includes/koneksi.php");
           <div class="flex items-center gap-2">
             <!-- Download Report Button -->
             <button
-              onclick="downloadExcelReport()"
+              id="downloadReportBtn"
+              type="button"
               class="btn-download"
               title="Download Excel Report">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -416,7 +417,6 @@ include("../includes/koneksi.php");
               <span class="hidden sm:inline">Download Report</span>
               <span class="sm:hidden">Download</span>
             </button>
-
             <!-- Back Button -->
             <a href="index.php" class="group relative overflow-hidden bg-gradient-to-r from-gray-700 to-gray-900 hover:from-gray-800 hover:to-black px-4 py-2.5 rounded-xl transition-all duration-300 inline-flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white transition-transform group-hover:rotate-12" fill="currentColor" viewBox="0 0 20 20">
@@ -1250,6 +1250,301 @@ include("../includes/koneksi.php");
         console.log('🔄 Auto-refreshing data...');
         loadRecap(date, tz);
       }, 30000);
+    });
+
+    async function downloadExcelReport() {
+      const downloadBtn = document.getElementById('downloadReportBtn');
+
+      // Disable button
+      if (downloadBtn) {
+        downloadBtn.disabled = true;
+        downloadBtn.innerHTML = `
+        <div class="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+        <span>Generating...</span>
+      `;
+      }
+
+      try {
+        console.log('📥 Starting Excel report generation...');
+
+        // Get current filter values
+        const timezone = document.getElementById('timezoneFilter')?.value || 'Asia/Jakarta';
+        const date = document.getElementById('dateFilter')?.value || new Date().toISOString().split('T')[0];
+
+        // Fetch fresh data
+        let url = `../track.php?tz=${encodeURIComponent(timezone)}`;
+        if (date) url += `&date=${date}`;
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch data');
+
+        const data = await response.json();
+        console.log('✅ Data fetched for export:', data);
+
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+
+        // ========== SHEET 1: SUMMARY ==========
+        const summaryData = [
+          ['📊 KULINO VISITOR DASHBOARD REPORT'],
+          ['Generated:', new Date().toLocaleString('id-ID', {
+            timeZone: timezone
+          })],
+          ['Timezone:', data.display_timezone || timezone],
+          ['Filter Date:', date],
+          [''],
+          ['SUMMARY STATISTICS'],
+          ['Total Visits Today', data.today || 0],
+          ['Unique Visitors', data.unique || 0],
+          ['Active Now (10 min)', data.active || 0],
+          [''],
+          ['WEEKLY TRENDS'],
+          ['Date', 'Visitors'],
+          ...data.labels.map((label, idx) => [label, data.weekly[idx] || 0])
+        ];
+
+        const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+        wsSummary['!cols'] = [{
+          wch: 25
+        }, {
+          wch: 20
+        }];
+        XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+        // ========== SHEET 2: TOP 10 COUNTRIES ==========
+        const countryData = [
+          ['🌍 TOP 10 COUNTRIES (Last 7 Days)'],
+          [''],
+          ['Country', 'Total Visitors'],
+          ...data.country_labels.map((country, idx) => [
+            country,
+            data.country_data[idx] || 0
+          ])
+        ];
+
+        const wsCountry = XLSX.utils.aoa_to_sheet(countryData);
+        wsCountry['!cols'] = [{
+          wch: 30
+        }, {
+          wch: 15
+        }];
+        XLSX.utils.book_append_sheet(wb, wsCountry, 'Top Countries');
+
+        // ========== SHEET 3: LOCATION DETAILS ==========
+        if (data.locations && data.locations.length > 0) {
+          const locationData = [
+            ['📍 VISITOR LOCATIONS - ' + date],
+            [''],
+            ['Country', 'City', 'Street', 'House No', 'District', 'Subdistrict', 'Region', 'Postal Code', 'Timezone', 'Latitude', 'Longitude', 'Total Visits'],
+            ...data.locations.map(loc => [
+              loc.country || '',
+              loc.city || '',
+              loc.street || '',
+              loc.house_number || '',
+              loc.district || '',
+              loc.subdistrict || '',
+              loc.region || '',
+              loc.postal_code || '',
+              loc.timezone || '',
+              loc.latitude || '',
+              loc.longitude || '',
+              loc.total || 0
+            ])
+          ];
+
+          const wsLocation = XLSX.utils.aoa_to_sheet(locationData);
+          wsLocation['!cols'] = [{
+              wch: 20
+            }, {
+              wch: 20
+            }, {
+              wch: 25
+            }, {
+              wch: 10
+            },
+            {
+              wch: 20
+            }, {
+              wch: 20
+            }, {
+              wch: 20
+            }, {
+              wch: 12
+            },
+            {
+              wch: 20
+            }, {
+              wch: 12
+            }, {
+              wch: 12
+            }, {
+              wch: 12
+            }
+          ];
+          XLSX.utils.book_append_sheet(wb, wsLocation, 'Locations');
+        }
+
+        // ========== SHEET 4: FREQUENCY DATA ==========
+        if (data.frequency && data.frequency.length > 0) {
+          const freqData = [
+            ['🔄 VISIT FREQUENCY (Last 7 Days)'],
+            [''],
+            ['Date', 'IP Address', 'City', 'Country', 'Timezone', 'Device & Browser', 'Visit Count'],
+            ...data.frequency.map(item => [
+              item.date || '',
+              item.ip || '',
+              item.city || '',
+              item.country || '',
+              item.timezone || '',
+              item.device || '',
+              item.visits || 0
+            ])
+          ];
+
+          const wsFreq = XLSX.utils.aoa_to_sheet(freqData);
+          wsFreq['!cols'] = [{
+              wch: 12
+            }, {
+              wch: 18
+            }, {
+              wch: 20
+            }, {
+              wch: 20
+            },
+            {
+              wch: 20
+            }, {
+              wch: 35
+            }, {
+              wch: 12
+            }
+          ];
+          XLSX.utils.book_append_sheet(wb, wsFreq, 'Frequency');
+        }
+
+        // ========== SHEET 5: ACTIVITY LOG ==========
+        if (data.activity && data.activity.length > 0) {
+          const activityData = [
+            ['📋 ACTIVITY LOG - ' + date],
+            [''],
+            ['Time', 'IP Address', 'City', 'Country', 'Timezone', 'Device & Browser'],
+            ...data.activity.map(item => [
+              item.time || '',
+              item.ip || '',
+              item.city || '',
+              item.country || '',
+              item.timezone || '',
+              item.device || ''
+            ])
+          ];
+
+          const wsActivity = XLSX.utils.aoa_to_sheet(activityData);
+          wsActivity['!cols'] = [{
+              wch: 12
+            }, {
+              wch: 18
+            }, {
+              wch: 20
+            }, {
+              wch: 20
+            },
+            {
+              wch: 20
+            }, {
+              wch: 35
+            }
+          ];
+          XLSX.utils.book_append_sheet(wb, wsActivity, 'Activity Log');
+        }
+
+        // ========== SHEET 6: BROWSER & DEVICE STATS ==========
+        if (data.browsers && data.browsers.length > 0) {
+          const browserData = [
+            ['🌐 BROWSER & DEVICE STATISTICS (Last 7 Days)'],
+            [''],
+            ['Device & Browser', 'Total Users'],
+            ...data.browsers.map(item => [
+              item.device || 'Unknown',
+              item.total || 0
+            ])
+          ];
+
+          const wsBrowser = XLSX.utils.aoa_to_sheet(browserData);
+          wsBrowser['!cols'] = [{
+            wch: 40
+          }, {
+            wch: 15
+          }];
+          XLSX.utils.book_append_sheet(wb, wsBrowser, 'Browsers & Devices');
+        }
+
+        // Generate filename with date
+        const filename = `Kulino_Visitor_Report_${date.replace(/-/g, '')}_${Date.now()}.xlsx`;
+
+        // Write and download
+        XLSX.writeFile(wb, filename);
+
+        console.log('✅ Excel report generated successfully');
+
+        // Show success message
+        if (window.Swal) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Report Downloaded!',
+            html: `
+            <div class="text-left">
+              <p class="mb-2">📊 <strong>Report Details:</strong></p>
+              <ul class="text-sm space-y-1 ml-4">
+                <li>✓ Summary Statistics</li>
+                <li>✓ Weekly Trends</li>
+                <li>✓ Top 10 Countries</li>
+                <li>✓ ${data.locations?.length || 0} Location Details</li>
+                <li>✓ ${data.frequency?.length || 0} Frequency Records</li>
+                <li>✓ ${data.activity?.length || 0} Activity Logs</li>
+                <li>✓ Browser & Device Stats</li>
+              </ul>
+            </div>
+          `,
+            confirmButtonText: 'Got it!',
+            timer: 5000
+          });
+        }
+
+      } catch (error) {
+        console.error('❌ Excel export error:', error);
+
+        if (window.Swal) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Export Failed',
+            text: 'Failed to generate Excel report: ' + error.message,
+            confirmButtonColor: '#ef4444'
+          });
+        } else {
+          alert('Failed to generate report: ' + error.message);
+        }
+      } finally {
+        // Re-enable button
+        if (downloadBtn) {
+          downloadBtn.disabled = false;
+          downloadBtn.innerHTML = `
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span class="hidden sm:inline">Download Report</span>
+          <span class="sm:hidden">Download</span>
+        `;
+        }
+      }
+    }
+
+    // Add event listener for download button
+    document.addEventListener('DOMContentLoaded', function() {
+      const downloadBtn = document.getElementById('downloadReportBtn');
+      if (downloadBtn) {
+        downloadBtn.addEventListener('click', downloadExcelReport);
+        console.log('✅ Download button event listener added');
+      }
     });
   </script>
 </body>
