@@ -13,16 +13,17 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 
 if ($conn->connect_error) {
     error_log("Connection failed: " . $conn->connect_error);
-    die(json_encode(["error" => "Koneksi database gagal"]));
+    die(json_encode(["error" => "Database connection failed", "details" => $conn->connect_error]));
 }
 
 $conn->set_charset("utf8mb4");
 
 // ==================== HELPER FUNCTIONS ====================
 
-function getRealIP() {
+function getRealIP()
+{
     $ip = '';
-    
+
     if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
         $ip = $_SERVER['HTTP_CLIENT_IP'];
     } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
@@ -32,15 +33,16 @@ function getRealIP() {
     } else {
         $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     }
-    
+
     return trim($ip);
 }
 
-function detectDeviceAndBrowser($ua) {
+function detectDeviceAndBrowser($ua)
+{
     $device = "Unknown Device";
     $browser = "Unknown Browser";
 
-    // Deteksi Browser
+    // Browser detection
     if (preg_match('/OPR\/|Opera/i', $ua)) {
         $browser = "Opera";
     } elseif (preg_match('/Edg/i', $ua)) {
@@ -57,7 +59,7 @@ function detectDeviceAndBrowser($ua) {
         $browser = "Internet Explorer";
     }
 
-    // Deteksi Device/OS
+    // Device/OS detection
     if (preg_match('/Windows NT 10/i', $ua)) {
         $device = "Windows 10";
     } elseif (preg_match('/Windows NT 11/i', $ua)) {
@@ -87,7 +89,57 @@ function detectDeviceAndBrowser($ua) {
     return $device . " - " . $browser;
 }
 
-function getLocationFromIP($ip) {
+// 🔧 NEW: Reverse geocoding dari GPS coordinates menggunakan Nominatim
+function reverseGeocode($latitude, $longitude)
+{
+    try {
+        $url = "https://nominatim.openstreetmap.org/reverse?format=json&lat={$latitude}&lon={$longitude}&zoom=18&addressdetails=1";
+
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => 5,
+                'user_agent' => 'KulinoGameHub/1.0',
+                'ignore_errors' => true
+            ]
+        ]);
+
+        $response = @file_get_contents($url, false, $context);
+
+        if ($response === false) {
+            throw new Exception("Reverse geocoding failed");
+        }
+
+        $data = json_decode($response, true);
+
+        if (!$data || isset($data['error'])) {
+            throw new Exception("Invalid geocoding response");
+        }
+
+        $address = $data['address'] ?? [];
+
+        return [
+            'success' => true,
+            'street' => $address['road'] ?? $address['pedestrian'] ?? '',
+            'house_number' => $address['house_number'] ?? '',
+            'district' => $address['suburb'] ?? $address['neighbourhood'] ?? '',
+            'subdistrict' => $address['village'] ?? $address['hamlet'] ?? '',
+            'city' => $address['city'] ?? $address['town'] ?? $address['municipality'] ?? $address['county'] ?? '',
+            'region' => $address['state'] ?? $address['province'] ?? '',
+            'country' => $address['country'] ?? '',
+            'country_code' => strtoupper($address['country_code'] ?? ''),
+            'postal_code' => $address['postcode'] ?? '',
+            'full_address' => $data['display_name'] ?? '',
+            'timezone' => 'Asia/Jakarta', // Default timezone for Indonesia
+        ];
+    } catch (Exception $e) {
+        error_log("Reverse geocoding error: " . $e->getMessage());
+        return ['success' => false, 'error' => $e->getMessage()];
+    }
+}
+
+// Fallback: Get location from IP
+function getLocationFromIP($ip)
+{
     if ($ip == '127.0.0.1' || $ip == '::1' || strpos($ip, '192.168.') === 0) {
         return [
             'city' => 'Localhost',
@@ -97,25 +149,25 @@ function getLocationFromIP($ip) {
             'timezone' => 'Asia/Jakarta',
         ];
     }
-    
+
     try {
         $url = "http://ip-api.com/json/{$ip}?fields=status,country,countryCode,region,city,timezone";
-        
+
         $context = stream_context_create([
             'http' => [
                 'timeout' => 3,
                 'ignore_errors' => true
             ]
         ]);
-        
+
         $response = @file_get_contents($url, false, $context);
-        
+
         if ($response === false) {
-            throw new Exception("API request failed");
+            throw new Exception("IP API request failed");
         }
-        
+
         $data = json_decode($response, true);
-        
+
         if ($data && $data['status'] === 'success') {
             return [
                 'city' => $data['city'] ?? 'Unknown',
@@ -126,9 +178,9 @@ function getLocationFromIP($ip) {
             ];
         }
     } catch (Exception $e) {
-        error_log("Location API error: " . $e->getMessage());
+        error_log("IP Location API error: " . $e->getMessage());
     }
-    
+
     return [
         'city' => 'Unknown',
         'region' => 'Unknown',
@@ -138,7 +190,8 @@ function getLocationFromIP($ip) {
     ];
 }
 
-function getTimezoneName($timezone) {
+function getTimezoneName($timezone)
+{
     $timezoneNames = [
         'Asia/Jakarta' => 'WIB (UTC+7)',
         'Asia/Makassar' => 'WITA (UTC+8)',
@@ -148,89 +201,126 @@ function getTimezoneName($timezone) {
         'Asia/Bangkok' => 'ICT (UTC+7)',
         'Asia/Manila' => 'PHT (UTC+8)',
     ];
-    
+
     return $timezoneNames[$timezone] ?? $timezone;
 }
 
-$ip     = getRealIP();
-$ua     = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
-$today  = date("Y-m-d");
-
+$ip = getRealIP();
+$ua = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
+$today = date("Y-m-d");
 $device = detectDeviceAndBrowser($ua);
 
-// ==================== TAMBAH KUNJUNGAN BARU ====================
+// ==================== ADD NEW VISITOR ====================
 if (isset($_GET['add']) && $_GET['add'] == "1") {
     try {
-        // Ambil data dari parameter
+        // Get GPS coordinates from parameters
         $latitude = isset($_GET['latitude']) && !empty($_GET['latitude']) ? floatval($_GET['latitude']) : null;
         $longitude = isset($_GET['longitude']) && !empty($_GET['longitude']) ? floatval($_GET['longitude']) : null;
-        $street = isset($_GET['street']) ? $conn->real_escape_string($_GET['street']) : '';
-        $house_number = isset($_GET['house_number']) ? $conn->real_escape_string($_GET['house_number']) : '';
-        $district = isset($_GET['district']) ? $conn->real_escape_string($_GET['district']) : '';
-        $subdistrict = isset($_GET['subdistrict']) ? $conn->real_escape_string($_GET['subdistrict']) : '';
-        $city = isset($_GET['city']) ? $conn->real_escape_string($_GET['city']) : '';
-        $region = isset($_GET['region']) ? $conn->real_escape_string($_GET['region']) : '';
-        $country = isset($_GET['country']) ? $conn->real_escape_string($_GET['country']) : '';
-        $country_code = isset($_GET['country_code']) ? $conn->real_escape_string($_GET['country_code']) : '';
-        $postal_code = isset($_GET['postal_code']) ? $conn->real_escape_string($_GET['postal_code']) : '';
-        $full_address = isset($_GET['full_address']) ? $conn->real_escape_string($_GET['full_address']) : '';
         $accuracy = isset($_GET['accuracy']) && !empty($_GET['accuracy']) ? floatval($_GET['accuracy']) : null;
-        
-        // Fallback ke IP geolocation jika tidak ada data GPS
-        if (empty($city) || empty($country)) {
-            $location = getLocationFromIP($ip);
-            $city = $city ?: $location['city'];
-            $region = $region ?: $location['region'];
-            $country = $country ?: $location['country'];
-            $country_code = $country_code ?: $location['country_code'];
-            $timezone = $location['timezone'];
-        } else {
-            $timezone = 'Asia/Jakarta';
+
+        $locationData = [];
+
+        // 🔧 PRIORITY 1: Use GPS coordinates if available
+        if ($latitude !== null && $longitude !== null) {
+            error_log("📍 Using GPS coordinates: {$latitude}, {$longitude}");
+
+            $geoResult = reverseGeocode($latitude, $longitude);
+
+            if ($geoResult['success']) {
+                $locationData = $geoResult;
+                error_log("✅ Reverse geocoding successful");
+            } else {
+                error_log("⚠️ Reverse geocoding failed, using IP fallback");
+                $locationData = getLocationFromIP($ip);
+            }
         }
-        
+        // 🔧 FALLBACK: Use IP-based location
+        else {
+            error_log("⚠️ No GPS data, using IP geolocation");
+            $locationData = getLocationFromIP($ip);
+        }
+
+        // Extract location data
+        $street = $locationData['street'] ?? '';
+        $house_number = $locationData['house_number'] ?? '';
+        $district = $locationData['district'] ?? '';
+        $subdistrict = $locationData['subdistrict'] ?? '';
+        $city = $locationData['city'] ?? 'Unknown';
+        $region = $locationData['region'] ?? '';
+        $country = $locationData['country'] ?? 'Unknown';
+        $country_code = $locationData['country_code'] ?? 'XX';
+        $postal_code = $locationData['postal_code'] ?? '';
+        $full_address = $locationData['full_address'] ?? '';
+        $timezone = $locationData['timezone'] ?? 'Asia/Jakarta';
+
+        // Set local time
         $tz = new DateTimeZone($timezone);
         $datetime = new DateTime('now', $tz);
         $localTime = $datetime->format('Y-m-d H:i:s');
-        
-        // 🔧 FIX: Insert dengan semua field
+
+        // Insert into database
         $stmt = $conn->prepare("
             INSERT INTO visitors 
             (ip_address, device, latitude, longitude, street, house_number, district, subdistrict, 
              city, region, country, country_code, postal_code, full_address, location_accuracy, timezone, visited_at) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
-        
+
         if (!$stmt) {
             throw new Exception("Prepare failed: " . $conn->error);
         }
-        
-        $stmt->bind_param("ssddssssssssssdss", 
-            $ip, $device, $latitude, $longitude, $street, $house_number, 
-            $district, $subdistrict, $city, $region, $country, $country_code,
-            $postal_code, $full_address, $accuracy, $timezone, $localTime
+
+        $stmt->bind_param(
+            "ssddssssssssssdss",
+            $ip,
+            $device,
+            $latitude,
+            $longitude,
+            $street,
+            $house_number,
+            $district,
+            $subdistrict,
+            $city,
+            $region,
+            $country,
+            $country_code,
+            $postal_code,
+            $full_address,
+            $accuracy,
+            $timezone,
+            $localTime
         );
-        
+
         if (!$stmt->execute()) {
             throw new Exception("Execute failed: " . $stmt->error);
         }
-        
+
         $stmt->close();
-        
+
+        error_log("✅ Visitor tracked successfully");
+
         echo json_encode([
             "success" => true,
-            "message" => "Visitor tracked",
+            "message" => "Visitor tracked successfully",
             "ip" => $ip,
             "location" => [
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+                'street' => $street,
+                'house_number' => $house_number,
                 'city' => $city,
+                'region' => $region,
                 'country' => $country,
                 'timezone' => $timezone
             ]
         ]);
         exit;
-        
     } catch (Exception $e) {
-        error_log("Exception: " . $e->getMessage());
-        echo json_encode(["error" => $e->getMessage()]);
+        error_log("❌ Exception: " . $e->getMessage());
+        echo json_encode([
+            "error" => "Failed to track visitor",
+            "details" => $e->getMessage()
+        ]);
         exit;
     }
 }
@@ -239,11 +329,11 @@ if (isset($_GET['add']) && $_GET['add'] == "1") {
 try {
     $displayTimezone = isset($_GET['tz']) ? $_GET['tz'] : 'Asia/Jakarta';
     $tz = new DateTimeZone($displayTimezone);
-    
+
     $filterDate = isset($_GET['date']) && $_GET['date'] != "" ? $_GET['date'] : $today;
     $filterDate = $conn->real_escape_string($filterDate);
 
-    // Total visits
+    // Total visits today
     $resToday = $conn->query("SELECT COUNT(*) as total FROM visitors WHERE DATE(visited_at)='$filterDate'");
     $totalVisits = $resToday ? $resToday->fetch_assoc()['total'] : 0;
 
@@ -252,7 +342,7 @@ try {
                                FROM visitors WHERE DATE(visited_at)='$filterDate'");
     $totalUnique = $resUnique ? $resUnique->fetch_assoc()['total'] : 0;
 
-    // Active visitors
+    // Active visitors (last 10 minutes)
     $activeVisitor = 0;
     if ($filterDate == $today) {
         $resActive = $conn->query("SELECT COUNT(DISTINCT ip_address) as active 
@@ -260,7 +350,7 @@ try {
         $activeVisitor = $resActive ? $resActive->fetch_assoc()['active'] : 0;
     }
 
-    // Weekly data
+    // Weekly data (last 7 days)
     $resWeekly = $conn->query("SELECT DATE(visited_at) as d, COUNT(*) as total 
                                FROM visitors WHERE visited_at >= NOW() - INTERVAL 7 DAY 
                                GROUP BY DATE(visited_at) ORDER BY d ASC");
@@ -277,7 +367,7 @@ try {
     $resCountry = $conn->query("
         SELECT country, country_code, COUNT(*) as total 
         FROM visitors WHERE visited_at >= NOW() - INTERVAL 7 DAY 
-        AND country IS NOT NULL AND country != ''
+        AND country IS NOT NULL AND country != '' AND country != 'Unknown'
         GROUP BY country, country_code ORDER BY total DESC LIMIT 10
     ");
     $countryData = [];
@@ -289,53 +379,63 @@ try {
         }
     }
 
-    // 🔧 FIX: Detail lokasi dengan semua field
+    // Location details for today
     $resLocations = $conn->query("
         SELECT 
             street, house_number, district, subdistrict,
             city, region, country, country_code, timezone, 
-            postal_code,
+            postal_code, latitude, longitude,
             COUNT(*) as total
         FROM visitors
         WHERE DATE(visited_at)='$filterDate'
+        AND city IS NOT NULL AND city != '' AND city != 'Unknown'
         GROUP BY street, house_number, district, subdistrict, 
-                 city, region, country, country_code, timezone, postal_code
+                 city, region, country, country_code, timezone, postal_code,
+                 latitude, longitude
         ORDER BY total DESC
     ");
-    
+
     $locations = [];
     if ($resLocations) {
         while ($row = $resLocations->fetch_assoc()) {
+            // Build readable address
+            $addressParts = array_filter([
+                $row['house_number'] && $row['street'] ? $row['house_number'] . ' ' . $row['street'] : '',
+                $row['district'] ?? '',
+                $row['subdistrict'] ?? '',
+                $row['city'] ?? ''
+            ]);
+
             $locations[] = [
                 "street" => $row['street'] ?? '',
                 "house_number" => $row['house_number'] ?? '',
                 "district" => $row['district'] ?? '',
                 "subdistrict" => $row['subdistrict'] ?? '',
                 "city" => $row['city'] ?? 'Unknown',
-                "region" => $row['region'] ?? 'Unknown',
+                "region" => $row['region'] ?? '',
                 "country" => $row['country'] ?? 'Unknown',
                 "country_code" => $row['country_code'] ?? 'XX',
                 "postal_code" => $row['postal_code'] ?? '',
                 "timezone" => getTimezoneName($row['timezone'] ?? 'Asia/Jakarta'),
+                "latitude" => $row['latitude'] ? floatval($row['latitude']) : null,
+                "longitude" => $row['longitude'] ? floatval($row['longitude']) : null,
+                "full_location" => implode(', ', $addressParts) ?: $row['city'],
                 "total" => (int)$row['total']
             ];
         }
     }
 
-    // Frequency data
+    // Frequency data (last 7 days)
     $resFreq = $conn->query("
-        SELECT ip_address, device, 
-               CONCAT_WS(', ', 
-                   NULLIF(CONCAT(house_number, ' ', street), ' '),
-                   NULLIF(city, ''),
-                   NULLIF(country, '')
-               ) as full_location,
-               city, country, timezone, 
-               DATE(visited_at) as d, COUNT(*) as visits
+        SELECT 
+            ip_address, device, city, country, country_code, timezone, 
+            DATE(visited_at) as d, COUNT(*) as visits
         FROM visitors
         WHERE visited_at >= NOW() - INTERVAL 7 DAY
-        GROUP BY ip_address, device, full_location, city, country, timezone, DATE(visited_at)
+        AND city IS NOT NULL AND city != '' AND city != 'Unknown'
+        GROUP BY ip_address, device, city, country, country_code, timezone, DATE(visited_at)
         ORDER BY d DESC, visits DESC
+        LIMIT 100
     ");
 
     $frequency = [];
@@ -344,9 +444,10 @@ try {
             $frequency[] = [
                 "ip" => $row['ip_address'],
                 "device" => $row['device'],
-                "full_location" => $row['full_location'] ?: 'Unknown',
                 "city" => $row['city'] ?? 'Unknown',
                 "country" => $row['country'] ?? 'Unknown',
+                "country_code" => $row['country_code'] ?? 'XX',
+                "full_location" => ($row['city'] ?? 'Unknown') . ', ' . ($row['country'] ?? 'Unknown'),
                 "timezone" => getTimezoneName($row['timezone'] ?? 'Asia/Jakarta'),
                 "date" => $row['d'],
                 "visits" => (int)$row['visits']
@@ -354,40 +455,42 @@ try {
         }
     }
 
-    // Activity log
+    // Activity log (today only)
     $resActivity = $conn->query("
         SELECT visited_at, ip_address, device, 
-               street, house_number, city, country, timezone
+               street, house_number, city, country, country_code, timezone
         FROM visitors 
-        WHERE DATE(visited_at)='$filterDate' 
+        WHERE DATE(visited_at)='$filterDate'
+        AND city IS NOT NULL AND city != '' AND city != 'Unknown'
         ORDER BY visited_at DESC
+        LIMIT 100
     ");
-    
+
     $activity = [];
     if ($resActivity) {
         while ($row = $resActivity->fetch_assoc()) {
             $dt = new DateTime($row['visited_at']);
             $dt->setTimezone($tz);
-            
+
             $addressParts = array_filter([
                 $row['house_number'] && $row['street'] ? $row['house_number'] . ' ' . $row['street'] : '',
                 $row['city']
             ]);
-            $fullLocation = implode(', ', $addressParts) ?: 'Unknown';
-            
+
             $activity[] = [
                 "time" => $dt->format('H:i:s'),
                 "ip" => $row['ip_address'],
                 "device" => $row['device'],
-                "full_location" => $fullLocation,
                 "city" => $row['city'] ?? 'Unknown',
                 "country" => $row['country'] ?? 'Unknown',
+                "country_code" => $row['country_code'] ?? 'XX',
+                "full_location" => implode(', ', $addressParts) ?: $row['city'],
                 "timezone" => getTimezoneName($row['timezone'] ?? 'Asia/Jakarta')
             ];
         }
     }
 
-    // Browser stats
+    // Browser/Device stats
     $resBrowser = $conn->query("
         SELECT device, COUNT(*) as total
         FROM visitors
@@ -396,7 +499,7 @@ try {
         ORDER BY total DESC
         LIMIT 10
     ");
-    
+
     $browserData = [];
     if ($resBrowser) {
         while ($row = $resBrowser->fetch_assoc()) {
@@ -407,6 +510,7 @@ try {
         }
     }
 
+    // Final response
     echo json_encode([
         "success" => true,
         "today" => (int)$totalVisits,
@@ -420,13 +524,20 @@ try {
         "frequency" => $frequency,
         "activity" => $activity,
         "browsers" => $browserData,
-        "display_timezone" => getTimezoneName($displayTimezone)
+        "display_timezone" => getTimezoneName($displayTimezone),
+        "debug" => [
+            "filter_date" => $filterDate,
+            "total_locations" => count($locations),
+            "has_gps_data" => !empty(array_filter($locations, function ($loc) {
+                return $loc['latitude'] !== null;
+            }))
+        ]
     ]);
-
 } catch (Exception $e) {
     error_log("Statistics error: " . $e->getMessage());
     echo json_encode([
-        "error" => $e->getMessage(),
+        "error" => "Failed to fetch statistics",
+        "details" => $e->getMessage(),
         "today" => 0,
         "unique" => 0,
         "active" => 0,
@@ -435,4 +546,3 @@ try {
 }
 
 $conn->close();
-?>
