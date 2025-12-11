@@ -55,6 +55,137 @@ let solBalance = 0;
 
 console.log("🚀 Kulino Script Starting...");
 
+// Utility Functions
+function shortAddr(addr) {
+  if (!addr) return "-";
+  return addr.slice(0, 6) + "..." + addr.slice(-4);
+}
+
+function showToast(message, type = "info") {
+  const colors = {
+    success: "bg-green-500",
+    error: "bg-red-500",
+    info: "bg-blue-500",
+  };
+
+  const toast = document.createElement("div");
+  toast.className = `fixed top-20 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    setTimeout(() => toast.remove(), 300);
+  }, 2700);
+}
+
+// Connect Wallet
+async function connectWallet() {
+  try {
+    if (!window.phantom?.solana?.isPhantom) {
+      Swal.fire({
+        icon: "warning",
+        title: "Phantom Not Installed",
+        text: "Please install the Phantom Wallet extension",
+        confirmButtonColor: "#3b82f6",
+      });
+      return;
+    }
+
+    const provider = window.phantom.solana;
+    const resp = await provider.connect();
+    const address = resp.publicKey.toString();
+
+    userAddress = address;
+    updateConnectedUI(address);
+
+    Swal.fire({
+      icon: "success",
+      title: "Connected!",
+      html: `<div class="text-sm"><code>${shortAddr(address)}</code></div>`,
+      confirmButtonColor: "#3b82f6",
+      timer: 3000,
+    });
+  } catch (err) {
+    console.error("Connect error:", err);
+    Swal.fire({
+      icon: "error",
+      title: "Connection Failed",
+      text: err.message || "Failed to connect wallet",
+      confirmButtonColor: "#ef4444",
+    });
+  }
+}
+
+function updateConnectedUI(address) {
+  document.getElementById("walletStatus").innerText = "Connected ✓";
+  document.getElementById("addrShort").innerText = shortAddr(address);
+  document.getElementById("disconnectBtn").classList.remove("hidden");
+
+  const connectBtn = document.getElementById("connectBtn");
+  const connectBtnMobile = document.getElementById("connectBtnMobile");
+
+  if (connectBtn)
+    connectBtn.innerHTML = '<span class="font-semibold">Connected</span>';
+  if (connectBtnMobile)
+    connectBtnMobile.innerHTML = '<span class="font-semibold">Connected</span>';
+
+  // Update swap button
+  document.getElementById("swapBtn").innerHTML = `
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+        </svg>
+        Swap Tokens
+      `;
+}
+
+function disconnectWallet() {
+  userAddress = null;
+  document.getElementById("walletStatus").innerText = "Not Connected";
+  document.getElementById("addrShort").innerText = "-";
+  document.getElementById("disconnectBtn").classList.add("hidden");
+
+  showToast("Wallet disconnected", "success");
+}
+
+function updateBalanceDisplay() {
+  // Placeholder - implement actual balance fetching
+  showToast("Balance updated", "success");
+}
+
+function swapTokens() {
+  const temp = document.getElementById("fromAmount").value;
+  document.getElementById("fromAmount").value =
+    document.getElementById("toAmount").value;
+  document.getElementById("toAmount").value = temp;
+}
+
+// Initialize
+document.addEventListener("DOMContentLoaded", () => {
+  document
+    .getElementById("connectBtn")
+    ?.addEventListener("click", connectWallet);
+  document
+    .getElementById("connectBtnMobile")
+    ?.addEventListener("click", connectWallet);
+
+  // Mobile menu toggle
+  document.getElementById("menuToggle")?.addEventListener("click", () => {
+    document.getElementById("mobileMenu").classList.toggle("hidden");
+  });
+
+  // Auto-calculate swap
+  document.getElementById("fromAmount")?.addEventListener("input", (e) => {
+    const value = parseFloat(e.target.value) || 0;
+    document.getElementById("toAmount").value = (value * 1.02).toFixed(2); // Example conversion
+  });
+});
+
+// Expose functions globally
+window.connectWallet = connectWallet;
+window.disconnectWallet = disconnectWallet;
+window.updateBalanceDisplay = updateBalanceDisplay;
+window.swapTokens = swapTokens;
+
 // ==================== UTILITY FUNCTIONS ====================
 function shortAddr(addr) {
   if (!addr) return "-";
