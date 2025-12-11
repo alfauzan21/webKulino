@@ -32,11 +32,12 @@
   <style>
     /* ===== Gaming Theme Variables ===== */
     :root {
-      --primary-dark: #0a0e27;
-      --secondary-dark: #1a1f3a;
-      --accent-blue: #3b82f6;
-      --accent-light-blue: #60a5fa;
-      --text-light: #e2e8f0;
+      --primary: #0a0e27;
+      --primary-dark: #1a1f3a;
+      --secondary: #3b82f6;
+      --accent: #60a5fa;
+      --dark: #1e293b;
+      --light: #f8fafc;
     }
 
     /* ===== Global Styles ===== */
@@ -824,77 +825,6 @@
 
           </div>
 
-          <!-- Swap Container -->
-          <div class="swap-container max-w-3xl">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-xl font-bold text-white">Exchange</h3>
-              <button class="text-gray-400 hover:text-blue-400 transition">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-              </button>
-            </div>
-
-            <!-- From Token -->
-            <div class="mb-1">
-              <label class="text-sm text-gray-400 mb-2 block">From</label>
-              <div class="glass-card p-4 rounded-xl">
-                <div class="flex items-center justify-between mb-3">
-                  <button class="token-select flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-full bg-purple-500"></div>
-                    <span class="font-semibold">POL</span>
-                    <span class="text-xs text-gray-400">Polygon</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                  </button>
-                  <span class="text-sm text-gray-400">Balance: <span id="fromBalance">0.00</span></span>
-                </div>
-                <input type="number" id="fromAmount" class="token-input" placeholder="0" step="0.01" min="0" />
-              </div>
-            </div>
-
-            <!-- Exchange Icon -->
-            <div class="exchange-icon" onclick="swapTokens()">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
-              </svg>
-            </div>
-
-            <!-- To Token -->
-            <div class="mb-4">
-              <label class="text-sm text-gray-400 mb-2 block">To</label>
-              <div class="glass-card p-4 rounded-xl">
-                <div class="flex items-center justify-between mb-3">
-                  <button class="token-select flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-full bg-indigo-500"></div>
-                    <span class="font-semibold">IXT</span>
-                    <span class="text-xs text-gray-400">Polygon</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                  </button>
-                  <span class="text-sm text-gray-400">Balance: <span id="toBalance">0.00</span></span>
-                </div>
-                <input type="number" id="toAmount" class="token-input" placeholder="0" readonly />
-              </div>
-            </div>
-
-            <!-- Swap Button -->
-            <button id="swapBtn" class="btn-primary w-full px-6 py-4 rounded-xl text-white font-bold text-lg flex items-center justify-center gap-2">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-              </svg>
-              Connect wallet
-            </button>
-
-            <!-- Info Text -->
-            <p class="text-xs text-gray-500 text-center mt-3">
-              Powered by LI.FI
-            </p>
-          </div>
-
           <!-- Quick Actions -->
           <div class="mt-6 flex flex-wrap gap-3">
             <a href="https://phantom.com/tokens/solana/E5chNtjGFvCMVYoTwcP9DtrdMdctRCGdGahAAhnHbHc1"
@@ -920,6 +850,77 @@
         </div>
       </div>
     </section>
+
+    <!-- Swap Container -->
+    <div class="swap-container max-w-3xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold text-white">Exchange</h3>
+        <button class="text-gray-400 hover:text-blue-400 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- From Token -->
+      <div class="mb-1">
+        <label class="text-sm text-gray-400 mb-2 block">From</label>
+        <div class="glass-card p-4 rounded-xl">
+          <div class="flex items-center justify-between mb-3">
+            <button class="token-select flex items-center gap-2">
+              <div class="w-6 h-6 rounded-full bg-purple-500"></div>
+              <span class="font-semibold">POL</span>
+              <span class="text-xs text-gray-400">Polygon</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            <span class="text-sm text-gray-400">Balance: <span id="fromBalance">0.00</span></span>
+          </div>
+          <input type="number" id="fromAmount" class="token-input" placeholder="0" step="0.01" min="0" />
+        </div>
+      </div>
+
+      <!-- Exchange Icon -->
+      <div class="exchange-icon" onclick="swapTokens()">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+        </svg>
+      </div>
+
+      <!-- To Token -->
+      <div class="mb-4">
+        <label class="text-sm text-gray-400 mb-2 block">To</label>
+        <div class="glass-card p-4 rounded-xl">
+          <div class="flex items-center justify-between mb-3">
+            <button class="token-select flex items-center gap-2">
+              <div class="w-6 h-6 rounded-full bg-indigo-500"></div>
+              <span class="font-semibold">IXT</span>
+              <span class="text-xs text-gray-400">Polygon</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            <span class="text-sm text-gray-400">Balance: <span id="toBalance">0.00</span></span>
+          </div>
+          <input type="number" id="toAmount" class="token-input" placeholder="0" readonly />
+        </div>
+      </div>
+
+      <!-- Swap Button -->
+      <button id="swapBtn" class="btn-primary w-full px-6 py-4 rounded-xl text-white font-bold text-lg flex items-center justify-center gap-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+        </svg>
+        Connect wallet
+      </button>
+
+      <!-- Info Text -->
+      <p class="text-xs text-gray-500 text-center mt-3">
+        Powered by LI.FI
+      </p>
+    </div>
 
     <!-- Featured Games Section -->
     <section class="mb-12 fade-in">
