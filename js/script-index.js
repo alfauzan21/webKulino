@@ -440,55 +440,185 @@ function showMainContent() {
 }
 
 // Track visitor with location
+// Track visitor with location - IMPROVED VERSION
 async function trackVisitorWithLocation(location) {
-  console.log("📊 Tracking visitor with location:", location);
+  console.log('📊 Tracking visitor with GPS location:', location);
 
+  // Build tracking data with GPS coordinates
   const trackData = {
     add: 1,
     latitude: location.latitude || 0,
     longitude: location.longitude || 0,
-    street: location.street || "",
-    house_number: location.houseNumber || "",
-    district: location.district || "",
-    subdistrict: location.subdistrict || "",
-    city: location.city || "Unknown",
-    region: location.region || "",
-    country: location.country || "Unknown",
-    country_code: location.countryCode || "XX",
-    postal_code: location.postalCode || "",
-    full_address: location.fullAddress || "",
     accuracy: location.accuracy || 0,
+    // Don't send frontend geocoding - let backend handle it
+    // Backend will use Nominatim for accurate reverse geocoding
   };
 
   const params = new URLSearchParams(trackData);
 
   try {
+    console.log('📡 Sending tracking request with GPS data...');
+    
     const response = await fetch(`track.php?${params.toString()}`, {
-      method: "GET",
-      credentials: "same-origin",
+      method: 'GET',
+      credentials: 'same-origin',
       headers: {
-        Accept: "application/json",
+        'Accept': 'application/json',
       },
     });
 
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
     const data = await response.json();
-    console.log("✅ Visitor tracked:", data);
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    console.log('✅ Visitor tracked successfully:', data);
 
     // Update visitor count
     if (data.today !== undefined) {
-      const countEl = document.getElementById("visitorCount");
+      const countEl = document.getElementById('visitorCount');
       if (countEl) countEl.textContent = data.today;
     }
+    
+    // Store successful tracking
+    sessionStorage.setItem('tracking_success', Date.now().toString());
+    
   } catch (error) {
-    console.error("❌ Tracking failed:", error);
+    console.error('❌ Tracking failed:', error);
 
     // Retry after 2 seconds
     setTimeout(() => {
-      fetch(`track.php?${params.toString()}`).catch((e) =>
-        console.error("Retry failed:", e)
-      );
+      console.log('🔄 Retrying tracking request...');
+      fetch(`track.php?${params.toString()}`, {
+        method: 'GET',
+        credentials: 'same-origin'
+      })
+      .then(res => res.json())
+      .then(data => console.log('✅ Retry successful:', data))
+      .catch(e => console.error('❌ Retry also failed:', e));
     }, 2000);
   }
+}
+
+// Request location permission - IMPROVED VERSION
+async function requestLocationPermission() {
+  console.log('📍 Requesting location permission...');
+
+  Swal.fire({
+    title: 'Meminta Izin Lokasi...',
+    html: 'Mohon izinkan akses lokasi pada popup browser Anda',
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
+
+  if (!navigator.geolocation) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Browser Tidak Mendukung',
+      text: 'Browser Anda tidak mendukung geolocation. Mohon gunakan browser modern.',
+      confirmButtonColor: '#ef4444',
+    });
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      console.log('✅ Location granted:', position);
+
+      const coords = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+      };
+
+      Swal.update({
+        html: 'Menyimpan lokasi Anda...',
+      });
+
+      // Show basic location info
+      userLocation = {
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        accuracy: coords.accuracy,
+        timestamp: Date.now(),
+      };
+
+      // Save to session
+      sessionStorage.setItem(
+        'kulino_location_granted',
+        JSON.stringify({
+          location: userLocation,
+          timestamp: Date.now(),
+        })
+      );
+
+      locationGranted = true;
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Lokasi Terdeteksi!',
+        html: `
+          <div class="text-left bg-green-50 rounded-lg p-4 mt-3">
+            <p class="text-sm font-semibold text-green-800 mb-2">📍 GPS Coordinates:</p>
+            <p class="text-sm text-green-700">
+              Latitude: ${coords.latitude.toFixed(6)}<br>
+              Longitude: ${coords.longitude.toFixed(6)}<br>
+              Accuracy: ~${Math.round(coords.accuracy)}m
+            </p>
+            <p class="text-xs text-green-600 mt-2">
+              ✓ Lokasi detail akan diproses oleh server
+            </p>
+          </div>
+        `,
+        confirmButtonText: 'Lanjutkan',
+        confirmButtonColor: '#10b981',
+        timer: 3000,
+      }).then(() => {
+        showMainContent();
+        // Send GPS coordinates to backend
+        trackVisitorWithLocation(userLocation);
+      });
+    },
+    (error) => {
+      console.error('❌ Location error:', error);
+
+      let errorMessage = '';
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          errorMessage =
+            'Anda menolak akses lokasi. Mohon izinkan akses lokasi untuk melanjutkan.';
+          break;
+        case error.POSITION_UNAVAILABLE:
+          errorMessage = 'Informasi lokasi tidak tersedia. Mohon coba lagi.';
+          break;
+        case error.TIMEOUT:
+          errorMessage = 'Permintaan lokasi timeout. Mohon coba lagi.';
+          break;
+        default:
+          errorMessage = 'Terjadi kesalahan saat mendapatkan lokasi.';
+      }
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal Mendapatkan Lokasi',
+        text: errorMessage,
+        confirmButtonText: 'Coba Lagi',
+        confirmButtonColor: '#667eea',
+      });
+    },
+    {
+      enableHighAccuracy: true,  // Use GPS for better accuracy
+      timeout: 10000,
+      maximumAge: 0,
+    }
+  );
 }
 
 // Initialize on page load

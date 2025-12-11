@@ -407,7 +407,8 @@ include("../includes/koneksi.php");
           <div class="flex items-center gap-2">
             <!-- Download Report Button -->
             <button
-              onclick="downloadExcelReport()"
+              id="downloadReportBtn"
+              type="button"
               class="btn-download"
               title="Download Excel Report">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -416,7 +417,6 @@ include("../includes/koneksi.php");
               <span class="hidden sm:inline">Download Report</span>
               <span class="sm:hidden">Download</span>
             </button>
-
             <!-- Back Button -->
             <a href="index.php" class="group relative overflow-hidden bg-gradient-to-r from-gray-700 to-gray-900 hover:from-gray-800 hover:to-black px-4 py-2.5 rounded-xl transition-all duration-300 inline-flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white transition-transform group-hover:rotate-12" fill="currentColor" viewBox="0 0 20 20">
@@ -681,7 +681,7 @@ include("../includes/koneksi.php");
     let allLocationsData = [];
     let allFrequencyData = [];
     let allActivityData = [];
-    let currentReportData = null; // Store current report data for export
+    let currentReportData = null;
 
     const countryFlags = {
       'ID': '🇮🇩',
@@ -727,211 +727,70 @@ include("../includes/koneksi.php");
       }
 
       return `
-        <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow-lg ${badgeClass}">
-          <span>${icon}</span>
-          <span>${count} visit${count > 1 ? 's' : ''}</span>
-        </span>
-      `;
-    }
-
-    // ==================== EXCEL EXPORT FUNCTION ====================
-    function downloadExcelReport() {
-      if (!currentReportData) {
-        alert('Data belum tersedia. Mohon tunggu data selesai dimuat.');
-        return;
-      }
-
-      try {
-        console.log('📊 Generating Excel Report...');
-
-        // Create workbook
-        const wb = XLSX.utils.book_new();
-
-        // Sheet 1: Summary
-        const summaryData = [
-          ['LAPORAN VISITOR KULINO GAME HUB'],
-          ['Tanggal Laporan:', new Date().toLocaleString('id-ID')],
-          ['Timezone:', currentReportData.display_timezone || 'WIB (UTC+7)'],
-          [''],
-          ['RINGKASAN'],
-          ['Total Kunjungan:', currentReportData.today || 0],
-          ['Unique Visitors:', currentReportData.unique || 0],
-          ['Active Visitors (10 min):', currentReportData.active || 0],
-        ];
-        const ws_summary = XLSX.utils.aoa_to_sheet(summaryData);
-        XLSX.utils.book_append_sheet(wb, ws_summary, 'Summary');
-
-        // Sheet 2: Weekly Data
-        if (currentReportData.labels && currentReportData.weekly) {
-          const weeklyData = [
-            ['GRAFIK 7 HARI TERAKHIR'],
-            ['Tanggal', 'Jumlah Visitor']
-          ];
-          currentReportData.labels.forEach((date, index) => {
-            weeklyData.push([date, currentReportData.weekly[index] || 0]);
-          });
-          const ws_weekly = XLSX.utils.aoa_to_sheet(weeklyData);
-          XLSX.utils.book_append_sheet(wb, ws_weekly, 'Grafik 7 Hari');
-        }
-
-        // Sheet 3: Top 10 Countries
-        if (currentReportData.country_labels && currentReportData.country_data) {
-          const countryData = [
-            ['TOP 10 NEGARA (7 HARI TERAKHIR)'],
-            ['Negara', 'Jumlah Visitor']
-          ];
-          currentReportData.country_labels.forEach((country, index) => {
-            countryData.push([country, currentReportData.country_data[index] || 0]);
-          });
-          const ws_country = XLSX.utils.aoa_to_sheet(countryData);
-          XLSX.utils.book_append_sheet(wb, ws_country, 'Top 10 Negara');
-        }
-
-        // Sheet 4: Location Details
-        if (allLocationsData && allLocationsData.length > 0) {
-          const locationData = [
-            ['LOKASI PENGUNJUNG HARI INI'],
-            ['No', 'Negara', 'Kode Negara', 'Kota', 'Region', 'Jalan', 'No. Rumah', 'Timezone', 'Total Kunjungan']
-          ];
-          allLocationsData.forEach((loc, index) => {
-            locationData.push([
-              index + 1,
-              loc.country || 'Unknown',
-              loc.country_code || 'XX',
-              loc.city || 'Unknown',
-              loc.region || '',
-              loc.street || '',
-              loc.house_number || '',
-              loc.timezone || 'Unknown',
-              loc.total || 0
-            ]);
-          });
-          const ws_location = XLSX.utils.aoa_to_sheet(locationData);
-          XLSX.utils.book_append_sheet(wb, ws_location, 'Lokasi Pengunjung');
-        }
-
-        // Sheet 5: Frequency
-        if (allFrequencyData && allFrequencyData.length > 0) {
-          const freqData = [
-            ['FREKUENSI KUNJUNGAN (7 HARI TERAKHIR)'],
-            ['Tanggal', 'IP Address', 'Lokasi', 'Kota', 'Negara', 'Timezone', 'Device & Browser', 'Jumlah Kunjungan']
-          ];
-          allFrequencyData.forEach((item) => {
-            freqData.push([
-              item.date || '-',
-              item.ip || '-',
-              item.full_location || 'Unknown',
-              item.city || 'Unknown',
-              item.country || 'Unknown',
-              item.timezone || 'Unknown',
-              item.device || 'Unknown',
-              item.visits || 0
-            ]);
-          });
-          const ws_freq = XLSX.utils.aoa_to_sheet(freqData);
-          XLSX.utils.book_append_sheet(wb, ws_freq, 'Frekuensi');
-        }
-
-        // Sheet 6: Activity Log
-        if (allActivityData && allActivityData.length > 0) {
-          const activityData = [
-            ['LOG AKTIVITAS HARI INI'],
-            ['Waktu', 'IP Address', 'Lokasi', 'Kota', 'Negara', 'Timezone', 'Device & Browser']
-          ];
-          allActivityData.forEach((item) => {
-            activityData.push([
-              item.time || '-',
-              item.ip || '-',
-              item.full_location || 'Unknown',
-              item.city || 'Unknown',
-              item.country || 'Unknown',
-              item.timezone || 'Unknown',
-              item.device || 'Unknown'
-            ]);
-          });
-          const ws_activity = XLSX.utils.aoa_to_sheet(activityData);
-          XLSX.utils.book_append_sheet(wb, ws_activity, 'Log Aktivitas');
-        }
-
-        // Sheet 7: Browser Stats
-        if (currentReportData.browsers && currentReportData.browsers.length > 0) {
-          const browserData = [
-            ['TOP 10 BROWSER & DEVICE (7 HARI TERAKHIR)'],
-            ['Device & Browser', 'Jumlah']
-          ];
-          currentReportData.browsers.forEach((item) => {
-            browserData.push([item.device || 'Unknown', item.total || 0]);
-          });
-          const ws_browser = XLSX.utils.aoa_to_sheet(browserData);
-          XLSX.utils.book_append_sheet(wb, ws_browser, 'Browser & Device');
-        }
-
-        // Generate filename with date
-        const filename = `Laporan_Visitor_Kulino_${new Date().toISOString().split('T')[0]}.xlsx`;
-
-        // Download
-        XLSX.writeFile(wb, filename);
-
-        console.log('✅ Excel report generated:', filename);
-
-        // Show success notification
-        showNotification('✅ Laporan berhasil diunduh!', 'success');
-
-      } catch (error) {
-        console.error('❌ Error generating Excel:', error);
-        alert('Gagal membuat laporan Excel. Silakan coba lagi.');
-      }
-    }
-
-    function showNotification(message, type = 'info') {
-      const colors = {
-        success: 'bg-green-500',
-        error: 'bg-red-500',
-        info: 'bg-blue-500'
-      };
-
-      const notification = document.createElement('div');
-      notification.className = `fixed top-24 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-xl z-50 animate-fade-in`;
-      notification.textContent = message;
-      document.body.appendChild(notification);
-
-      setTimeout(() => {
-        notification.style.opacity = '0';
-        notification.style.transition = 'opacity 0.3s';
-        setTimeout(() => notification.remove(), 300);
-      }, 3000);
+    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow-lg ${badgeClass}">
+      <span>${icon}</span>
+      <span>${count} visit${count > 1 ? 's' : ''}</span>
+    </span>
+  `;
     }
 
     // ==================== LOAD DATA ====================
+    let loadAttempts = 0;
+    const MAX_LOAD_ATTEMPTS = 3;
+
     async function loadRecap(date = "", timezone = "Asia/Jakarta") {
       const statusDiv = document.getElementById('connectionStatus');
       const statusMsg = document.getElementById('statusMessage');
 
+      loadAttempts++;
+
+      console.log(`📡 Attempt ${loadAttempts}/${MAX_LOAD_ATTEMPTS}: Loading data...`);
+
       try {
-        let url = `track.php?tz=${encodeURIComponent(timezone)}`;
+        let url = `../track.php?tz=${encodeURIComponent(timezone)}`;
         if (date) url += `&date=${date}`;
 
         console.log('📡 Fetching:', url);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
         const res = await fetch(url, {
           method: 'GET',
           credentials: 'same-origin',
           headers: {
             'Accept': 'application/json'
-          }
+          },
+          signal: controller.signal
         });
 
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
 
         const data = await res.json();
         console.log('✅ Data received:', data);
 
-        if (data.error) throw new Error(data.error);
+        // Check for errors in response
+        if (data.error) {
+          throw new Error(data.error + (data.details ? ': ' + data.details : ''));
+        }
+
+        // Validate required data
+        if (typeof data.today === 'undefined') {
+          throw new Error('Invalid response: missing required data');
+        }
 
         // Store data for export
         currentReportData = data;
 
-        statusDiv.classList.add('hidden');
+        // Hide error status
+        if (statusDiv) statusDiv.classList.add('hidden');
+
+        // Reset load attempts on success
+        loadAttempts = 0;
 
         // Update stats
         document.getElementById("totalVisits").innerText = data.today || 0;
@@ -942,28 +801,63 @@ include("../includes/koneksi.php");
           document.getElementById("currentTimezone").innerText = data.display_timezone;
         }
 
+        // Update charts
         updateWeeklyChart(data.labels || [], data.weekly || []);
         updateCountryChart(data.country_labels || [], data.country_data || []);
         updateBrowserChart(data.browsers || []);
 
+        // Update tables
         updateLocationTable(data.locations || []);
         updateFrequencyTable(data.frequency || []);
         updateActivityTable(data.activity || []);
 
+        console.log('✅ Dashboard updated successfully');
+
       } catch (e) {
         console.error("❌ Error:", e);
-        statusDiv.classList.remove('hidden');
-        statusMsg.textContent = `Error: ${e.message}`;
 
+        if (statusDiv && statusMsg) {
+          statusDiv.classList.remove('hidden');
+
+          if (e.name === 'AbortError') {
+            statusMsg.textContent = `Request timeout. Retrying... (${loadAttempts}/${MAX_LOAD_ATTEMPTS})`;
+          } else {
+            statusMsg.textContent = `Error: ${e.message}. Retrying... (${loadAttempts}/${MAX_LOAD_ATTEMPTS})`;
+          }
+        }
+
+        // Update UI with error state
         document.getElementById("totalVisits").innerText = "Error";
         document.getElementById("totalUnique").innerText = "Error";
         document.getElementById("activeVisitor").innerText = "Error";
+
+        // Retry logic
+        if (loadAttempts < MAX_LOAD_ATTEMPTS) {
+          console.log(`⏳ Retrying in 3 seconds...`);
+          setTimeout(() => {
+            loadRecap(date, timezone);
+          }, 3000);
+        } else {
+          console.error('❌ Max retry attempts reached');
+          if (statusMsg) {
+            statusMsg.textContent = `Failed to load data after ${MAX_LOAD_ATTEMPTS} attempts. Please refresh the page.`;
+          }
+
+          // Show empty state in tables
+          document.getElementById('locationTable').innerHTML =
+            '<tr><td colspan="5" class="text-center text-red-500 py-8">Failed to load data. Please refresh the page.</td></tr>';
+        }
       }
     }
 
     // ==================== CHARTS ====================
     function updateWeeklyChart(labels, data) {
-      const ctx = document.getElementById("weeklyChart").getContext("2d");
+      const ctx = document.getElementById("weeklyChart")?.getContext("2d");
+      if (!ctx) {
+        console.error('Weekly chart canvas not found');
+        return;
+      }
+
       if (weeklyChartInstance) weeklyChartInstance.destroy();
 
       weeklyChartInstance = new Chart(ctx, {
@@ -1018,20 +912,20 @@ include("../includes/koneksi.php");
     }
 
     function updateCountryChart(labels, data) {
-      const ctx = document.getElementById("countryChart").getContext("2d");
+      const ctx = document.getElementById("countryChart")?.getContext("2d");
+      if (!ctx) {
+        console.error('Country chart canvas not found');
+        return;
+      }
+
       if (countryChartInstance) countryChartInstance.destroy();
 
       const colors = [
-        'rgba(102, 126, 234, 0.8)',
-        'rgba(16, 185, 129, 0.8)',
-        'rgba(244, 63, 94, 0.8)',
-        'rgba(251, 191, 36, 0.8)',
-        'rgba(147, 51, 234, 0.8)',
-        'rgba(59, 130, 246, 0.8)',
-        'rgba(236, 72, 153, 0.8)',
-        'rgba(34, 197, 94, 0.8)',
-        'rgba(249, 115, 22, 0.8)',
-        'rgba(168, 85, 247, 0.8)'
+        'rgba(102, 126, 234, 0.8)', 'rgba(16, 185, 129, 0.8)',
+        'rgba(244, 63, 94, 0.8)', 'rgba(251, 191, 36, 0.8)',
+        'rgba(147, 51, 234, 0.8)', 'rgba(59, 130, 246, 0.8)',
+        'rgba(236, 72, 153, 0.8)', 'rgba(34, 197, 94, 0.8)',
+        'rgba(249, 115, 22, 0.8)', 'rgba(168, 85, 247, 0.8)'
       ];
 
       countryChartInstance = new Chart(ctx, {
@@ -1081,23 +975,23 @@ include("../includes/koneksi.php");
     }
 
     function updateBrowserChart(browsers) {
-      const ctx = document.getElementById("browserChart").getContext("2d");
+      const ctx = document.getElementById("browserChart")?.getContext("2d");
+      if (!ctx) {
+        console.error('Browser chart canvas not found');
+        return;
+      }
+
       if (browserChartInstance) browserChartInstance.destroy();
 
       const labels = browsers.map(b => b.device || 'Unknown');
       const data = browsers.map(b => b.total || 0);
 
       const colors = [
-        'rgba(102, 126, 234, 0.8)',
-        'rgba(16, 185, 129, 0.8)',
-        'rgba(244, 63, 94, 0.8)',
-        'rgba(251, 191, 36, 0.8)',
-        'rgba(147, 51, 234, 0.8)',
-        'rgba(59, 130, 246, 0.8)',
-        'rgba(236, 72, 153, 0.8)',
-        'rgba(34, 197, 94, 0.8)',
-        'rgba(249, 115, 22, 0.8)',
-        'rgba(168, 85, 247, 0.8)'
+        'rgba(102, 126, 234, 0.8)', 'rgba(16, 185, 129, 0.8)',
+        'rgba(244, 63, 94, 0.8)', 'rgba(251, 191, 36, 0.8)',
+        'rgba(147, 51, 234, 0.8)', 'rgba(59, 130, 246, 0.8)',
+        'rgba(236, 72, 153, 0.8)', 'rgba(34, 197, 94, 0.8)',
+        'rgba(249, 115, 22, 0.8)', 'rgba(168, 85, 247, 0.8)'
       ];
 
       browserChartInstance = new Chart(ctx, {
@@ -1137,12 +1031,18 @@ include("../includes/koneksi.php");
     // ==================== TABLES ====================
     function updateLocationTable(locations) {
       allLocationsData = locations;
-      const limit = parseInt(document.getElementById('locationLimit').value);
+      const limit = parseInt(document.getElementById('locationLimit')?.value || 10);
       const tbody = document.getElementById('locationTable');
+
+      if (!tbody) {
+        console.error('Location table body not found');
+        return;
+      }
+
       const displayData = locations.slice(0, limit);
 
       if (locations.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-8">Tidak ada data lokasi</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-8">Tidak ada data lokasi hari ini</td></tr>';
         updateLocationStats(0, 0, 0, 0);
         document.getElementById('showingCount').textContent = '0';
         document.getElementById('totalLocationCount').textContent = '0';
@@ -1156,7 +1056,19 @@ include("../includes/koneksi.php");
 
       updateLocationStats(locations.length, uniqueCountries, uniqueCities, uniqueTimezones);
 
-      tbody.innerHTML = displayData.map((loc, idx) => `
+      tbody.innerHTML = displayData.map((loc, idx) => {
+        // Build full address display
+        let addressDisplay = [];
+        if (loc.house_number || loc.street) {
+          addressDisplay.push(`${loc.house_number} ${loc.street}`.trim());
+        }
+        if (loc.district) addressDisplay.push(loc.district);
+        if (loc.subdistrict) addressDisplay.push(loc.subdistrict);
+        if (loc.city) addressDisplay.push(loc.city);
+
+        const fullAddress = addressDisplay.length > 0 ? addressDisplay.join(', ') : 'Unknown';
+
+        return `
       <tr>
         <td class="text-center">${idx + 1}</td>
         <td>
@@ -1167,8 +1079,10 @@ include("../includes/koneksi.php");
         </td>
         <td>
           <div class="text-sm">
-            <div class="font-medium text-gray-900">${loc.city || 'Unknown'}</div>
-            <div class="text-gray-500">${loc.region || ''}</div>
+            <div class="font-medium text-gray-900">${fullAddress}</div>
+            ${loc.latitude && loc.longitude ? 
+              `<div class="text-xs text-gray-500 mt-1">📍 ${loc.latitude.toFixed(6)}, ${loc.longitude.toFixed(6)}</div>` 
+              : ''}
           </div>
         </td>
         <td>
@@ -1178,7 +1092,8 @@ include("../includes/koneksi.php");
         </td>
         <td class="text-center">${getVisitBadge(loc.total)}</td>
       </tr>
-    `).join('');
+    `;
+      }).join('');
 
       document.getElementById('showingCount').textContent = displayData.length;
       document.getElementById('totalLocationCount').textContent = locations.length;
@@ -1193,8 +1108,11 @@ include("../includes/koneksi.php");
 
     function updateFrequencyTable(frequency) {
       allFrequencyData = frequency;
-      const limit = parseInt(document.getElementById('frequencyLimit').value);
+      const limit = parseInt(document.getElementById('frequencyLimit')?.value || 10);
       const tbody = document.getElementById('freqTable');
+
+      if (!tbody) return;
+
       const displayData = frequency.slice(0, limit);
 
       if (frequency.length === 0) {
@@ -1205,37 +1123,36 @@ include("../includes/koneksi.php");
       }
 
       tbody.innerHTML = displayData.map(item => `
-      <tr>
-        <td>${item.date || '-'}</td>
-        <td class="font-mono text-sm">${item.ip || '-'}</td>
-        <td>
-          <div class="flex items-center gap-2">
-            <span class="country-flag">${getCountryFlag(item.country_code)}</span>
-            <div class="text-sm">
-              <div class="font-medium">${item.city || 'Unknown'}</div>
-              <div class="text-gray-500">${item.country || ''}</div>
-            </div>
-          </div>
-        </td>
-        <td>
-          <span class="inline-block px-3 py-1 bg-purple-100 text-purple-800 rounded-lg text-xs font-semibold">
-            ${item.timezone || 'Unknown'}
-          </span>
-        </td>
-        <td>
+    <tr>
+      <td>${item.date || '-'}</td>
+      <td class="font-mono text-sm">${item.ip || '-'}</td>
+      <td>
+        <div class="flex items-center gap-2">
+          <span class="country-flag">${getCountryFlag(item.country_code)}</span>
           <div class="text-sm">
-            <div class="font-medium">${item.device || 'Unknown'}</div>
-            <div class="text-gray-500">${item.browser || 'Unknown'}</div>
+            <div class="font-medium">${item.city || 'Unknown'}</div>
+            <div class="text-gray-500">${item.country || ''}</div>
           </div>
-        </td>
-        <td class="text-center">
-          <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
-            <span>🔢</span>
-            <span>${item.visits} visits</span>
-          </span>
-        </td>
-      </tr>
-    `).join('');
+        </div>
+      </td>
+      <td>
+        <span class="inline-block px-3 py-1 bg-purple-100 text-purple-800 rounded-lg text-xs font-semibold">
+          ${item.timezone || 'Unknown'}
+        </span>
+      </td>
+      <td>
+        <div class="text-sm">
+          <div class="font-medium">${item.device || 'Unknown'}</div>
+        </div>
+      </td>
+      <td class="text-center">
+        <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
+          <span>🔢</span>
+          <span>${item.visits} visits</span>
+        </span>
+      </td>
+    </tr>
+  `).join('');
 
       document.getElementById('freqShowingCount').textContent = displayData.length;
       document.getElementById('freqTotalCount').textContent = frequency.length;
@@ -1243,8 +1160,11 @@ include("../includes/koneksi.php");
 
     function updateActivityTable(activity) {
       allActivityData = activity;
-      const limit = parseInt(document.getElementById('activityLimit').value);
+      const limit = parseInt(document.getElementById('activityLimit')?.value || 10);
       const tbody = document.getElementById('activityTable');
+
+      if (!tbody) return;
+
       const displayData = activity.slice(0, limit);
 
       if (activity.length === 0) {
@@ -1255,76 +1175,376 @@ include("../includes/koneksi.php");
       }
 
       tbody.innerHTML = displayData.map(item => `
-      <tr>
-        <td class="font-medium">${item.time || '-'}</td>
-        <td class="font-mono text-sm">${item.ip || '-'}</td>
-        <td>
-          <div class="flex items-center gap-2">
-            <span class="country-flag">${getCountryFlag(item.country_code)}</span>
-            <div class="text-sm">
-              <div class="font-medium">${item.city || 'Unknown'}</div>
-              <div class="text-gray-500">${item.country || ''}</div>
-            </div>
-          </div>
-        </td>
-        <td>
-          <span class="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-lg text-xs font-semibold">
-            ${item.timezone || 'Unknown'}
-          </span>
-        </td>
-        <td>
+    <tr>
+      <td class="font-medium">${item.time || '-'}</td>
+      <td class="font-mono text-sm">${item.ip || '-'}</td>
+      <td>
+        <div class="flex items-center gap-2">
+          <span class="country-flag">${getCountryFlag(item.country_code)}</span>
           <div class="text-sm">
-            <div class="font-medium">${item.device || 'Unknown'}</div>
-            <div class="text-gray-500">${item.browser || 'Unknown'}</div>
+            <div class="font-medium">${item.city || 'Unknown'}</div>
+            <div class="text-gray-500">${item.country || ''}</div>
           </div>
-        </td>
-      </tr>
-    `).join('');
+        </div>
+      </td>
+      <td>
+        <span class="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-lg text-xs font-semibold">
+          ${item.timezone || 'Unknown'}
+        </span>
+      </td>
+      <td>
+        <div class="text-sm">
+          <div class="font-medium">${item.device || 'Unknown'}</div>
+        </div>
+      </td>
+    </tr>
+  `).join('');
 
       document.getElementById('activityShowingCount').textContent = displayData.length;
       document.getElementById('activityTotalCount').textContent = activity.length;
     }
 
     // ==================== EVENT LISTENERS ====================
-    document.getElementById('timezoneFilter').addEventListener('change', function() {
+    document.getElementById('timezoneFilter')?.addEventListener('change', function() {
       const tz = this.value;
       const date = document.getElementById('dateFilter').value;
       loadRecap(date, tz);
     });
 
-    document.getElementById('dateFilter').addEventListener('change', function() {
+    document.getElementById('dateFilter')?.addEventListener('change', function() {
       const date = this.value;
       const tz = document.getElementById('timezoneFilter').value;
       loadRecap(date, tz);
     });
 
-    document.getElementById('locationLimit').addEventListener('change', function() {
+    document.getElementById('locationLimit')?.addEventListener('change', function() {
       updateLocationTable(allLocationsData);
     });
 
-    document.getElementById('frequencyLimit').addEventListener('change', function() {
+    document.getElementById('frequencyLimit')?.addEventListener('change', function() {
       updateFrequencyTable(allFrequencyData);
     });
 
-    document.getElementById('activityLimit').addEventListener('change', function() {
+    document.getElementById('activityLimit')?.addEventListener('change', function() {
       updateActivityTable(allActivityData);
     });
 
     // ==================== INIT ====================
     document.addEventListener('DOMContentLoaded', function() {
+      console.log('🚀 Dashboard initializing...');
+
       // Set default date to today
       const today = new Date().toISOString().split('T')[0];
-      document.getElementById('dateFilter').value = today;
+      const dateFilter = document.getElementById('dateFilter');
+      if (dateFilter) {
+        dateFilter.value = today;
+      }
 
       // Load initial data
       loadRecap(today, 'Asia/Jakarta');
 
       // Auto refresh every 30 seconds
       setInterval(() => {
-        const date = document.getElementById('dateFilter').value;
-        const tz = document.getElementById('timezoneFilter').value;
+        const date = document.getElementById('dateFilter')?.value;
+        const tz = document.getElementById('timezoneFilter')?.value;
+        console.log('🔄 Auto-refreshing data...');
         loadRecap(date, tz);
       }, 30000);
+    });
+
+    async function downloadExcelReport() {
+      const downloadBtn = document.getElementById('downloadReportBtn');
+
+      // Disable button
+      if (downloadBtn) {
+        downloadBtn.disabled = true;
+        downloadBtn.innerHTML = `
+        <div class="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+        <span>Generating...</span>
+      `;
+      }
+
+      try {
+        console.log('📥 Starting Excel report generation...');
+
+        // Get current filter values
+        const timezone = document.getElementById('timezoneFilter')?.value || 'Asia/Jakarta';
+        const date = document.getElementById('dateFilter')?.value || new Date().toISOString().split('T')[0];
+
+        // Fetch fresh data
+        let url = `../track.php?tz=${encodeURIComponent(timezone)}`;
+        if (date) url += `&date=${date}`;
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch data');
+
+        const data = await response.json();
+        console.log('✅ Data fetched for export:', data);
+
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+
+        // ========== SHEET 1: SUMMARY ==========
+        const summaryData = [
+          ['📊 KULINO VISITOR DASHBOARD REPORT'],
+          ['Generated:', new Date().toLocaleString('id-ID', {
+            timeZone: timezone
+          })],
+          ['Timezone:', data.display_timezone || timezone],
+          ['Filter Date:', date],
+          [''],
+          ['SUMMARY STATISTICS'],
+          ['Total Visits Today', data.today || 0],
+          ['Unique Visitors', data.unique || 0],
+          ['Active Now (10 min)', data.active || 0],
+          [''],
+          ['WEEKLY TRENDS'],
+          ['Date', 'Visitors'],
+          ...data.labels.map((label, idx) => [label, data.weekly[idx] || 0])
+        ];
+
+        const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+        wsSummary['!cols'] = [{
+          wch: 25
+        }, {
+          wch: 20
+        }];
+        XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+        // ========== SHEET 2: TOP 10 COUNTRIES ==========
+        const countryData = [
+          ['🌍 TOP 10 COUNTRIES (Last 7 Days)'],
+          [''],
+          ['Country', 'Total Visitors'],
+          ...data.country_labels.map((country, idx) => [
+            country,
+            data.country_data[idx] || 0
+          ])
+        ];
+
+        const wsCountry = XLSX.utils.aoa_to_sheet(countryData);
+        wsCountry['!cols'] = [{
+          wch: 30
+        }, {
+          wch: 15
+        }];
+        XLSX.utils.book_append_sheet(wb, wsCountry, 'Top Countries');
+
+        // ========== SHEET 3: LOCATION DETAILS ==========
+        if (data.locations && data.locations.length > 0) {
+          const locationData = [
+            ['📍 VISITOR LOCATIONS - ' + date],
+            [''],
+            ['Country', 'City', 'Street', 'House No', 'District', 'Subdistrict', 'Region', 'Postal Code', 'Timezone', 'Latitude', 'Longitude', 'Total Visits'],
+            ...data.locations.map(loc => [
+              loc.country || '',
+              loc.city || '',
+              loc.street || '',
+              loc.house_number || '',
+              loc.district || '',
+              loc.subdistrict || '',
+              loc.region || '',
+              loc.postal_code || '',
+              loc.timezone || '',
+              loc.latitude || '',
+              loc.longitude || '',
+              loc.total || 0
+            ])
+          ];
+
+          const wsLocation = XLSX.utils.aoa_to_sheet(locationData);
+          wsLocation['!cols'] = [{
+              wch: 20
+            }, {
+              wch: 20
+            }, {
+              wch: 25
+            }, {
+              wch: 10
+            },
+            {
+              wch: 20
+            }, {
+              wch: 20
+            }, {
+              wch: 20
+            }, {
+              wch: 12
+            },
+            {
+              wch: 20
+            }, {
+              wch: 12
+            }, {
+              wch: 12
+            }, {
+              wch: 12
+            }
+          ];
+          XLSX.utils.book_append_sheet(wb, wsLocation, 'Locations');
+        }
+
+        // ========== SHEET 4: FREQUENCY DATA ==========
+        if (data.frequency && data.frequency.length > 0) {
+          const freqData = [
+            ['🔄 VISIT FREQUENCY (Last 7 Days)'],
+            [''],
+            ['Date', 'IP Address', 'City', 'Country', 'Timezone', 'Device & Browser', 'Visit Count'],
+            ...data.frequency.map(item => [
+              item.date || '',
+              item.ip || '',
+              item.city || '',
+              item.country || '',
+              item.timezone || '',
+              item.device || '',
+              item.visits || 0
+            ])
+          ];
+
+          const wsFreq = XLSX.utils.aoa_to_sheet(freqData);
+          wsFreq['!cols'] = [{
+              wch: 12
+            }, {
+              wch: 18
+            }, {
+              wch: 20
+            }, {
+              wch: 20
+            },
+            {
+              wch: 20
+            }, {
+              wch: 35
+            }, {
+              wch: 12
+            }
+          ];
+          XLSX.utils.book_append_sheet(wb, wsFreq, 'Frequency');
+        }
+
+        // ========== SHEET 5: ACTIVITY LOG ==========
+        if (data.activity && data.activity.length > 0) {
+          const activityData = [
+            ['📋 ACTIVITY LOG - ' + date],
+            [''],
+            ['Time', 'IP Address', 'City', 'Country', 'Timezone', 'Device & Browser'],
+            ...data.activity.map(item => [
+              item.time || '',
+              item.ip || '',
+              item.city || '',
+              item.country || '',
+              item.timezone || '',
+              item.device || ''
+            ])
+          ];
+
+          const wsActivity = XLSX.utils.aoa_to_sheet(activityData);
+          wsActivity['!cols'] = [{
+              wch: 12
+            }, {
+              wch: 18
+            }, {
+              wch: 20
+            }, {
+              wch: 20
+            },
+            {
+              wch: 20
+            }, {
+              wch: 35
+            }
+          ];
+          XLSX.utils.book_append_sheet(wb, wsActivity, 'Activity Log');
+        }
+
+        // ========== SHEET 6: BROWSER & DEVICE STATS ==========
+        if (data.browsers && data.browsers.length > 0) {
+          const browserData = [
+            ['🌐 BROWSER & DEVICE STATISTICS (Last 7 Days)'],
+            [''],
+            ['Device & Browser', 'Total Users'],
+            ...data.browsers.map(item => [
+              item.device || 'Unknown',
+              item.total || 0
+            ])
+          ];
+
+          const wsBrowser = XLSX.utils.aoa_to_sheet(browserData);
+          wsBrowser['!cols'] = [{
+            wch: 40
+          }, {
+            wch: 15
+          }];
+          XLSX.utils.book_append_sheet(wb, wsBrowser, 'Browsers & Devices');
+        }
+
+        // Generate filename with date
+        const filename = `Kulino_Visitor_Report_${date.replace(/-/g, '')}_${Date.now()}.xlsx`;
+
+        // Write and download
+        XLSX.writeFile(wb, filename);
+
+        console.log('✅ Excel report generated successfully');
+
+        // Show success message
+        if (window.Swal) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Report Downloaded!',
+            html: `
+            <div class="text-left">
+              <p class="mb-2">📊 <strong>Report Details:</strong></p>
+              <ul class="text-sm space-y-1 ml-4">
+                <li>✓ Summary Statistics</li>
+                <li>✓ Weekly Trends</li>
+                <li>✓ Top 10 Countries</li>
+                <li>✓ ${data.locations?.length || 0} Location Details</li>
+                <li>✓ ${data.frequency?.length || 0} Frequency Records</li>
+                <li>✓ ${data.activity?.length || 0} Activity Logs</li>
+                <li>✓ Browser & Device Stats</li>
+              </ul>
+            </div>
+          `,
+            confirmButtonText: 'Got it!',
+            timer: 5000
+          });
+        }
+
+      } catch (error) {
+        console.error('❌ Excel export error:', error);
+
+        if (window.Swal) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Export Failed',
+            text: 'Failed to generate Excel report: ' + error.message,
+            confirmButtonColor: '#ef4444'
+          });
+        } else {
+          alert('Failed to generate report: ' + error.message);
+        }
+      } finally {
+        // Re-enable button
+        if (downloadBtn) {
+          downloadBtn.disabled = false;
+          downloadBtn.innerHTML = `
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span class="hidden sm:inline">Download Report</span>
+          <span class="sm:hidden">Download</span>
+        `;
+        }
+      }
+    }
+
+    // Add event listener for download button
+    document.addEventListener('DOMContentLoaded', function() {
+      const downloadBtn = document.getElementById('downloadReportBtn');
+      if (downloadBtn) {
+        downloadBtn.addEventListener('click', downloadExcelReport);
+        console.log('✅ Download button event listener added');
+      }
     });
   </script>
 </body>
