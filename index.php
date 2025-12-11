@@ -100,39 +100,6 @@
       transform: rotate(-45deg) translate(4px, -5px);
     }
 
-    /* ===== Enhanced Buttons ===== */
-    .btn-gaming {
-      position: relative;
-      overflow: hidden;
-      transition: all 0.3s ease;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      font-size: 0.875rem;
-    }
-
-    .btn-gaming::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 0;
-      height: 0;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.3);
-      transform: translate(-50%, -50%);
-      transition: width 0.6s, height 0.6s;
-    }
-
-    .btn-gaming:hover::before {
-      width: 300px;
-      height: 300px;
-    }
-
-    .btn-gaming:active {
-      transform: scale(0.95);
-    }
-
     /* Primary Button */
     .btn-primary {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -142,91 +109,6 @@
     .btn-primary:hover {
       box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
       transform: translateY(-2px);
-    }
-
-    /* Secondary Button */
-    .btn-secondary {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
-    }
-
-    .btn-secondary:hover {
-      box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
-      transform: translateY(-2px);
-    }
-
-    /* Play Button */
-    .btn-play {
-      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-      box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
-    }
-
-    .btn-play:hover {
-      box-shadow: 0 6px 20px rgba(79, 172, 254, 0.6);
-      transform: translateY(-2px);
-    }
-
-    /* Admin Button */
-    .btn-admin {
-      background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-      box-shadow: 0 4px 15px rgba(250, 112, 154, 0.4);
-    }
-
-    .btn-admin:hover {
-      box-shadow: 0 6px 20px rgba(250, 112, 154, 0.6);
-      transform: translateY(-2px);
-    }
-
-    /* Outline Button */
-    .btn-outline {
-      background: transparent;
-      border: 2px solid;
-      border-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%) 1;
-      color: #667eea;
-      box-shadow: none;
-    }
-
-    .btn-outline:hover {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      transform: translateY(-2px);
-    }
-
-    /* ===== Card Animations ===== */
-    .game-card {
-      transition: all 0.3s ease;
-    }
-
-    .game-card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-    }
-
-    .featured-card {
-      transition: all 0.3s ease;
-    }
-
-    .featured-card:hover {
-      transform: scale(1.05);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-    }
-
-    .featured-card:hover video {
-      opacity: 1;
-    }
-
-    .featured-card video {
-      transition: opacity 0.3s ease;
-    }
-
-    /* ===== News Card ===== */
-    .news-card {
-      transition: all 0.3s ease;
-    }
-
-    .news-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     }
 
     /* ===== Overlay Effect ===== */
@@ -243,32 +125,6 @@
 
     .game-card:hover .overlay {
       opacity: 1;
-    }
-
-    /* ===== Badge Styles ===== */
-    .badge {
-      display: inline-block;
-      padding: 0.25rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .badge-new {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-    }
-
-    .badge-hot {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      color: white;
-    }
-
-    .badge-top {
-      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-      color: white;
     }
 
     /* ===== Glow Effect ===== */
@@ -366,24 +222,6 @@
         font-size: 0.75rem;
         padding: 0.5rem 1rem;
       }
-    }
-
-    /* ===== Navigation Buttons ===== */
-    .nav-btn {
-      transition: all 0.3s ease;
-      background: white;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .nav-btn:hover {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      transform: scale(1.1);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-    }
-
-    .nav-btn:active {
-      transform: scale(0.95);
     }
 
     /* ===== Loading Spinner ===== */
@@ -503,88 +341,7 @@
       background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
       color: #333;
     }
-
-    /* Location Block Overlay */
-    #locationBlockOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      z-index: 9999;
-      display: none;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #locationBlockOverlay.active {
-      display: flex;
-    }
-
-    .location-block-content {
-      background: white;
-      border-radius: 24px;
-      padding: 3rem;
-      max-width: 500px;
-      text-align: center;
-      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
-      animation: slideUp 0.5s ease;
-    }
-
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(50px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .location-icon {
-      width: 100px;
-      height: 100px;
-      margin: 0 auto 1.5rem;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-
-      0%,
-      100% {
-        transform: scale(1);
-      }
-
-      50% {
-        transform: scale(1.05);
-      }
-    }
-
-    .retry-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 1rem 2rem;
-      border-radius: 12px;
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      margin-top: 1.5rem;
-    }
-
-    .retry-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-    }
-
+    
     /* Main content hidden initially */
     #mainContent {
       display: none;
