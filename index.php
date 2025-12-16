@@ -23,7 +23,8 @@
   <!-- Solana Web3.js Library -->
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.min.js"></script>
   <!-- CSS -->
-  <link rel="stylesheet" href="./css/style-login.css" />
+  <link rel="stylesheet" href="css/style-login.css" />
+  <link rel="stylesheet" href="css/swap.css" />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
