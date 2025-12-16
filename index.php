@@ -23,7 +23,7 @@
   <!-- Solana Web3.js Library -->
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.min.js"></script>
   <!-- CSS -->
-  <link rel="stylesheet" href="public_html/game/css/style-index.css" />
+  <link rel="stylesheet" href="./css/style-login.css" />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -824,77 +824,6 @@
 
           </div>
 
-          <!-- Swap Container -->
-          <div class="swap-container max-w-3xl">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-xl font-bold text-white">Exchange</h3>
-              <button class="text-gray-400 hover:text-blue-400 transition">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-              </button>
-            </div>
-
-            <!-- From Token -->
-            <div class="mb-1">
-              <label class="text-sm text-gray-400 mb-2 block">From</label>
-              <div class="glass-card p-4 rounded-xl">
-                <div class="flex items-center justify-between mb-3">
-                  <button class="token-select flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-full bg-purple-500"></div>
-                    <span class="font-semibold">POL</span>
-                    <span class="text-xs text-gray-400">Polygon</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                  </button>
-                  <span class="text-sm text-gray-400">Balance: <span id="fromBalance">0.00</span></span>
-                </div>
-                <input type="number" id="fromAmount" class="token-input" placeholder="0" step="0.01" min="0" />
-              </div>
-            </div>
-
-            <!-- Exchange Icon -->
-            <div class="exchange-icon" onclick="swapTokens()">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
-              </svg>
-            </div>
-
-            <!-- To Token -->
-            <div class="mb-4">
-              <label class="text-sm text-gray-400 mb-2 block">To</label>
-              <div class="glass-card p-4 rounded-xl">
-                <div class="flex items-center justify-between mb-3">
-                  <button class="token-select flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-full bg-indigo-500"></div>
-                    <span class="font-semibold">IXT</span>
-                    <span class="text-xs text-gray-400">Polygon</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                  </button>
-                  <span class="text-sm text-gray-400">Balance: <span id="toBalance">0.00</span></span>
-                </div>
-                <input type="number" id="toAmount" class="token-input" placeholder="0" readonly />
-              </div>
-            </div>
-
-            <!-- Swap Button -->
-            <button id="swapBtn" class="btn-primary w-full px-6 py-4 rounded-xl text-white font-bold text-lg flex items-center justify-center gap-2">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-              </svg>
-              Connect wallet
-            </button>
-
-            <!-- Info Text -->
-            <p class="text-xs text-gray-500 text-center mt-3">
-              Powered by LI.FI
-            </p>
-          </div>
-
           <!-- Quick Actions -->
           <div class="mt-6 flex flex-wrap gap-3">
             <a href="https://phantom.com/tokens/solana/E5chNtjGFvCMVYoTwcP9DtrdMdctRCGdGahAAhnHbHc1"
@@ -920,6 +849,283 @@
         </div>
       </div>
     </section>
+
+    <!-- Token Swap Section -->
+<section class="mb-12 fade-in">
+  <div class="max-w-2xl mx-auto">
+    <div class="text-center mb-8">
+      <h3 class="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-3">
+        🔄 Swap to Kulino
+      </h3>
+      <p class="text-gray-600">Exchange your crypto for Kulino Coins instantly</p>
+    </div>
+
+    <div class="swap-container glass-card">
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-6">
+        <h4 class="text-xl font-bold text-white">Exchange</h4>
+        <button onclick="openSwapSettings()" class="text-gray-400 hover:text-blue-400 transition p-2 rounded-lg hover:bg-white/10">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- From Token -->
+      <div class="mb-2">
+        <label class="text-sm text-gray-400 mb-2 block font-medium">You Pay</label>
+        <div class="glass-card p-4 rounded-xl border border-white/10 hover:border-blue-400/30 transition">
+          <div class="flex items-center justify-between mb-3">
+            <button onclick="openTokenSelector('from')" class="token-select flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-white/10 transition">
+              <img id="fromTokenIcon" src="https://cryptologos.cc/logos/bitcoin-btc-logo.png" alt="BTC" class="w-8 h-8 rounded-full">
+              <div class="text-left">
+                <span id="fromTokenSymbol" class="font-bold text-white text-lg">BTC</span>
+                <span id="fromTokenName" class="text-xs text-gray-400 block">Bitcoin</span>
+              </div>
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            <div class="text-right">
+              <p class="text-xs text-gray-400">Balance</p>
+              <p id="fromBalance" class="text-sm font-semibold text-white">0.00</p>
+            </div>
+          </div>
+          <input 
+            type="number" 
+            id="fromAmount" 
+            class="token-input bg-transparent border-none text-white text-2xl font-bold w-full focus:outline-none" 
+            placeholder="0.0" 
+            step="0.000001"
+            oninput="calculateSwapAmount()"
+          />
+          <div class="flex items-center justify-between mt-2">
+            <p id="fromAmountUSD" class="text-xs text-gray-400">≈ $0.00 USD</p>
+            <button onclick="setMaxAmount()" class="text-xs text-blue-400 hover:text-blue-300 font-semibold px-3 py-1 rounded-lg bg-blue-400/10 hover:bg-blue-400/20 transition">
+              MAX
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Swap Direction Button -->
+      <div class="flex justify-center -my-3 relative z-10">
+        <button onclick="flipSwapDirection()" class="exchange-icon bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+          <svg class="w-6 h-6 text-white transition-transform duration-300" id="swapArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- To Token (KULINO) -->
+      <div class="mb-6">
+        <label class="text-sm text-gray-400 mb-2 block font-medium">You Receive</label>
+        <div class="glass-card p-4 rounded-xl border border-yellow-500/30 hover:border-yellow-400/50 transition bg-gradient-to-br from-yellow-500/5 to-orange-500/5">
+          <div class="flex items-center justify-between mb-3">
+            <div class="token-select flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-yellow-500/20 to-orange-500/20">
+              <img src="assets/icon/kulino-logo-blue.png" alt="KULINO" class="w-8 h-8 rounded-full">
+              <div class="text-left">
+                <span class="font-bold text-white text-lg">KULINO</span>
+                <span class="text-xs text-gray-400 block">Kulino Coin</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-gray-400">Balance</p>
+              <p id="kulinoBalanceDisplay" class="text-sm font-semibold text-yellow-400">0.00</p>
+            </div>
+          </div>
+          <input 
+            type="number" 
+            id="toAmount" 
+            class="token-input bg-transparent border-none text-white text-2xl font-bold w-full focus:outline-none" 
+            placeholder="0.0" 
+            readonly
+          />
+          <div class="mt-2">
+            <p id="toAmountUSD" class="text-xs text-gray-400">≈ $0.00 USD</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Swap Info -->
+      <div id="swapInfo" class="glass-card p-4 rounded-xl mb-4 space-y-2 text-sm hidden">
+        <div class="flex justify-between text-gray-300">
+          <span>Exchange Rate</span>
+          <span id="exchangeRate" class="font-semibold">-</span>
+        </div>
+        <div class="flex justify-between text-gray-300">
+          <span>Network Fee</span>
+          <span id="networkFee" class="font-semibold">~$0.00</span>
+        </div>
+        <div class="flex justify-between text-gray-300">
+          <span>Slippage Tolerance</span>
+          <span id="slippageTolerance" class="font-semibold text-blue-400">0.5%</span>
+        </div>
+        <div class="flex justify-between text-gray-300 pt-2 border-t border-white/10">
+          <span class="font-semibold">Estimated Time</span>
+          <span id="estimatedTime" class="font-semibold text-green-400">~30 seconds</span>
+        </div>
+      </div>
+
+      <!-- Swap Button -->
+      <button 
+        id="swapButton" 
+        onclick="executeSwap()" 
+        class="btn-primary w-full px-6 py-4 rounded-xl text-white font-bold text-lg flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+        </svg>
+        <span id="swapButtonText">Connect Wallet to Swap</span>
+      </button>
+
+      <!-- Powered By -->
+      <div class="mt-4 flex items-center justify-center gap-2 text-xs text-gray-500">
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+        </svg>
+        <span>Secured by Jupiter & 1inch Aggregators</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Token Selector Modal -->
+<div id="tokenSelectorModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+  <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl max-w-md w-full max-h-[80vh] overflow-hidden shadow-2xl">
+    <!-- Modal Header -->
+    <div class="p-6 border-b border-white/10">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold text-white">Select Token</h3>
+        <button onclick="closeTokenSelector()" class="text-gray-400 hover:text-white transition p-2 rounded-lg hover:bg-white/10">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <input 
+        type="text" 
+        id="tokenSearchInput" 
+        placeholder="Search by name or symbol..." 
+        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 transition"
+        oninput="filterTokenList()"
+      />
+    </div>
+
+    <!-- Token List -->
+    <div id="tokenList" class="overflow-y-auto max-h-96 p-4">
+      <!-- Bitcoin -->
+      <button onclick="selectToken('BTC', 'Bitcoin', 'https://cryptologos.cc/logos/bitcoin-btc-logo.png', 'btc')" class="token-item w-full flex items-center gap-4 p-4 rounded-xl hover:bg-white/10 transition">
+        <img src="https://cryptologos.cc/logos/bitcoin-btc-logo.png" alt="BTC" class="w-10 h-10 rounded-full">
+        <div class="flex-1 text-left">
+          <p class="font-bold text-white">Bitcoin</p>
+          <p class="text-sm text-gray-400">BTC</p>
+        </div>
+        <p class="text-sm font-semibold text-gray-300">$0.00</p>
+      </button>
+
+      <!-- Solana -->
+      <button onclick="selectToken('SOL', 'Solana', 'https://cryptologos.cc/logos/solana-sol-logo.png', 'sol')" class="token-item w-full flex items-center gap-4 p-4 rounded-xl hover:bg-white/10 transition">
+        <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="SOL" class="w-10 h-10 rounded-full">
+        <div class="flex-1 text-left">
+          <p class="font-bold text-white">Solana</p>
+          <p class="text-sm text-gray-400">SOL</p>
+        </div>
+        <p class="text-sm font-semibold text-gray-300">$0.00</p>
+      </button>
+
+      <!-- Ethereum -->
+      <button onclick="selectToken('ETH', 'Ethereum', 'https://cryptologos.cc/logos/ethereum-eth-logo.png', 'eth')" class="token-item w-full flex items-center gap-4 p-4 rounded-xl hover:bg-white/10 transition">
+        <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png" alt="ETH" class="w-10 h-10 rounded-full">
+        <div class="flex-1 text-left">
+          <p class="font-bold text-white">Ethereum</p>
+          <p class="text-sm text-gray-400">ETH</p>
+        </div>
+        <p class="text-sm font-semibold text-gray-300">$0.00</p>
+      </button>
+
+      <!-- XRP -->
+      <button onclick="selectToken('XRP', 'Ripple', 'https://cryptologos.cc/logos/xrp-xrp-logo.png', 'xrp')" class="token-item w-full flex items-center gap-4 p-4 rounded-xl hover:bg-white/10 transition">
+        <img src="https://cryptologos.cc/logos/xrp-xrp-logo.png" alt="XRP" class="w-10 h-10 rounded-full">
+        <div class="flex-1 text-left">
+          <p class="font-bold text-white">Ripple</p>
+          <p class="text-sm text-gray-400">XRP</p>
+        </div>
+        <p class="text-sm font-semibold text-gray-300">$0.00</p>
+      </button>
+
+      <!-- Polygon -->
+      <button onclick="selectToken('MATIC', 'Polygon', 'https://cryptologos.cc/logos/polygon-matic-logo.png', 'matic')" class="token-item w-full flex items-center gap-4 p-4 rounded-xl hover:bg-white/10 transition">
+        <img src="https://cryptologos.cc/logos/polygon-matic-logo.png" alt="MATIC" class="w-10 h-10 rounded-full">
+        <div class="flex-1 text-left">
+          <p class="font-bold text-white">Polygon</p>
+          <p class="text-sm text-gray-400">MATIC</p>
+        </div>
+        <p class="text-sm font-semibold text-gray-300">$0.00</p>
+      </button>
+
+      <!-- Sui -->
+      <button onclick="selectToken('SUI', 'Sui', 'https://cryptologos.cc/logos/sui-sui-logo.png', 'sui')" class="token-item w-full flex items-center gap-4 p-4 rounded-xl hover:bg-white/10 transition">
+        <img src="https://cryptologos.cc/logos/sui-sui-logo.png" alt="SUI" class="w-10 h-10 rounded-full">
+        <div class="flex-1 text-left">
+          <p class="font-bold text-white">Sui</p>
+          <p class="text-sm text-gray-400">SUI</p>
+        </div>
+        <p class="text-sm font-semibold text-gray-300">$0.00</p>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Swap Settings Modal -->
+<div id="swapSettingsModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+  <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl max-w-md w-full shadow-2xl p-6">
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="text-xl font-bold text-white">Swap Settings</h3>
+      <button onclick="closeSwapSettings()" class="text-gray-400 hover:text-white transition p-2 rounded-lg hover:bg-white/10">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Slippage Tolerance -->
+    <div class="mb-6">
+      <label class="text-sm font-semibold text-gray-300 mb-3 block">Slippage Tolerance</label>
+      <div class="grid grid-cols-4 gap-2 mb-3">
+        <button onclick="setSlippage(0.1)" class="slippage-btn px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white font-semibold transition">0.1%</button>
+        <button onclick="setSlippage(0.5)" class="slippage-btn active px-4 py-2 rounded-lg bg-blue-500 text-white font-semibold transition">0.5%</button>
+        <button onclick="setSlippage(1.0)" class="slippage-btn px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white font-semibold transition">1.0%</button>
+        <button onclick="setSlippage(3.0)" class="slippage-btn px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white font-semibold transition">3.0%</button>
+      </div>
+      <input 
+        type="number" 
+        id="customSlippage" 
+        placeholder="Custom %" 
+        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-400"
+        step="0.1"
+        oninput="setSlippage(parseFloat(this.value) || 0.5)"
+      />
+    </div>
+
+    <!-- Transaction Deadline -->
+    <div class="mb-6">
+      <label class="text-sm font-semibold text-gray-300 mb-3 block">Transaction Deadline (minutes)</label>
+      <input 
+        type="number" 
+        id="txDeadline" 
+        value="20" 
+        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-400"
+        min="1"
+      />
+    </div>
+
+    <button onclick="closeSwapSettings()" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-3 rounded-xl transition">
+      Save Settings
+    </button>
+  </div>
+</div>
 
     <!-- Featured Games Section -->
     <section class="mb-12 fade-in">

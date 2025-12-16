@@ -1,0 +1,215 @@
+/* ===== SWAP SECTION STYLES ===== */
+
+/* Glass Card Effect */
+.glass-card {
+  background: rgba(26, 31, 58, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Swap Container */
+.swap-container {
+  background: linear-gradient(135deg, rgba(10, 14, 39, 0.95) 0%, rgba(26, 31, 58, 0.95) 100%);
+  backdrop-filter: blur(30px);
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-radius: 2rem;
+  padding: 2rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* Token Input */
+.token-input {
+  background: transparent;
+  border: none;
+  color: white;
+  width: 100%;
+  font-size: 1.5rem;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.token-input:focus {
+  outline: none;
+}
+
+.token-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* Token Select Button */
+.token-select {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.token-select:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.02);
+}
+
+/* Exchange Icon (Swap Direction Button) */
+.exchange-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: -1.75rem auto;
+  position: relative;
+  z-index: 10;
+  border: 4px solid rgba(10, 14, 39, 1);
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+}
+
+.exchange-icon:hover {
+  transform: rotate(180deg) scale(1.1);
+  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.6);
+}
+
+.exchange-icon:active {
+  transform: rotate(180deg) scale(0.95);
+}
+
+/* Primary Button Enhanced */
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn-primary:hover::before {
+  width: 400px;
+  height: 400px;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+  transform: translateY(-2px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary:disabled:hover {
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+}
+
+/* Token Item in Modal */
+.token-item {
+  transition: all 0.2s ease;
+}
+
+.token-item:hover {
+  transform: translateX(4px);
+}
+
+.token-item img {
+  transition: all 0.3s ease;
+}
+
+.token-item:hover img {
+  transform: scale(1.1);
+}
+
+/* Slippage Button */
+.slippage-btn {
+  transition: all 0.2s ease;
+}
+
+.slippage-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.slippage-btn:not(.active):hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Loading Animation */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(59, 130, 246, 0.8);
+  }
+}
+
+.swap-loading {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Success State */
+.swap-success {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+}
+
+/* Error State */
+.swap-error {
+  border-color: rgba(239, 68, 68, 0.5);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .swap-container {
+    padding: 1.5rem;
+  }
+
+  .token-input {
+    font-size: 1.25rem;
+  }
+
+  .exchange-icon {
+    width: 3rem;
+    height: 3rem;
+    margin: -1.5rem auto;
+  }
+}
+
+/* Animate Number Changes */
+@keyframes number-change {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+    color: #60a5fa;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.number-animate {
+  animation: number-change 0.3s ease;
+}
