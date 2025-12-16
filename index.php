@@ -1623,6 +1623,7 @@
   </script>
 
   <script src="./js/script-index.js"></script>
+  <script src="./js/swap.js"></script>
 
 </body>
 
