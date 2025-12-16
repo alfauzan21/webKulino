@@ -1,14 +1,49 @@
 // ==================== CONFIGURATION ====================
 const KULINO_TOKEN_MINT = "E5chNtjGFvCMVYoTwcP9DtrdMdctRCGdGahAAhnHbHc1";
 
-// 🔧 FIXED: Better RPC endpoints with proper error handling
+// 🔧 FIX: Multiple RPC endpoints dengan fallback
 const SOLANA_RPC_ENDPOINTS = [
-  "https://api.mainnet-beta.solana.com", // Primary - free public RPC
-  "https://solana-api.projectserum.com", // Backup 1
-  "https://rpc.ankr.com/solana" // Backup 2
+  "https://solana-mainnet.g.alchemy.com/v2/demo", // Alchemy demo
+  "https://api.mainnet-beta.solana.com",
+  "https://solana-api.projectserum.com",
+  "https://rpc.ankr.com/solana",
 ];
 
 let currentRPCIndex = 0;
+
+// Function untuk mendapatkan RPC connection dengan retry
+function getConnection() {
+  const rpcUrl = SOLANA_RPC_ENDPOINTS[currentRPCIndex];
+  return new solanaWeb3.Connection(rpcUrl, {
+    commitment: "confirmed",
+    confirmTransactionInitialTimeout: 60000,
+  });
+}
+
+// Function untuk retry dengan RPC endpoint berikutnya
+async function retryWithNextRPC(fn) {
+  const maxRetries = SOLANA_RPC_ENDPOINTS.length;
+  let lastError;
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      console.warn(
+        `❌ RPC ${SOLANA_RPC_ENDPOINTS[currentRPCIndex]} failed:`,
+        error.message
+      );
+      currentRPCIndex = (currentRPCIndex + 1) % SOLANA_RPC_ENDPOINTS.length;
+      console.log(
+        `🔄 Switching to RPC: ${SOLANA_RPC_ENDPOINTS[currentRPCIndex]}`
+      );
+    }
+  }
+
+  throw lastError;
+}
+
 const WALLET_STORAGE_KEY = "kulino_connected_wallet";
 const SESSION_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 days
 
@@ -17,9 +52,139 @@ let provider = null;
 let userAddress = null;
 let kulinoBalance = 0;
 let solBalance = 0;
-let balanceUpdateInProgress = false;
 
 console.log("🚀 Kulino Script Starting...");
+
+// Utility Functions
+function shortAddr(addr) {
+  if (!addr) return "-";
+  return addr.slice(0, 6) + "..." + addr.slice(-4);
+}
+
+function showToast(message, type = "info") {
+  const colors = {
+    success: "bg-green-500",
+    error: "bg-red-500",
+    info: "bg-blue-500",
+  };
+
+  const toast = document.createElement("div");
+  toast.className = `fixed top-20 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    setTimeout(() => toast.remove(), 300);
+  }, 2700);
+}
+
+// Connect Wallet
+async function connectWallet() {
+  try {
+    if (!window.phantom?.solana?.isPhantom) {
+      Swal.fire({
+        icon: "warning",
+        title: "Phantom Not Installed",
+        text: "Please install the Phantom Wallet extension",
+        confirmButtonColor: "#3b82f6",
+      });
+      return;
+    }
+
+    const provider = window.phantom.solana;
+    const resp = await provider.connect();
+    const address = resp.publicKey.toString();
+
+    userAddress = address;
+    updateConnectedUI(address);
+
+    Swal.fire({
+      icon: "success",
+      title: "Connected!",
+      html: `<div class="text-sm"><code>${shortAddr(address)}</code></div>`,
+      confirmButtonColor: "#3b82f6",
+      timer: 3000,
+    });
+  } catch (err) {
+    console.error("Connect error:", err);
+    Swal.fire({
+      icon: "error",
+      title: "Connection Failed",
+      text: err.message || "Failed to connect wallet",
+      confirmButtonColor: "#ef4444",
+    });
+  }
+}
+
+function updateConnectedUI(address) {
+  document.getElementById("walletStatus").innerText = "Connected ✓";
+  document.getElementById("addrShort").innerText = shortAddr(address);
+  document.getElementById("disconnectBtn").classList.remove("hidden");
+
+  const connectBtn = document.getElementById("connectBtn");
+  const connectBtnMobile = document.getElementById("connectBtnMobile");
+
+  if (connectBtn)
+    connectBtn.innerHTML = '<span class="font-semibold">Connected</span>';
+  if (connectBtnMobile)
+    connectBtnMobile.innerHTML = '<span class="font-semibold">Connected</span>';
+
+  // Update swap button
+  document.getElementById("swapBtn").innerHTML = `
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+        </svg>
+        Swap Tokens
+      `;
+}
+
+function disconnectWallet() {
+  userAddress = null;
+  document.getElementById("walletStatus").innerText = "Not Connected";
+  document.getElementById("addrShort").innerText = "-";
+  document.getElementById("disconnectBtn").classList.add("hidden");
+
+  showToast("Wallet disconnected", "success");
+}
+
+function updateBalanceDisplay() {
+  // Placeholder - implement actual balance fetching
+  showToast("Balance updated", "success");
+}
+
+function swapTokens() {
+  const temp = document.getElementById("fromAmount").value;
+  document.getElementById("fromAmount").value =
+    document.getElementById("toAmount").value;
+  document.getElementById("toAmount").value = temp;
+}
+
+// Initialize
+document.addEventListener("DOMContentLoaded", () => {
+  document
+    .getElementById("connectBtn")
+    ?.addEventListener("click", connectWallet);
+  document
+    .getElementById("connectBtnMobile")
+    ?.addEventListener("click", connectWallet);
+
+  // Mobile menu toggle
+  document.getElementById("menuToggle")?.addEventListener("click", () => {
+    document.getElementById("mobileMenu").classList.toggle("hidden");
+  });
+
+  // Auto-calculate swap
+  document.getElementById("fromAmount")?.addEventListener("input", (e) => {
+    const value = parseFloat(e.target.value) || 0;
+    document.getElementById("toAmount").value = (value * 1.02).toFixed(2); // Example conversion
+  });
+});
+
+// Expose functions globally
+window.connectWallet = connectWallet;
+window.disconnectWallet = disconnectWallet;
+window.updateBalanceDisplay = updateBalanceDisplay;
+window.swapTokens = swapTokens;
 
 // ==================== UTILITY FUNCTIONS ====================
 function shortAddr(addr) {
@@ -48,62 +213,431 @@ function showToast(message, type = "info") {
     success: "bg-green-500",
     error: "bg-red-500",
     info: "bg-blue-500",
-    warning: "bg-yellow-500"
   };
 
   const toast = document.createElement("div");
-  toast.className = `fixed top-20 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
+  toast.className = `fixed top-20 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in`;
   toast.textContent = message;
   document.body.appendChild(toast);
-  
   setTimeout(() => {
     toast.style.opacity = "0";
     setTimeout(() => toast.remove(), 300);
   }, 2700);
 }
 
-// 🔧 FIXED: Better RPC connection with fallback
-function getConnection() {
-  const rpcUrl = SOLANA_RPC_ENDPOINTS[currentRPCIndex];
-  console.log(`🔗 Using RPC: ${rpcUrl}`);
-  
-  return new solanaWeb3.Connection(rpcUrl, {
-    commitment: "confirmed",
-    confirmTransactionInitialTimeout: 30000,
-    wsEndpoint: undefined // Disable WebSocket to avoid connection issues
-  });
-}
+// ==================== LOCATION TRACKING SYSTEM ====================
+let locationGranted = false;
+let userLocation = null;
 
-// 🔧 FIXED: Improved retry logic with better error handling
-async function retryWithNextRPC(fn, maxRetries = 2) {
-  let lastError;
-  
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      console.log(`🔄 Attempt ${attempt + 1}/${maxRetries} with RPC: ${SOLANA_RPC_ENDPOINTS[currentRPCIndex]}`);
-      return await fn();
-    } catch (error) {
-      lastError = error;
-      console.warn(`❌ RPC ${SOLANA_RPC_ENDPOINTS[currentRPCIndex]} failed:`, error.message);
-      
-      // Switch to next RPC endpoint
-      currentRPCIndex = (currentRPCIndex + 1) % SOLANA_RPC_ENDPOINTS.length;
-      
-      // Wait before retry
-      if (attempt < maxRetries - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+// Check if location was previously granted
+function checkLocationStatus() {
+  const locationData = sessionStorage.getItem("kulino_location_granted");
+
+  if (locationData) {
+    const data = JSON.parse(locationData);
+    const timeSince = Date.now() - data.timestamp;
+
+    // Location valid for 24 hours
+    if (timeSince < 24 * 60 * 60 * 1000) {
+      console.log("✅ Location already granted (from session)");
+      userLocation = data.location;
+      showMainContent();
+      trackVisitorWithLocation(data.location);
+      return true;
     }
   }
-  
-  throw lastError;
+
+  return false;
 }
 
-// 🔧 FIXED: Better balance fetching with proper error handling
+// Request location permission
+async function requestLocationPermission() {
+  console.log("📍 Requesting location permission...");
+
+  Swal.fire({
+    title: "Meminta Izin Lokasi...",
+    html: "Mohon izinkan akses lokasi pada popup browser Anda",
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
+
+  if (!navigator.geolocation) {
+    Swal.fire({
+      icon: "error",
+      title: "Browser Tidak Mendukung",
+      text: "Browser Anda tidak mendukung geolocation. Mohon gunakan browser modern.",
+      confirmButtonColor: "#ef4444",
+    });
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      console.log("✅ Location granted:", position);
+
+      const coords = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+      };
+
+      Swal.update({
+        html: "Mendapatkan detail lokasi...",
+      });
+
+      // Get detailed address using Nominatim (OpenStreetMap)
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.latitude}&lon=${coords.longitude}&zoom=18&addressdetails=1`,
+          {
+            headers: {
+              "User-Agent": "KulinoGameHub/1.0",
+            },
+          }
+        );
+
+        const data = await response.json();
+        console.log("🗺️ Location data:", data);
+
+        const address = data.address || {};
+        userLocation = {
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          accuracy: coords.accuracy,
+          street: address.road || address.pedestrian || "",
+          houseNumber: address.house_number || "",
+          city:
+            address.city ||
+            address.town ||
+            address.village ||
+            address.county ||
+            "",
+          region: address.state || address.province || "",
+          country: address.country || "",
+          countryCode: address.country_code?.toUpperCase() || "",
+          postalCode: address.postcode || "",
+          fullAddress: data.display_name || "",
+          timestamp: Date.now(),
+        };
+
+        // Save to session
+        sessionStorage.setItem(
+          "kulino_location_granted",
+          JSON.stringify({
+            location: userLocation,
+            timestamp: Date.now(),
+          })
+        );
+
+        locationGranted = true;
+
+        Swal.fire({
+          icon: "success",
+          title: "Lokasi Terdeteksi!",
+          html: `
+            <div class="text-left bg-green-50 rounded-lg p-4 mt-3">
+              <p class="text-sm font-semibold text-green-800 mb-2">📍 Detail Lokasi:</p>
+              <p class="text-sm text-green-700">
+                ${
+                  userLocation.street
+                    ? userLocation.houseNumber +
+                      " " +
+                      userLocation.street +
+                      "<br>"
+                    : ""
+                }
+                ${userLocation.city}, ${userLocation.region}<br>
+                ${userLocation.country} (${userLocation.countryCode})
+              </p>
+            </div>
+          `,
+          confirmButtonText: "Lanjutkan",
+          confirmButtonColor: "#10b981",
+          timer: 3000,
+        }).then(() => {
+          showMainContent();
+          trackVisitorWithLocation(userLocation);
+        });
+      } catch (error) {
+        console.error("❌ Geocoding error:", error);
+
+        // Fallback: use basic location data
+        userLocation = {
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          accuracy: coords.accuracy,
+          city: "Unknown",
+          country: "Unknown",
+          countryCode: "XX",
+          timestamp: Date.now(),
+        };
+
+        sessionStorage.setItem(
+          "kulino_location_granted",
+          JSON.stringify({
+            location: userLocation,
+            timestamp: Date.now(),
+          })
+        );
+
+        locationGranted = true;
+
+        Swal.fire({
+          icon: "success",
+          title: "Lokasi Terdeteksi!",
+          text: "Lokasi dasar berhasil dideteksi",
+          confirmButtonText: "Lanjutkan",
+          confirmButtonColor: "#10b981",
+          timer: 2000,
+        }).then(() => {
+          showMainContent();
+          trackVisitorWithLocation(userLocation);
+        });
+      }
+    },
+    (error) => {
+      console.error("❌ Location error:", error);
+
+      let errorMessage = "";
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          errorMessage =
+            "Anda menolak akses lokasi. Mohon izinkan akses lokasi untuk melanjutkan.";
+          break;
+        case error.POSITION_UNAVAILABLE:
+          errorMessage = "Informasi lokasi tidak tersedia. Mohon coba lagi.";
+          break;
+        case error.TIMEOUT:
+          errorMessage = "Permintaan lokasi timeout. Mohon coba lagi.";
+          break;
+        default:
+          errorMessage = "Terjadi kesalahan saat mendapatkan lokasi.";
+      }
+
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Mendapatkan Lokasi",
+        text: errorMessage,
+        confirmButtonText: "Coba Lagi",
+        confirmButtonColor: "#667eea",
+      });
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0,
+    }
+  );
+}
+
+// Show main content
+function showMainContent() {
+  document.getElementById("locationBlockOverlay").classList.remove("active");
+  document.getElementById("mainContent").classList.add("active");
+  console.log("✅ Main content displayed");
+}
+
+// Track visitor with location
+// Track visitor with location - IMPROVED VERSION
+async function trackVisitorWithLocation(location) {
+  console.log('📊 Tracking visitor with GPS location:', location);
+
+  // Build tracking data with GPS coordinates
+  const trackData = {
+    add: 1,
+    latitude: location.latitude || 0,
+    longitude: location.longitude || 0,
+    accuracy: location.accuracy || 0,
+    // Don't send frontend geocoding - let backend handle it
+    // Backend will use Nominatim for accurate reverse geocoding
+  };
+
+  const params = new URLSearchParams(trackData);
+
+  try {
+    console.log('📡 Sending tracking request with GPS data...');
+    
+    const response = await fetch(`track.php?${params.toString()}`, {
+      method: 'GET',
+      credentials: 'same-origin',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    console.log('✅ Visitor tracked successfully:', data);
+
+    // Update visitor count
+    if (data.today !== undefined) {
+      const countEl = document.getElementById('visitorCount');
+      if (countEl) countEl.textContent = data.today;
+    }
+    
+    // Store successful tracking
+    sessionStorage.setItem('tracking_success', Date.now().toString());
+    
+  } catch (error) {
+    console.error('❌ Tracking failed:', error);
+
+    // Retry after 2 seconds
+    setTimeout(() => {
+      console.log('🔄 Retrying tracking request...');
+      fetch(`track.php?${params.toString()}`, {
+        method: 'GET',
+        credentials: 'same-origin'
+      })
+      .then(res => res.json())
+      .then(data => console.log('✅ Retry successful:', data))
+      .catch(e => console.error('❌ Retry also failed:', e));
+    }, 2000);
+  }
+}
+
+// Request location permission - IMPROVED VERSION
+async function requestLocationPermission() {
+  console.log('📍 Requesting location permission...');
+
+  Swal.fire({
+    title: 'Meminta Izin Lokasi...',
+    html: 'Mohon izinkan akses lokasi pada popup browser Anda',
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
+
+  if (!navigator.geolocation) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Browser Tidak Mendukung',
+      text: 'Browser Anda tidak mendukung geolocation. Mohon gunakan browser modern.',
+      confirmButtonColor: '#ef4444',
+    });
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      console.log('✅ Location granted:', position);
+
+      const coords = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+      };
+
+      Swal.update({
+        html: 'Menyimpan lokasi Anda...',
+      });
+
+      // Show basic location info
+      userLocation = {
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        accuracy: coords.accuracy,
+        timestamp: Date.now(),
+      };
+
+      // Save to session
+      sessionStorage.setItem(
+        'kulino_location_granted',
+        JSON.stringify({
+          location: userLocation,
+          timestamp: Date.now(),
+        })
+      );
+
+      locationGranted = true;
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Lokasi Terdeteksi!',
+        html: `
+          <div class="text-left bg-green-50 rounded-lg p-4 mt-3">
+            <p class="text-sm font-semibold text-green-800 mb-2">📍 GPS Coordinates:</p>
+            <p class="text-sm text-green-700">
+              Latitude: ${coords.latitude.toFixed(6)}<br>
+              Longitude: ${coords.longitude.toFixed(6)}<br>
+              Accuracy: ~${Math.round(coords.accuracy)}m
+            </p>
+            <p class="text-xs text-green-600 mt-2">
+              ✓ Lokasi detail akan diproses oleh server
+            </p>
+          </div>
+        `,
+        confirmButtonText: 'Lanjutkan',
+        confirmButtonColor: '#10b981',
+        timer: 3000,
+      }).then(() => {
+        showMainContent();
+        // Send GPS coordinates to backend
+        trackVisitorWithLocation(userLocation);
+      });
+    },
+    (error) => {
+      console.error('❌ Location error:', error);
+
+      let errorMessage = '';
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          errorMessage =
+            'Anda menolak akses lokasi. Mohon izinkan akses lokasi untuk melanjutkan.';
+          break;
+        case error.POSITION_UNAVAILABLE:
+          errorMessage = 'Informasi lokasi tidak tersedia. Mohon coba lagi.';
+          break;
+        case error.TIMEOUT:
+          errorMessage = 'Permintaan lokasi timeout. Mohon coba lagi.';
+          break;
+        default:
+          errorMessage = 'Terjadi kesalahan saat mendapatkan lokasi.';
+      }
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal Mendapatkan Lokasi',
+        text: errorMessage,
+        confirmButtonText: 'Coba Lagi',
+        confirmButtonColor: '#667eea',
+      });
+    },
+    {
+      enableHighAccuracy: true,  // Use GPS for better accuracy
+      timeout: 10000,
+      maximumAge: 0,
+    }
+  );
+}
+
+// Initialize on page load
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("🚀 Initializing location system...");
+
+  // Check if location already granted
+  if (!checkLocationStatus()) {
+    // Show location block overlay
+    document.getElementById("locationBlockOverlay").classList.add("active");
+    console.log("⚠️ Location not granted, showing overlay");
+  }
+});
+
+// ==================== BALANCE FUNCTIONS (FIXED) ====================
 async function getSOLBalance(walletAddress) {
   try {
     console.log("📊 Fetching SOL balance...");
-    
+
     const balance = await retryWithNextRPC(async () => {
       const connection = getConnection();
       const pubkey = new solanaWeb3.PublicKey(walletAddress);
@@ -115,7 +649,7 @@ async function getSOLBalance(walletAddress) {
     return solAmount;
   } catch (error) {
     console.error("❌ SOL fetch error:", error);
-    // Don't throw error, return 0 instead to keep UI working
+    showToast("Failed to fetch SOL balance", "error");
     return 0;
   }
 }
@@ -136,7 +670,8 @@ async function getKulinoBalance(walletAddress) {
 
     if (tokenAccounts.value.length > 0) {
       const balance =
-        tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount || 0;
+        tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount ||
+        0;
       console.log("✅ Kulino balance:", balance);
       return balance;
     }
@@ -145,24 +680,16 @@ async function getKulinoBalance(walletAddress) {
     return 0;
   } catch (error) {
     console.error("❌ Kulino fetch error:", error);
-    // Don't throw error, return 0 instead
+    showToast("Failed to fetch KULINO balance", "error");
     return 0;
   }
 }
 
-// 🔧 FIXED: Better balance display update with loading states
 async function updateBalanceDisplay(address = userAddress) {
   if (!address) {
     console.log("⚠️ No address to update balance");
     return;
   }
-
-  if (balanceUpdateInProgress) {
-    console.log("⏳ Balance update already in progress");
-    return;
-  }
-
-  balanceUpdateInProgress = true;
 
   const kulinoEl = document.getElementById("kulinoBalance");
   const solEl = document.getElementById("solBalance");
@@ -170,7 +697,8 @@ async function updateBalanceDisplay(address = userAddress) {
 
   // Show loading state
   if (kulinoEl) {
-    kulinoEl.innerHTML = '<span class="inline-block w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin"></span>';
+    kulinoEl.innerHTML =
+      '<span class="inline-block w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin"></span>';
   }
   if (refreshBtn) {
     refreshBtn.disabled = true;
@@ -180,7 +708,7 @@ async function updateBalanceDisplay(address = userAddress) {
   try {
     // Fetch balances with timeout
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Balance fetch timeout")), 20000)
+      setTimeout(() => reject(new Error("Balance fetch timeout")), 15000)
     );
 
     const balancePromise = Promise.all([
@@ -195,36 +723,105 @@ async function updateBalanceDisplay(address = userAddress) {
 
     // Update UI
     if (kulinoEl) {
-      kulinoEl.innerHTML = `<strong>${formatKulinoBalance(kulinoBalance)}</strong> KULINO`;
+      kulinoEl.innerHTML = `<strong>${formatKulinoBalance(
+        kulinoBalance
+      )}</strong> KULINO`;
     }
     if (solEl) {
       solEl.textContent = `${formatSOLBalance(solBalance)} SOL`;
     }
 
-    console.log("✅ Balance updated successfully");
+    console.log("✅ Balance updated");
     showToast("Balance updated successfully", "success");
-    
   } catch (error) {
     console.error("❌ Balance update failed:", error);
-    
-    // Show friendly error message
-    if (kulinoEl) {
-      kulinoEl.innerHTML = "<strong>0.00</strong> KULINO <small class='text-yellow-300'>(RPC Error)</small>";
-    }
-    if (solEl) {
-      solEl.textContent = "0.0000 SOL";
-    }
-    
-    showToast("Balance temporarily unavailable", "warning");
-    
+    if (kulinoEl) kulinoEl.innerHTML = "<strong>0.00</strong> KULINO";
+    if (solEl) solEl.textContent = "0.0000 SOL";
+    showToast("Failed to update balance", "error");
   } finally {
-    balanceUpdateInProgress = false;
-    
     if (refreshBtn) {
       refreshBtn.disabled = false;
       refreshBtn.classList.remove("opacity-50");
     }
   }
+}
+
+// ==================== UI UPDATE ====================
+function updateConnectedUI(address) {
+  console.log("🔄 Updating UI for:", shortAddr(address));
+  userAddress = address;
+
+  const walletStatus = document.getElementById("walletStatus");
+  const addrShort = document.getElementById("addrShort");
+  const disconnectBtn = document.getElementById("disconnectBtn");
+
+  if (walletStatus) walletStatus.innerText = "Connected ✓";
+  if (addrShort) addrShort.innerText = shortAddr(address);
+  if (disconnectBtn) disconnectBtn.classList.remove("hidden");
+
+  const updateButton = (btn) => {
+    if (!btn) return;
+    btn.innerHTML = `
+      <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+      </svg>
+      <span class="font-semibold text-white">Connected</span>
+    `;
+  };
+
+  updateButton(document.getElementById("connectBtn"));
+  updateButton(document.getElementById("connectBtnMobile"));
+
+  try {
+    localStorage.setItem(WALLET_STORAGE_KEY, address);
+    localStorage.setItem("kulino_wallet_timestamp", Date.now().toString());
+  } catch (e) {
+    console.error("Storage error:", e);
+  }
+
+  updateBalanceDisplay(address);
+  console.log("✅ UI updated");
+}
+
+function resetDisconnectedUI() {
+  console.log("🔄 Resetting UI to disconnected state");
+  userAddress = null;
+  kulinoBalance = 0;
+  solBalance = 0;
+
+  const walletStatus = document.getElementById("walletStatus");
+  const addrShort = document.getElementById("addrShort");
+  const kulinoEl = document.getElementById("kulinoBalance");
+  const solEl = document.getElementById("solBalance");
+  const disconnectBtn = document.getElementById("disconnectBtn");
+
+  if (walletStatus) walletStatus.innerText = "Not Connected";
+  if (addrShort) addrShort.innerText = "-";
+  if (kulinoEl) kulinoEl.innerHTML = "<strong>0.00</strong> KULINO";
+  if (solEl) solEl.textContent = "0.0000 SOL";
+  if (disconnectBtn) disconnectBtn.classList.add("hidden");
+
+  const buttonHTML = `
+    <svg class="w-5 h-5 text-white transition-transform group-hover:scale-110" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+    </svg>
+    <span class="font-semibold text-white">Connect Wallet</span>
+  `;
+
+  const connectBtn = document.getElementById("connectBtn");
+  const connectBtnMobile = document.getElementById("connectBtnMobile");
+
+  if (connectBtn) connectBtn.innerHTML = buttonHTML;
+  if (connectBtnMobile) connectBtnMobile.innerHTML = buttonHTML;
+
+  try {
+    localStorage.removeItem(WALLET_STORAGE_KEY);
+    localStorage.removeItem("kulino_wallet_timestamp");
+  } catch (e) {
+    console.error("Storage error:", e);
+  }
+
+  console.log("✅ UI reset complete");
 }
 
 // ==================== WALLET FUNCTIONS ====================
@@ -303,7 +900,9 @@ async function connectWallet() {
         <div class="space-y-3">
           <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-3 rounded-lg">
             <p class="text-sm text-gray-600 mb-1">Wallet Address:</p>
-            <code class="text-xs font-mono text-indigo-600 font-semibold">${shortAddr(address)}</code>
+            <code class="text-xs font-mono text-indigo-600 font-semibold">${shortAddr(
+              address
+            )}</code>
           </div>
           <div class="bg-green-50 border border-green-200 rounded-lg p-3">
             <p class="text-sm text-green-800">✓ Auto-reconnect enabled for 30 days</p>
@@ -336,87 +935,6 @@ async function connectWallet() {
   }
 }
 
-function updateConnectedUI(address) {
-  console.log("🔄 Updating UI for:", shortAddr(address));
-  userAddress = address;
-
-  const walletStatus = document.getElementById("walletStatus");
-  const addrShort = document.getElementById("addrShort");
-  const disconnectBtn = document.getElementById("disconnectBtn");
-
-  if (walletStatus) walletStatus.innerText = "Connected ✓";
-  if (addrShort) addrShort.innerText = shortAddr(address);
-  if (disconnectBtn) disconnectBtn.classList.remove("hidden");
-
-  const updateButton = (btn) => {
-    if (!btn) return;
-    btn.innerHTML = `
-      <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-      </svg>
-      <span class="font-semibold text-white">Connected</span>
-    `;
-  };
-
-  updateButton(document.getElementById("connectBtn"));
-  updateButton(document.getElementById("connectBtnMobile"));
-
-  try {
-    localStorage.setItem(WALLET_STORAGE_KEY, address);
-    localStorage.setItem("kulino_wallet_timestamp", Date.now().toString());
-  } catch (e) {
-    console.error("Storage error:", e);
-  }
-
-  // Update balance with slight delay to ensure connection is stable
-  setTimeout(() => {
-    updateBalanceDisplay(address);
-  }, 1000);
-
-  console.log("✅ UI updated");
-}
-
-function resetDisconnectedUI() {
-  console.log("🔄 Resetting UI to disconnected state");
-  userAddress = null;
-  kulinoBalance = 0;
-  solBalance = 0;
-
-  const walletStatus = document.getElementById("walletStatus");
-  const addrShort = document.getElementById("addrShort");
-  const kulinoEl = document.getElementById("kulinoBalance");
-  const solEl = document.getElementById("solBalance");
-  const disconnectBtn = document.getElementById("disconnectBtn");
-
-  if (walletStatus) walletStatus.innerText = "Not Connected";
-  if (addrShort) addrShort.innerText = "-";
-  if (kulinoEl) kulinoEl.innerHTML = "<strong>0.00</strong> KULINO";
-  if (solEl) solEl.textContent = "0.0000 SOL";
-  if (disconnectBtn) disconnectBtn.classList.add("hidden");
-
-  const buttonHTML = `
-    <svg class="w-5 h-5 text-white transition-transform group-hover:scale-110" fill="currentColor" viewBox="0 0 20 20">
-      <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-    </svg>
-    <span class="font-semibold text-white">Connect Wallet</span>
-  `;
-
-  const connectBtn = document.getElementById("connectBtn");
-  const connectBtnMobile = document.getElementById("connectBtnMobile");
-
-  if (connectBtn) connectBtn.innerHTML = buttonHTML;
-  if (connectBtnMobile) connectBtnMobile.innerHTML = buttonHTML;
-
-  try {
-    localStorage.removeItem(WALLET_STORAGE_KEY);
-    localStorage.removeItem("kulino_wallet_timestamp");
-  } catch (e) {
-    console.error("Storage error:", e);
-  }
-
-  console.log("✅ UI reset complete");
-}
-
 function showDisconnectDialog() {
   Swal.fire({
     title: "Disconnect Wallet?",
@@ -424,11 +942,15 @@ function showDisconnectDialog() {
       <div class="text-left space-y-3">
         <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg">
           <p class="text-sm text-gray-600 mb-1">Connected Wallet:</p>
-          <code class="text-sm font-mono text-indigo-600 font-semibold">${shortAddr(userAddress)}</code>
+          <code class="text-sm font-mono text-indigo-600 font-semibold">${shortAddr(
+            userAddress
+          )}</code>
         </div>
         <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
           <p class="text-sm text-gray-600 mb-1">Kulino Balance:</p>
-          <p class="text-lg font-bold text-yellow-600">${formatKulinoBalance(kulinoBalance)} KULINO</p>
+          <p class="text-lg font-bold text-yellow-600">${formatKulinoBalance(
+            kulinoBalance
+          )} KULINO</p>
         </div>
       </div>
     `,
@@ -526,8 +1048,11 @@ function playGame(gameId) {
     return;
   }
 
-  const baseUrl = window.location.origin + window.location.pathname.replace("index.php", "");
-  const gameUrl = `${baseUrl}WebUnity/index.html?wallet=${encodeURIComponent(userAddress)}&game=${encodeURIComponent(gameId)}`;
+  const baseUrl =
+    window.location.origin + window.location.pathname.replace("index.php", "");
+  const gameUrl = `${baseUrl}WebUnity/index.html?wallet=${encodeURIComponent(
+    userAddress
+  )}&game=${encodeURIComponent(gameId)}`;
 
   console.log("🚀 Opening game at:", gameUrl);
 
@@ -548,7 +1073,11 @@ function playGame(gameId) {
   setTimeout(() => {
     const newWindow = window.open(gameUrl, "_blank");
 
-    if (!newWindow || newWindow.closed || typeof newWindow.closed == "undefined") {
+    if (
+      !newWindow ||
+      newWindow.closed ||
+      typeof newWindow.closed == "undefined"
+    ) {
       Swal.fire({
         icon: "error",
         title: "Popup Blocked",
@@ -575,7 +1104,7 @@ function playGame(gameId) {
   }, 500);
 }
 
-// ==================== SLIDER & UI FUNCTIONS ====================
+// ==================== SLIDER FUNCTIONS ====================
 function scrollSlider(sliderId, direction) {
   const slider = document.getElementById(sliderId);
   if (!slider) return;
@@ -587,20 +1116,33 @@ function scrollSlider(sliderId, direction) {
   });
 }
 
+// 🔧 FIX: Marketplace Functions (ADDED)
 function filterMarketplace(category) {
   console.log("🔍 Filtering marketplace by category:", category);
 
   const cards = document.querySelectorAll(".product-card");
   const filterBtns = document.querySelectorAll(".marketplace-filter-btn");
 
+  // Update active button styling
   filterBtns.forEach((btn) => {
-    btn.classList.remove("active", "from-indigo-600", "to-purple-600", "text-white");
+    btn.classList.remove(
+      "active",
+      "from-indigo-600",
+      "to-purple-600",
+      "text-white"
+    );
     btn.classList.add("bg-gray-100", "text-gray-700");
   });
 
-  event.target.classList.add("active", "from-indigo-600", "to-purple-600", "text-white");
+  event.target.classList.add(
+    "active",
+    "from-indigo-600",
+    "to-purple-600",
+    "text-white"
+  );
   event.target.classList.remove("bg-gray-100", "text-gray-700");
 
+  // Show/hide sub-category filter
   const subFilter = document.getElementById("subCategoryFilter");
   if (subFilter) {
     if (category !== "all") {
@@ -611,6 +1153,7 @@ function filterMarketplace(category) {
     }
   }
 
+  // Filter product cards
   cards.forEach((card) => {
     if (category === "all" || card.dataset.category === category) {
       card.style.display = "flex";
@@ -632,13 +1175,18 @@ function showSubCategories(category) {
     subCategories = ["All", "Monopoly", "Ular Tangga"];
   }
 
-  subFilter.innerHTML = '<div class="flex flex-wrap gap-2">' +
-    subCategories.map(sub =>
-      `<button onclick="filterBySubCategory('${category}', '${sub}')" 
+  subFilter.innerHTML =
+    '<div class="flex flex-wrap gap-2">' +
+    subCategories
+      .map(
+        (sub) =>
+          `<button onclick="filterBySubCategory('${category}', '${sub}')" 
         class="sub-filter-btn px-4 py-2 text-sm rounded-lg bg-white border border-gray-300 text-gray-700 hover:border-indigo-600 hover:text-indigo-600 transition">
         ${sub}
       </button>`
-    ).join("") + "</div>";
+      )
+      .join("") +
+    "</div>";
 }
 
 function filterBySubCategory(category, subCategory) {
@@ -652,7 +1200,10 @@ function filterBySubCategory(category, subCategory) {
         card.style.display = "flex";
       }
     } else {
-      if (card.dataset.category === category && card.dataset.subcategory === subCategory) {
+      if (
+        card.dataset.category === category &&
+        card.dataset.subcategory === subCategory
+      ) {
         card.style.display = "flex";
       } else {
         card.style.display = "none";
@@ -661,15 +1212,20 @@ function filterBySubCategory(category, subCategory) {
   });
 }
 
+// 🔧 FIX: Product Modal Functions (ADDED)
 let currentProduct = null;
 
 function openProductModal(product) {
   console.log("🛍️ Opening product modal:", product.product_name);
-  currentProduct = product;
-  
-  const modal = document.getElementById("productModal");
-  if (!modal) return;
 
+  currentProduct = product;
+  const modal = document.getElementById("productModal");
+  if (!modal) {
+    console.error("Product modal not found");
+    return;
+  }
+
+  // Update modal content
   const modalImage = document.getElementById("modalImage");
   const modalTitle = document.getElementById("modalTitle");
   const modalDescription = document.getElementById("modalDescription");
@@ -686,10 +1242,14 @@ function openProductModal(product) {
   if (modalDescription) modalDescription.textContent = product.description;
   if (modalCategory) modalCategory.textContent = product.subcategory;
 
-  const hasDiscount = product.original_price && product.original_price > product.price;
+  // Price section with discount
+  const hasDiscount =
+    product.original_price && product.original_price > product.price;
 
   if (hasDiscount) {
-    const discount = Math.round(((product.original_price - product.price) / product.original_price) * 100);
+    const discount = Math.round(
+      ((product.original_price - product.price) / product.original_price) * 100
+    );
     if (modalDiscount) {
       modalDiscount.textContent = `-${discount}%`;
       modalDiscount.classList.remove("hidden");
@@ -718,19 +1278,24 @@ function openProductModal(product) {
     }
   }
 
+  // Stock status
   if (modalStock) {
-    const stockHtml = product.stock > 0
-      ? `<span class="text-green-600 font-medium">✓ In Stock (${product.stock} available)</span>`
-      : `<span class="text-red-600 font-medium">✗ Out of Stock</span>`;
+    const stockHtml =
+      product.stock > 0
+        ? `<span class="text-green-600 font-medium">✓ In Stock (${product.stock} available)</span>`
+        : `<span class="text-red-600 font-medium">✗ Out of Stock</span>`;
     modalStock.innerHTML = stockHtml;
   }
 
+  // Show modal
   modal.classList.remove("hidden");
   modal.classList.add("flex");
   document.body.style.overflow = "hidden";
 }
 
 function closeProductModal() {
+  console.log("❌ Closing product modal");
+
   const modal = document.getElementById("productModal");
   if (!modal) return;
 
@@ -741,9 +1306,20 @@ function closeProductModal() {
 }
 
 function buyNowProduct() {
-  if (!currentProduct) return;
+  if (!currentProduct) {
+    console.error("No product selected");
+    return;
+  }
 
-  const instagramUrl = "https://www.instagram.com/kulinohouse.merchant/";
+  console.log("💰 Buy now:", currentProduct.product_name);
+
+  const message =
+    `Hi, saya tertarik dengan produk:\n\n` +
+    `📦 ${currentProduct.product_name}\n` +
+    `💰 Rp ${parseInt(currentProduct.price).toLocaleString("id-ID")}\n\n` +
+    `Apakah produk ini masih tersedia?`;
+
+  const instagramUrl = `https://www.instagram.com/kulinohouse.merchant/`;
   window.open(instagramUrl, "_blank");
 
   setTimeout(() => {
@@ -751,10 +1327,9 @@ function buyNowProduct() {
       icon: "info",
       title: "Redirecting to Instagram",
       html: `
-        <p>Contact our merchant on Instagram to complete your purchase:</p>
-        <div class="bg-gray-100 p-4 rounded-lg mt-3">
-          <p class="font-semibold">${currentProduct.product_name}</p>
-          <p class="text-green-600 font-bold">Rp ${parseInt(currentProduct.price).toLocaleString("id-ID")}</p>
+        <p>Please send this message to complete your purchase:</p>
+        <div class="bg-gray-100 p-4 rounded-lg mt-3 text-left">
+          <p class="text-sm text-gray-700 whitespace-pre-line">${message}</p>
         </div>
       `,
       confirmButtonText: "Got it!",
@@ -763,34 +1338,43 @@ function buyNowProduct() {
   }, 500);
 }
 
-// ==================== VISITOR TRACKING ====================
+// ==================== VISITOR TRACKING (IMPROVED) ====================
 function trackVisitor() {
   console.log("📊 Tracking visitor...");
 
+  // Track visitor dengan retry mechanism
   fetch("track.php?add=1", {
     method: "GET",
     credentials: "same-origin",
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+    },
   })
-    .then(response => {
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       return response.json();
     })
-    .then(data => {
+    .then((data) => {
       if (data.success) {
         console.log("✅ Visitor tracked successfully:", data);
       } else {
         console.error("❌ Tracking failed:", data.error);
       }
     })
-    .catch(err => {
+    .catch((err) => {
       console.error("❌ Tracking request failed:", err);
+      // Retry setelah 2 detik
       setTimeout(() => {
-        fetch("track.php?add=1", { method: "GET", credentials: "same-origin" })
-          .catch(e => console.error("Retry failed:", e));
+        fetch("track.php?add=1", {
+          method: "GET",
+          credentials: "same-origin",
+        }).catch((e) => console.error("Retry failed:", e));
       }, 2000);
     });
 
+  // Update visitor count display
   updateVisitorCount();
 }
 
@@ -798,186 +1382,26 @@ function updateVisitorCount() {
   fetch("track.php", {
     method: "GET",
     credentials: "same-origin",
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+    },
   })
-    .then(res => {
+    .then((res) => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
     })
-    .then(data => {
+    .then((data) => {
       const countEl = document.getElementById("visitorCount");
       if (countEl && data.today !== undefined) {
         countEl.textContent = data.today;
         console.log("📊 Visitor count updated:", data.today);
       }
     })
-    .catch(err => console.error("❌ Count fetch failed:", err));
+    .catch((err) => console.error("❌ Count fetch failed:", err));
 }
 
+// Auto-refresh visitor count setiap 30 detik
 setInterval(updateVisitorCount, 30000);
-
-// ==================== LOCATION TRACKING ====================
-let locationGranted = false;
-let userLocation = null;
-
-function checkLocationStatus() {
-  const locationData = sessionStorage.getItem("kulino_location_granted");
-
-  if (locationData) {
-    const data = JSON.parse(locationData);
-    const timeSince = Date.now() - data.timestamp;
-
-    if (timeSince < 24 * 60 * 60 * 1000) {
-      console.log("✅ Location already granted (from session)");
-      userLocation = data.location;
-      showMainContent();
-      trackVisitorWithLocation(data.location);
-      return true;
-    }
-  }
-
-  return false;
-}
-
-async function requestLocationPermission() {
-  console.log("📍 Requesting location permission...");
-
-  Swal.fire({
-    title: "Meminta Izin Lokasi...",
-    html: "Mohon izinkan akses lokasi pada popup browser Anda",
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading(),
-  });
-
-  if (!navigator.geolocation) {
-    Swal.fire({
-      icon: "error",
-      title: "Browser Tidak Mendukung",
-      text: "Browser Anda tidak mendukung geolocation.",
-      confirmButtonColor: "#ef4444",
-    });
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const coords = {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        accuracy: position.coords.accuracy,
-      };
-
-      userLocation = {
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-        accuracy: coords.accuracy,
-        timestamp: Date.now(),
-      };
-
-      sessionStorage.setItem(
-        "kulino_location_granted",
-        JSON.stringify({ location: userLocation, timestamp: Date.now() })
-      );
-
-      locationGranted = true;
-
-      Swal.fire({
-        icon: "success",
-        title: "Lokasi Terdeteksi!",
-        html: `
-          <div class="text-left bg-green-50 rounded-lg p-4 mt-3">
-            <p class="text-sm font-semibold text-green-800 mb-2">📍 GPS Coordinates:</p>
-            <p class="text-sm text-green-700">
-              Latitude: ${coords.latitude.toFixed(6)}<br>
-              Longitude: ${coords.longitude.toFixed(6)}<br>
-              Accuracy: ~${Math.round(coords.accuracy)}m
-            </p>
-          </div>
-        `,
-        confirmButtonText: "Lanjutkan",
-        confirmButtonColor: "#10b981",
-        timer: 3000,
-      }).then(() => {
-        showMainContent();
-        trackVisitorWithLocation(userLocation);
-      });
-    },
-    (error) => {
-      console.error("❌ Location error:", error);
-      
-      Swal.fire({
-        icon: "error",
-        title: "Gagal Mendapatkan Lokasi",
-        text: "Mohon izinkan akses lokasi untuk melanjutkan.",
-        confirmButtonText: "Coba Lagi",
-        confirmButtonColor: "#667eea",
-      });
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0,
-    }
-  );
-}
-
-function showMainContent() {
-  const overlay = document.getElementById("locationBlockOverlay");
-  if (overlay) {
-    overlay.classList.remove("active");
-  }
-  console.log("✅ Main content displayed");
-}
-
-async function trackVisitorWithLocation(location) {
-  console.log("📊 Tracking visitor with GPS location:", location);
-
-  const trackData = {
-    add: 1,
-    latitude: location.latitude || 0,
-    longitude: location.longitude || 0,
-    accuracy: location.accuracy || 0,
-  };
-
-  const params = new URLSearchParams(trackData);
-
-  try {
-    const response = await fetch(`track.php?${params.toString()}`, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: { Accept: "application/json" },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-
-    if (data.error) throw new Error(data.error);
-
-    console.log("✅ Visitor tracked successfully:", data);
-
-    if (data.today !== undefined) {
-      const countEl = document.getElementById("visitorCount");
-      if (countEl) countEl.textContent = data.today;
-    }
-
-    sessionStorage.setItem("tracking_success", Date.now().toString());
-  } catch (error) {
-    console.error("❌ Tracking failed:", error);
-
-    setTimeout(() => {
-      fetch(`track.php?${params.toString()}`, {
-        method: "GET",
-        credentials: "same-origin",
-      })
-        .then(res => res.json())
-        .then(data => console.log("✅ Retry successful:", data))
-        .catch(e => console.error("❌ Retry also failed:", e));
-    }, 2000);
-  }
-}
 
 // ==================== INITIALIZATION ====================
 function waitForLibraries() {
@@ -1008,7 +1432,6 @@ async function initializeApp() {
 
   if (typeof solanaWeb3 === "undefined") {
     console.error("❌ Solana Web3 library not loaded!");
-    showToast("Failed to load blockchain library", "error");
     return;
   }
 
@@ -1020,16 +1443,6 @@ async function initializeApp() {
   console.log("✅ Libraries ready");
   console.log("🚀 Initializing Kulino...");
 
-  // Check location status
-  console.log("🚀 Initializing location system...");
-  if (!checkLocationStatus()) {
-    const overlay = document.getElementById("locationBlockOverlay");
-    if (overlay) {
-      overlay.classList.add("active");
-    }
-    console.log("⚠️ Location not granted, showing overlay");
-  }
-
   // Track visitor
   trackVisitor();
 
@@ -1039,25 +1452,33 @@ async function initializeApp() {
     if (btn) {
       console.log(`✅ Found button: ${btnId}`);
       btn.removeAttribute("onclick");
-      btn.addEventListener("click", function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        connectWallet();
-      }, { passive: false });
+      btn.addEventListener(
+        "click",
+        function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log(`🖱️ ${btnId} clicked`);
+          connectWallet();
+        },
+        { passive: false }
+      );
     }
   };
 
   setupButton("connectBtn");
   setupButton("connectBtnMobile");
 
+  // Setup disconnect button
   const disconnectBtn = document.getElementById("disconnectBtn");
   if (disconnectBtn) {
     disconnectBtn.addEventListener("click", function (e) {
       e.preventDefault();
+      e.stopPropagation();
       showDisconnectDialog();
     });
   }
 
+  // Setup refresh balance button
   const refreshBtn = document.getElementById("refreshBalanceBtn");
   if (refreshBtn) {
     refreshBtn.addEventListener("click", function (e) {
@@ -1078,7 +1499,7 @@ async function initializeApp() {
     }
   });
 
-  // Setup mobile menu
+  // Setup mobile menu toggle
   const menuToggle = document.getElementById("menuToggle");
   const mobileMenu = document.getElementById("mobileMenu");
   if (menuToggle && mobileMenu) {
@@ -1088,15 +1509,17 @@ async function initializeApp() {
     });
   }
 
-  // Setup product modal
+  // Setup product modal close on outside click
   const productModal = document.getElementById("productModal");
   if (productModal) {
     productModal.addEventListener("click", function (e) {
-      if (e.target === this) closeProductModal();
+      if (e.target === this) {
+        closeProductModal();
+      }
     });
   }
 
-  // Auto-connect wallet
+  // Auto-connect wallet after delay
   setTimeout(() => {
     autoConnectWallet();
   }, 1000);
@@ -1104,7 +1527,7 @@ async function initializeApp() {
   console.log("✅ Kulino Ready!");
 }
 
-// Start initialization
+// Start initialization when DOM is ready
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", initializeApp);
 } else {
@@ -1124,6 +1547,5 @@ window.filterBySubCategory = filterBySubCategory;
 window.openProductModal = openProductModal;
 window.closeProductModal = closeProductModal;
 window.buyNowProduct = buyNowProduct;
-window.requestLocationPermission = requestLocationPermission;
 
 console.log("✅ Script loaded successfully");
