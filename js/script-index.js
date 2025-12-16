@@ -3,10 +3,10 @@ const KULINO_TOKEN_MINT = "E5chNtjGFvCMVYoTwcP9DtrdMdctRCGdGahAAhnHbHc1";
 
 // 🔧 FIX: Multiple RPC endpoints dengan fallback
 const SOLANA_RPC_ENDPOINTS = [
-  "https://solana-mainnet.g.alchemy.com/v2/demo", // Alchemy demo
-  "https://api.mainnet-beta.solana.com",
-  "https://solana-api.projectserum.com",
-  "https://rpc.ankr.com/solana",
+  "https://api.mainnet-beta.solana.com", // Public endpoint - best compatibility
+  "https://solana-api.syndica.io/access-token/HGlwRGMqfQ8LoQWRn83x48fcq4UmTXKT5bLrPqJfpnvPpJtw47wf0nWKd62B46Uo/rpc", // Syndica free tier
+  "https://rpc.helius.xyz/?api-key=", // Helius free (works without key for basic calls)
+  "https://solana.public-rpc.com", // Community RPC
 ];
 
 let currentRPCIndex = 0;
@@ -14,9 +14,11 @@ let currentRPCIndex = 0;
 // Function untuk mendapatkan RPC connection dengan retry
 function getConnection() {
   const rpcUrl = SOLANA_RPC_ENDPOINTS[currentRPCIndex];
+  console.log(`🔗 Using RPC: ${rpcUrl.substring(0, 50)}...`);
+  
   return new solanaWeb3.Connection(rpcUrl, {
     commitment: "confirmed",
-    confirmTransactionInitialTimeout: 60000,
+    confirmTransactionInitialTimeout: 30000, // Reduced from 60000
   });
 }
 
@@ -30,17 +32,28 @@ async function retryWithNextRPC(fn) {
       return await fn();
     } catch (error) {
       lastError = error;
-      console.warn(
-        `❌ RPC ${SOLANA_RPC_ENDPOINTS[currentRPCIndex]} failed:`,
-        error.message
-      );
+      
+      // Only log if it's a real error, not just switching RPC
+      if (!error.message?.includes("Failed to fetch")) {
+        console.warn(
+          `⚠️ RPC ${SOLANA_RPC_ENDPOINTS[currentRPCIndex].substring(0, 40)}... failed:`,
+          error.message
+        );
+      }
+      
       currentRPCIndex = (currentRPCIndex + 1) % SOLANA_RPC_ENDPOINTS.length;
-      console.log(
-        `🔄 Switching to RPC: ${SOLANA_RPC_ENDPOINTS[currentRPCIndex]}`
-      );
+      
+      if (i < maxRetries - 1) {
+        console.log(
+          `🔄 Switching to RPC ${currentRPCIndex + 1}/${SOLANA_RPC_ENDPOINTS.length}`
+        );
+        // Add small delay between retries
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
   }
 
+  console.error("❌ All RPC endpoints failed");
   throw lastError;
 }
 
@@ -648,8 +661,13 @@ async function getSOLBalance(walletAddress) {
     console.log("✅ SOL balance:", solAmount);
     return solAmount;
   } catch (error) {
-    console.error("❌ SOL fetch error:", error);
-    showToast("Failed to fetch SOL balance", "error");
+    console.error("❌ SOL fetch error:", error.message);
+    
+    // Don't show error toast if it's just a connection issue
+    if (!error.message?.includes("Failed to fetch")) {
+      showToast("Could not fetch SOL balance", "warning");
+    }
+    
     return 0;
   }
 }
@@ -679,8 +697,13 @@ async function getKulinoBalance(walletAddress) {
     console.log("ℹ️ No Kulino tokens found");
     return 0;
   } catch (error) {
-    console.error("❌ Kulino fetch error:", error);
-    showToast("Failed to fetch KULINO balance", "error");
+    console.error("❌ Kulino fetch error:", error.message);
+    
+    // Don't show error toast if it's just a connection issue
+    if (!error.message?.includes("Failed to fetch")) {
+      showToast("Could not fetch KULINO balance", "warning");
+    }
+    
     return 0;
   }
 }
@@ -706,9 +729,9 @@ async function updateBalanceDisplay(address = userAddress) {
   }
 
   try {
-    // Fetch balances with timeout
+    // Fetch balances with longer timeout
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Balance fetch timeout")), 15000)
+      setTimeout(() => reject(new Error("Balance fetch timeout")), 30000) // Increased to 30s
     );
 
     const balancePromise = Promise.all([
@@ -734,10 +757,18 @@ async function updateBalanceDisplay(address = userAddress) {
     console.log("✅ Balance updated");
     showToast("Balance updated successfully", "success");
   } catch (error) {
-    console.error("❌ Balance update failed:", error);
-    if (kulinoEl) kulinoEl.innerHTML = "<strong>0.00</strong> KULINO";
-    if (solEl) solEl.textContent = "0.0000 SOL";
-    showToast("Failed to update balance", "error");
+    console.error("❌ Balance update failed:", error.message);
+    
+    // Show friendly error message
+    if (kulinoEl) kulinoEl.innerHTML = "<strong>--</strong> KULINO";
+    if (solEl) solEl.textContent = "-- SOL";
+    
+    // Only show error toast if it's not a timeout
+    if (!error.message?.includes("timeout")) {
+      showToast("Unable to fetch balances. Please try again.", "warning");
+    } else {
+      showToast("Balance fetch took too long. Please refresh.", "warning");
+    }
   } finally {
     if (refreshBtn) {
       refreshBtn.disabled = false;
@@ -745,6 +776,30 @@ async function updateBalanceDisplay(address = userAddress) {
     }
   }
 }
+
+// ==================== IMPROVED ERROR HANDLING ====================
+
+// Override console.error to reduce spam
+const originalConsoleError = console.error;
+const errorCache = new Set();
+
+console.error = function(...args) {
+  const errorMsg = args.join(' ');
+  
+  // Filter out repetitive RPC errors
+  if (errorMsg.includes('RPC') || errorMsg.includes('Failed to fetch')) {
+    const errorKey = errorMsg.substring(0, 50);
+    if (errorCache.has(errorKey)) {
+      return; // Skip duplicate errors
+    }
+    errorCache.add(errorKey);
+    
+    // Clear cache after 5 seconds
+    setTimeout(() => errorCache.delete(errorKey), 5000);
+  }
+  
+  originalConsoleError.apply(console, args);
+};
 
 // ==================== UI UPDATE ====================
 function updateConnectedUI(address) {
