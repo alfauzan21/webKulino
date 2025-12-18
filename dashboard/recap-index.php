@@ -278,6 +278,109 @@ include("../includes/koneksi.php");
       font-size: 0.875rem;
     }
 
+    /* ==================== ACTIVITY LOG SPECIFIC STYLING ==================== */
+
+    /* Country flag larger for activity log */
+    #activityTable .country-flag {
+      font-size: 2rem;
+      line-height: 1;
+    }
+
+    /* Address lines spacing */
+    #activityTable .space-y-1>*+* {
+      margin-top: 0.5rem;
+    }
+
+    /* Hover effects for activity rows */
+    #activityTable tbody tr {
+      transition: all 0.3s ease;
+    }
+
+    #activityTable tbody tr:hover {
+      background: linear-gradient(to right, #f0fdf4, #ecfdf5);
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+      transform: translateX(2px);
+    }
+
+    /* Badge animations */
+    @keyframes badge-pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.05);
+      }
+    }
+
+    #activityTable tbody tr:first-child .rounded-full {
+      animation: badge-pulse 2s ease-in-out infinite;
+    }
+
+    /* IP Address styling */
+    #activityTable .font-mono {
+      letter-spacing: -0.5px;
+    }
+
+    /* Device badge styling */
+    #activityTable .bg-gradient-to-r {
+      transition: all 0.3s ease;
+    }
+
+    #activityTable tbody tr:hover .bg-gradient-to-r {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Statistics cards animation */
+    .table-container>div:first-child+div>div {
+      transition: all 0.3s ease;
+    }
+
+    .table-container>div:first-child+div>div:hover {
+      transform: translateY(-4px);
+    }
+
+    /* Loading state */
+    @keyframes shimmer {
+      0% {
+        background-position: -1000px 0;
+      }
+
+      100% {
+        background-position: 1000px 0;
+      }
+    }
+
+    .loading-shimmer {
+      background: linear-gradient(to right,
+          #f3f4f6 0%,
+          #e5e7eb 20%,
+          #f3f4f6 40%,
+          #f3f4f6 100%);
+      background-size: 1000px 100%;
+      animation: shimmer 2s linear infinite;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      #activityTable .country-flag {
+        font-size: 1.5rem;
+      }
+
+      #activityTable tbody td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8125rem;
+      }
+
+      .table-wrapper {
+        max-height: 500px;
+      }
+    }
+
+
     /* Download Button Style */
     .btn-download {
       display: inline-flex;
@@ -511,6 +614,7 @@ include("../includes/koneksi.php");
     </section>
 
     <!-- Location Table -->
+    <!-- Location Table Section -->
     <section class="table-container mb-8">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-bold text-gray-900">📍 Lokasi Pengunjung Hari Ini</h2>
@@ -531,33 +635,34 @@ include("../includes/koneksi.php");
 
       <!-- Statistics Summary -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200 hover:shadow-lg transition">
           <p class="text-xs text-blue-600 font-semibold mb-1">Total Locations</p>
           <p id="totalLocations" class="text-2xl font-bold text-blue-700">-</p>
         </div>
-        <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200">
+        <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200 hover:shadow-lg transition">
           <p class="text-xs text-green-600 font-semibold mb-1">Total Countries</p>
           <p id="totalCountries" class="text-2xl font-bold text-green-700">-</p>
         </div>
-        <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-xl border border-purple-200">
+        <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-xl border border-purple-200 hover:shadow-lg transition">
           <p class="text-xs text-purple-600 font-semibold mb-1">Total Cities</p>
           <p id="totalCities" class="text-2xl font-bold text-purple-700">-</p>
         </div>
-        <div class="bg-gradient-to-br from-orange-50 to-yellow-50 p-4 rounded-xl border border-orange-200">
+        <div class="bg-gradient-to-br from-orange-50 to-yellow-50 p-4 rounded-xl border border-orange-200 hover:shadow-lg transition">
           <p class="text-xs text-orange-600 font-semibold mb-1">Timezones</p>
           <p id="totalTimezones" class="text-2xl font-bold text-orange-700">-</p>
         </div>
       </div>
 
+      <!-- Location Table -->
       <div class="table-wrapper">
         <table>
           <thead>
             <tr>
               <th width="5%">No</th>
-              <th width="20%">Negara</th>
-              <th width="40%">Alamat Lengkap</th>
+              <th width="15%">Negara</th>
+              <th width="50%">Alamat Lengkap</th>
               <th width="15%">Timezone</th>
-              <th width="20%">Total Kunjungan</th>
+              <th width="15%">Total Kunjungan</th>
             </tr>
           </thead>
           <tbody id="locationTable">
@@ -623,10 +728,14 @@ include("../includes/koneksi.php");
       </div>
     </section>
 
-    <!-- Activity Log -->
+    <!-- Activity Log Section -->
     <section class="table-container">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-bold text-gray-900">📋 Log Aktivitas</h2>
+        <div>
+          <h2 class="text-lg font-bold text-gray-900">📋 Log Aktivitas</h2>
+          <p class="text-sm text-gray-500 mt-1">Real-time visitor activity with detailed location</p>
+        </div>
+
         <div class="flex items-center gap-3">
           <label for="activityLimit" class="text-sm font-semibold text-gray-700">Show:</label>
           <select id="activityLimit"
@@ -635,24 +744,71 @@ include("../includes/koneksi.php");
             <option value="20">20 entries</option>
             <option value="50">50 entries</option>
             <option value="100">100 entries</option>
+            <option value="200">200 entries</option>
           </select>
         </div>
       </div>
 
+      <!-- Activity Summary Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200 hover:shadow-lg transition">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white text-xl">
+              ✅
+            </div>
+            <div>
+              <p class="text-xs text-green-600 font-semibold">Total Activities</p>
+              <p id="totalActivities" class="text-2xl font-bold text-green-700">-</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200 hover:shadow-lg transition">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white text-xl">
+              🌍
+            </div>
+            <div>
+              <p class="text-xs text-blue-600 font-semibold">Unique Locations</p>
+              <p id="uniqueActivityLocations" class="text-2xl font-bold text-blue-700">-</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-xl border border-purple-200 hover:shadow-lg transition">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center text-white text-xl">
+              📱
+            </div>
+            <div>
+              <p class="text-xs text-purple-600 font-semibold">Unique Devices</p>
+              <p id="uniqueDevices" class="text-2xl font-bold text-purple-700">-</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity Table -->
       <div class="table-wrapper">
         <table>
           <thead>
             <tr>
-              <th>Waktu (Local)</th>
-              <th>IP Address</th>
-              <th>Lokasi</th>
-              <th>Timezone</th>
-              <th>Device & Browser</th>
+              <th width="8%" class="text-center">#</th>
+              <th width="12%" class="text-center">Waktu (Local)</th>
+              <th width="12%">IP Address</th>
+              <th width="35%">Lokasi Detail</th>
+              <th width="13%" class="text-center">Timezone</th>
+              <th width="20%">Device & Browser</th>
             </tr>
           </thead>
           <tbody id="activityTable">
             <tr>
-              <td colspan="5" class="text-center text-gray-500">Memuat data...</td>
+              <td colspan="6" class="text-center text-gray-500">
+                <div class="py-8">
+                  <div class="inline-block w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                  <p>Memuat data aktivitas...</p>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -662,9 +818,19 @@ include("../includes/koneksi.php");
         <div class="pagination-info">
           Showing <span id="activityShowingCount">0</span> of <span id="activityTotalCount">0</span> entries
         </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="exportActivityLog()"
+            class="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition">
+            📥 Export CSV
+          </button>
+          <button onclick="refreshActivityLog()"
+            class="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition">
+            🔄 Refresh
+          </button>
+        </div>
       </div>
     </section>
-
   </main>
 
   <footer class="max-w-7xl mx-auto px-4 py-6 text-center">
@@ -701,36 +867,110 @@ include("../includes/koneksi.php");
       'FR': '🇫🇷'
     };
 
+    // ==================== GET COUNTRY FLAG EMOJI ====================
     function getCountryFlag(countryCode) {
-      return countryFlags[countryCode] || '🌐';
+      const flags = {
+        'ID': '🇮🇩',
+        'US': '🇺🇸',
+        'SG': '🇸🇬',
+        'MY': '🇲🇾',
+        'TH': '🇹🇭',
+        'PH': '🇵🇭',
+        'VN': '🇻🇳',
+        'JP': '🇯🇵',
+        'KR': '🇰🇷',
+        'CN': '🇨🇳',
+        'IN': '🇮🇳',
+        'AU': '🇦🇺',
+        'GB': '🇬🇧',
+        'DE': '🇩🇪',
+        'FR': '🇫🇷',
+        'IT': '🇮🇹',
+        'ES': '🇪🇸',
+        'BR': '🇧🇷',
+        'MX': '🇲🇽',
+        'CA': '🇨🇦',
+        'RU': '🇷🇺',
+        'NL': '🇳🇱',
+        'BE': '🇧🇪',
+        'CH': '🇨🇭',
+        'SE': '🇸🇪',
+        'NO': '🇳🇴',
+        'DK': '🇩🇰',
+        'FI': '🇫🇮',
+        'PL': '🇵🇱',
+        'TR': '🇹🇷',
+        'SA': '🇸🇦',
+        'AE': '🇦🇪',
+        'EG': '🇪🇬',
+        'ZA': '🇿🇦',
+        'NG': '🇳🇬',
+        'KE': '🇰🇪',
+        'AR': '🇦🇷',
+        'CL': '🇨🇱',
+        'CO': '🇨🇴',
+        'PE': '🇵🇪',
+        'NZ': '🇳🇿',
+        'IE': '🇮🇪',
+        'AT': '🇦🇹',
+        'GR': '🇬🇷',
+        'PT': '🇵🇹',
+        'CZ': '🇨🇿',
+        'HU': '🇭🇺',
+        'RO': '🇷🇴',
+        'UA': '🇺🇦',
+        'IL': '🇮🇱',
+        'PK': '🇵🇰',
+        'BD': '🇧🇩',
+        'LK': '🇱🇰',
+        'MM': '🇲🇲',
+        'KH': '🇰🇭',
+        'LA': '🇱🇦'
+      };
+
+      return flags[countryCode?.toUpperCase()] || '🌐';
     }
 
+    // ==================== GET VISIT BADGE WITH STYLING ====================
     function getVisitBadge(count) {
       let badgeClass = '';
       let icon = '';
+      let label = '';
 
-      if (count >= 50) {
-        badgeClass = 'bg-gradient-to-r from-red-500 to-pink-500 text-white';
+      if (count >= 100) {
+        badgeClass = 'from-purple-500 to-pink-600';
+        icon = '🏆';
+        label = 'Platinum';
+      } else if (count >= 50) {
+        badgeClass = 'from-red-500 to-pink-500';
         icon = '🔥';
+        label = 'Hot';
       } else if (count >= 20) {
-        badgeClass = 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white';
+        badgeClass = 'from-orange-500 to-yellow-500';
         icon = '⚡';
+        label = 'Popular';
       } else if (count >= 10) {
-        badgeClass = 'bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900';
+        badgeClass = 'from-yellow-400 to-orange-400';
         icon = '⭐';
+        label = 'Rising';
       } else if (count >= 5) {
-        badgeClass = 'bg-gradient-to-r from-blue-400 to-indigo-500 text-white';
+        badgeClass = 'from-blue-400 to-indigo-500';
         icon = '📊';
+        label = 'Active';
       } else {
-        badgeClass = 'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-800';
+        badgeClass = 'from-gray-400 to-gray-500';
         icon = '📍';
+        label = 'Regular';
       }
 
       return `
-    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow-lg ${badgeClass}">
-      <span>${icon}</span>
-      <span>${count} visit${count > 1 ? 's' : ''}</span>
-    </span>
+    <div class="inline-flex flex-col items-center gap-1">
+      <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm shadow-lg bg-gradient-to-r ${badgeClass} text-white">
+        <span class="text-lg">${icon}</span>
+        <span>${count}</span>
+      </span>
+      <span class="text-xs font-semibold text-gray-600">${label}</span>
+    </div>
   `;
     }
 
@@ -771,6 +1011,10 @@ include("../includes/koneksi.php");
         }
 
         const data = await res.json();
+
+        // Update activity table with statistics
+        updateActivityTable(data.activity || []);
+        updateActivityStatistics(data.activity || []);
         console.log('✅ Data received:', data);
 
         // Check for errors in response
@@ -796,6 +1040,7 @@ include("../includes/koneksi.php");
         document.getElementById("totalVisits").innerText = data.today || 0;
         document.getElementById("totalUnique").innerText = data.unique || 0;
         document.getElementById("activeVisitor").innerText = data.active || 0;
+        
 
         if (data.display_timezone) {
           document.getElementById("currentTimezone").innerText = data.display_timezone;
@@ -831,6 +1076,11 @@ include("../includes/koneksi.php");
         document.getElementById("totalUnique").innerText = "Error";
         document.getElementById("activeVisitor").innerText = "Error";
 
+        document.getElementById('activityLimit')?.addEventListener('change', function() {
+          updateActivityTable(allActivityData);
+          updateActivityStatistics(allActivityData);
+        });
+        
         // Retry logic
         if (loadAttempts < MAX_LOAD_ATTEMPTS) {
           console.log(`⏳ Retrying in 3 seconds...`);
@@ -1042,7 +1292,22 @@ include("../includes/koneksi.php");
       const displayData = locations.slice(0, limit);
 
       if (locations.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-8">Tidak ada data lokasi hari ini</td></tr>';
+        tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center text-gray-500 py-8">
+          <div class="flex flex-col items-center">
+            <svg class="w-16 h-16 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <p class="font-semibold">Tidak ada data lokasi hari ini</p>
+            <p class="text-sm text-gray-400 mt-1">Data akan muncul setelah ada visitor</p>
+          </div>
+        </td>
+      </tr>
+    `;
         updateLocationStats(0, 0, 0, 0);
         document.getElementById('showingCount').textContent = '0';
         document.getElementById('totalLocationCount').textContent = '0';
@@ -1057,40 +1322,74 @@ include("../includes/koneksi.php");
       updateLocationStats(locations.length, uniqueCountries, uniqueCities, uniqueTimezones);
 
       tbody.innerHTML = displayData.map((loc, idx) => {
-        // Build full address display
-        let addressDisplay = [];
-        if (loc.house_number || loc.street) {
-          addressDisplay.push(`${loc.house_number} ${loc.street}`.trim());
-        }
-        if (loc.district) addressDisplay.push(loc.district);
-        if (loc.subdistrict) addressDisplay.push(loc.subdistrict);
-        if (loc.city) addressDisplay.push(loc.city);
+        // Build detailed address display
+        const addressParts = [];
 
-        const fullAddress = addressDisplay.length > 0 ? addressDisplay.join(', ') : 'Unknown';
+        // Street address (House Number + Street)
+        if (loc.house_number && loc.street) {
+          addressParts.push(`<strong>${loc.house_number}</strong> ${loc.street}`);
+        } else if (loc.street) {
+          addressParts.push(`<strong>${loc.street}</strong>`);
+        }
+
+        // Administrative divisions
+        const adminParts = [];
+        if (loc.subdistrict) adminParts.push(loc.subdistrict);
+        if (loc.district) adminParts.push(loc.district);
+        if (adminParts.length > 0) {
+          addressParts.push(adminParts.join(', '));
+        }
+
+        // City and Region
+        const locationParts = [];
+        if (loc.city) locationParts.push(`<strong>${loc.city}</strong>`);
+        if (loc.region && loc.region !== loc.city) locationParts.push(loc.region);
+        if (locationParts.length > 0) {
+          addressParts.push(locationParts.join(', '));
+        }
+
+        // Postal Code
+        if (loc.postal_code) {
+          addressParts.push(`📮 ${loc.postal_code}`);
+        }
+
+        const fullAddress = addressParts.length > 0 ?
+          addressParts.join('<br>') :
+          '<span class="text-gray-400 italic">Address details not available</span>';
+
+        // GPS Coordinates display
+        const gpsDisplay = loc.latitude && loc.longitude ? `
+      <div class="text-xs text-gray-500 mt-2 p-2 bg-gray-50 rounded">
+        📍 ${loc.latitude.toFixed(6)}, ${loc.longitude.toFixed(6)}
+      </div>
+    ` : '';
 
         return `
-      <tr>
-        <td class="text-center">${idx + 1}</td>
+      <tr class="hover:bg-blue-50 transition-colors">
+        <td class="text-center font-semibold text-gray-700">${idx + 1}</td>
         <td>
-          <div class="flex items-center gap-2">
-            <span class="country-flag">${getCountryFlag(loc.country_code)}</span>
-            <span class="font-semibold">${loc.country || 'Unknown'}</span>
+          <div class="flex items-center gap-3">
+            <span class="country-flag text-3xl">${getCountryFlag(loc.country_code)}</span>
+            <div>
+              <p class="font-bold text-gray-900">${loc.country || 'Unknown'}</p>
+              <p class="text-xs text-gray-500">${loc.country_code || 'XX'}</p>
+            </div>
           </div>
         </td>
         <td>
-          <div class="text-sm">
-            <div class="font-medium text-gray-900">${fullAddress}</div>
-            ${loc.latitude && loc.longitude ? 
-              `<div class="text-xs text-gray-500 mt-1">📍 ${loc.latitude.toFixed(6)}, ${loc.longitude.toFixed(6)}</div>` 
-              : ''}
+          <div class="text-sm leading-relaxed">
+            ${fullAddress}
+            ${gpsDisplay}
           </div>
         </td>
-        <td>
-          <span class="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-xs font-semibold">
+        <td class="text-center">
+          <span class="inline-block px-3 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl text-xs font-bold shadow-md">
             ${loc.timezone || 'Unknown'}
           </span>
         </td>
-        <td class="text-center">${getVisitBadge(loc.total)}</td>
+        <td class="text-center">
+          ${getVisitBadge(loc.total)}
+        </td>
       </tr>
     `;
       }).join('');
@@ -1099,11 +1398,30 @@ include("../includes/koneksi.php");
       document.getElementById('totalLocationCount').textContent = locations.length;
     }
 
+    // ==================== UPDATE LOCATION STATISTICS ====================
     function updateLocationStats(total, countries, cities, timezones) {
-      document.getElementById('totalLocations').textContent = total;
-      document.getElementById('totalCountries').textContent = countries;
-      document.getElementById('totalCities').textContent = cities;
-      document.getElementById('totalTimezones').textContent = timezones;
+      const elements = {
+        totalLocations: document.getElementById('totalLocations'),
+        totalCountries: document.getElementById('totalCountries'),
+        totalCities: document.getElementById('totalCities'),
+        totalTimezones: document.getElementById('totalTimezones')
+      };
+
+      // Animate number changes
+      Object.entries(elements).forEach(([key, element]) => {
+        if (element) {
+          element.classList.add('loading');
+          setTimeout(() => {
+            element.classList.remove('loading');
+          }, 300);
+        }
+      });
+
+      // Update values
+      if (elements.totalLocations) elements.totalLocations.textContent = total;
+      if (elements.totalCountries) elements.totalCountries.textContent = countries;
+      if (elements.totalCities) elements.totalCities.textContent = cities;
+      if (elements.totalTimezones) elements.totalTimezones.textContent = timezones;
     }
 
     function updateFrequencyTable(frequency) {
@@ -1158,50 +1476,363 @@ include("../includes/koneksi.php");
       document.getElementById('freqTotalCount').textContent = frequency.length;
     }
 
+    // ==================== UPDATE ACTIVITY TABLE WITH DETAILED LOCATION ====================
     function updateActivityTable(activity) {
       allActivityData = activity;
       const limit = parseInt(document.getElementById('activityLimit')?.value || 10);
       const tbody = document.getElementById('activityTable');
 
-      if (!tbody) return;
+      if (!tbody) {
+        console.error('Activity table body not found');
+        return;
+      }
 
       const displayData = activity.slice(0, limit);
 
       if (activity.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-8">Tidak ada aktivitas terbaru</td></tr>';
+        tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="text-center text-gray-500 py-8">
+          <div class="flex flex-col items-center">
+            <svg class="w-16 h-16 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            <p class="font-semibold">Tidak ada aktivitas terbaru</p>
+            <p class="text-sm text-gray-400 mt-1">Log aktivitas akan muncul saat ada pengunjung</p>
+          </div>
+        </td>
+      </tr>
+    `;
         document.getElementById('activityShowingCount').textContent = '0';
         document.getElementById('activityTotalCount').textContent = '0';
         return;
       }
 
-      tbody.innerHTML = displayData.map(item => `
-    <tr>
-      <td class="font-medium">${item.time || '-'}</td>
-      <td class="font-mono text-sm">${item.ip || '-'}</td>
-      <td>
-        <div class="flex items-center gap-2">
-          <span class="country-flag">${getCountryFlag(item.country_code)}</span>
-          <div class="text-sm">
-            <div class="font-medium">${item.city || 'Unknown'}</div>
-            <div class="text-gray-500">${item.country || ''}</div>
+      tbody.innerHTML = displayData.map((item, index) => {
+        // Build detailed address display
+        const addressLines = [];
+
+        // Line 1: Street Address
+        if (item.house_number && item.street) {
+          addressLines.push(`
+        <div class="flex items-start gap-2">
+          <span class="text-blue-600 mt-0.5">🏠</span>
+          <span><strong class="text-gray-900">${item.house_number}</strong> ${item.street}</span>
+        </div>
+      `);
+        } else if (item.street) {
+          addressLines.push(`
+        <div class="flex items-start gap-2">
+          <span class="text-blue-600 mt-0.5">🏠</span>
+          <span class="text-gray-900">${item.street}</span>
+        </div>
+      `);
+        }
+
+        // Line 2: Administrative Divisions
+        const adminParts = [];
+        if (item.subdistrict) adminParts.push(item.subdistrict);
+        if (item.district) adminParts.push(item.district);
+
+        if (adminParts.length > 0) {
+          addressLines.push(`
+        <div class="flex items-start gap-2">
+          <span class="text-purple-600 mt-0.5">📍</span>
+          <span class="text-gray-700">${adminParts.join(', ')}</span>
+        </div>
+      `);
+        }
+
+        // Line 3: City & Region
+        const locationParts = [];
+        if (item.city) locationParts.push(`<strong>${item.city}</strong>`);
+        if (item.region && item.region !== item.city) locationParts.push(item.region);
+
+        if (locationParts.length > 0) {
+          addressLines.push(`
+        <div class="flex items-start gap-2">
+          <span class="text-green-600 mt-0.5">🏙️</span>
+          <span class="text-gray-800">${locationParts.join(', ')}</span>
+        </div>
+      `);
+        }
+
+        // Line 4: Postal Code
+        if (item.postal_code) {
+          addressLines.push(`
+        <div class="flex items-start gap-2">
+          <span class="text-orange-600 mt-0.5">📮</span>
+          <span class="text-gray-600">Postal Code: <strong>${item.postal_code}</strong></span>
+        </div>
+      `);
+        }
+
+        // Line 5: GPS Coordinates (if available)
+        if (item.latitude && item.longitude) {
+          addressLines.push(`
+        <div class="flex items-start gap-2 text-xs">
+          <span class="text-indigo-600 mt-0.5">📡</span>
+          <span class="text-gray-500 font-mono">${item.latitude.toFixed(6)}, ${item.longitude.toFixed(6)}</span>
+        </div>
+      `);
+        }
+
+        const addressDisplay = addressLines.length > 0 ?
+          addressLines.join('') :
+          '<div class="text-gray-400 italic text-sm">Address details not available</div>';
+
+        // Activity number badge
+        const activityBadge = getActivityBadge(index + 1, displayData.length);
+
+        return `
+      <tr class="hover:bg-green-50 transition-all duration-200">
+        <td class="text-center">
+          ${activityBadge}
+        </td>
+        
+        <td class="text-center">
+          <div class="flex flex-col items-center gap-1">
+            <span class="font-mono text-lg font-bold text-indigo-700">${item.time}</span>
+            <span class="text-xs text-gray-500">${item.full_datetime?.split(' ')[0] || ''}</span>
           </div>
-        </div>
-      </td>
-      <td>
-        <span class="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-lg text-xs font-semibold">
-          ${item.timezone || 'Unknown'}
-        </span>
-      </td>
-      <td>
-        <div class="text-sm">
-          <div class="font-medium">${item.device || 'Unknown'}</div>
-        </div>
-      </td>
-    </tr>
-  `).join('');
+        </td>
+        
+        <td>
+          <div class="flex items-center gap-2">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md">
+              ${item.ip?.split('.')[3] || '?'}
+            </div>
+            <div>
+              <p class="font-mono text-sm font-semibold text-gray-800">${item.ip || '-'}</p>
+              <p class="text-xs text-gray-500">IP Address</p>
+            </div>
+          </div>
+        </td>
+        
+        <td>
+          <div class="space-y-2">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="country-flag text-2xl">${getCountryFlag(item.country_code)}</span>
+              <div>
+                <p class="font-bold text-gray-900">${item.country || 'Unknown'}</p>
+                <p class="text-xs text-gray-500">${item.country_code || 'XX'}</p>
+              </div>
+            </div>
+            <div class="pl-1 space-y-1 text-sm">
+              ${addressDisplay}
+            </div>
+          </div>
+        </td>
+        
+        <td class="text-center">
+          <div class="inline-flex flex-col items-center gap-2">
+            <span class="inline-block px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl text-xs font-bold shadow-md">
+              ${item.timezone || 'Unknown'}
+            </span>
+            <span class="text-xs text-gray-500">${item.timezone?.includes('UTC') ? 'Timezone' : 'Local Time'}</span>
+          </div>
+        </td>
+        
+        <td>
+          <div class="space-y-2">
+            <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-200">
+              <p class="text-xs text-purple-600 font-semibold mb-1">Device & Browser</p>
+              <p class="text-sm text-gray-800 font-medium">${item.device || 'Unknown'}</p>
+            </div>
+            ${getDeviceIcon(item.device)}
+          </div>
+        </td>
+      </tr>
+    `;
+      }).join('');
 
       document.getElementById('activityShowingCount').textContent = displayData.length;
       document.getElementById('activityTotalCount').textContent = activity.length;
+    }
+
+    // ==================== GET ACTIVITY BADGE ====================
+    function getActivityBadge(number, total) {
+      let badgeClass = '';
+      let icon = '';
+
+      if (number === 1) {
+        badgeClass = 'from-yellow-400 to-orange-500';
+        icon = '🥇';
+      } else if (number === 2) {
+        badgeClass = 'from-gray-300 to-gray-400';
+        icon = '🥈';
+      } else if (number === 3) {
+        badgeClass = 'from-orange-400 to-yellow-600';
+        icon = '🥉';
+      } else if (number <= 5) {
+        badgeClass = 'from-blue-400 to-indigo-500';
+        icon = '⭐';
+      } else {
+        badgeClass = 'from-gray-400 to-gray-500';
+        icon = '📌';
+      }
+
+      return `
+    <div class="flex flex-col items-center gap-1">
+      <div class="w-12 h-12 rounded-full bg-gradient-to-br ${badgeClass} flex items-center justify-center text-white font-bold text-lg shadow-lg">
+        ${icon}
+      </div>
+      <span class="text-xs font-semibold text-gray-600">#${number}</span>
+    </div>
+  `;
+    }
+
+    // ==================== GET DEVICE ICON ====================
+    function getDeviceIcon(device) {
+      if (!device) return '';
+
+      const deviceLower = device.toLowerCase();
+      let icon = '💻';
+      let label = 'Desktop';
+      let colorClass = 'blue';
+
+      if (deviceLower.includes('android')) {
+        icon = '📱';
+        label = 'Android';
+        colorClass = 'green';
+      } else if (deviceLower.includes('iphone') || deviceLower.includes('ipad')) {
+        icon = '📱';
+        label = 'iOS';
+        colorClass = 'purple';
+      } else if (deviceLower.includes('windows')) {
+        icon = '💻';
+        label = 'Windows';
+        colorClass = 'blue';
+      } else if (deviceLower.includes('mac')) {
+        icon = '🖥️';
+        label = 'macOS';
+        colorClass = 'gray';
+      } else if (deviceLower.includes('linux')) {
+        icon = '🐧';
+        label = 'Linux';
+        colorClass = 'yellow';
+      }
+
+      return `
+    <div class="flex items-center justify-center gap-2 text-${colorClass}-600 text-xs font-semibold">
+      <span class="text-lg">${icon}</span>
+      <span>${label}</span>
+    </div>
+  `;
+    }
+
+    // ==================== EXPORT ACTIVITY LOG TO CSV ====================
+    function exportActivityLog() {
+      if (!allActivityData || allActivityData.length === 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'No Data',
+          text: 'No activity data available to export',
+          confirmButtonColor: '#ef4444'
+        });
+        return;
+      }
+
+      // Prepare CSV data
+      const csvRows = [];
+
+      // Header
+      csvRows.push([
+        'No',
+        'Date',
+        'Time',
+        'IP Address',
+        'Country',
+        'City',
+        'Street',
+        'House Number',
+        'District',
+        'Subdistrict',
+        'Region',
+        'Postal Code',
+        'Timezone',
+        'Latitude',
+        'Longitude',
+        'Device & Browser'
+      ].join(','));
+
+      // Data rows
+      allActivityData.forEach((item, index) => {
+        csvRows.push([
+          index + 1,
+          item.full_datetime?.split(' ')[0] || '',
+          item.time || '',
+          item.ip || '',
+          item.country || '',
+          item.city || '',
+          `"${item.street || ''}"`,
+          item.house_number || '',
+          `"${item.district || ''}"`,
+          `"${item.subdistrict || ''}"`,
+          `"${item.region || ''}"`,
+          item.postal_code || '',
+          item.timezone || '',
+          item.latitude || '',
+          item.longitude || '',
+          `"${item.device || ''}"`
+        ].join(','));
+      });
+
+      // Create and download CSV
+      const csvContent = csvRows.join('\n');
+      const blob = new Blob([csvContent], {
+        type: 'text/csv;charset=utf-8;'
+      });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+
+      const filename = `Activity_Log_${new Date().toISOString().split('T')[0]}.csv`;
+
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Exported!',
+        text: `Activity log exported to ${filename}`,
+        timer: 2000,
+        showConfirmButton: false
+      });
+    }
+
+    // ==================== REFRESH ACTIVITY LOG ====================
+    function refreshActivityLog() {
+      const date = document.getElementById('dateFilter')?.value;
+      const timezone = document.getElementById('timezoneFilter')?.value;
+
+      Swal.fire({
+        title: 'Refreshing...',
+        text: 'Loading latest activity data',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      loadRecap(date, timezone).then(() => {
+        Swal.fire({
+          icon: 'success',
+          title: 'Refreshed!',
+          text: 'Activity log updated successfully',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      }).catch(error => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Refresh Failed',
+          text: error.message,
+          confirmButtonColor: '#ef4444'
+        });
+      });
     }
 
     // ==================== EVENT LISTENERS ====================
@@ -1252,6 +1883,8 @@ include("../includes/koneksi.php");
       }, 30000);
     });
 
+    // ==================== ENHANCED EXCEL REPORT GENERATOR ====================
+
     async function downloadExcelReport() {
       const downloadBtn = document.getElementById('downloadReportBtn');
 
@@ -1259,9 +1892,9 @@ include("../includes/koneksi.php");
       if (downloadBtn) {
         downloadBtn.disabled = true;
         downloadBtn.innerHTML = `
-        <div class="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-        <span>Generating...</span>
-      `;
+      <div class="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+      <span>Generating...</span>
+    `;
       }
 
       try {
@@ -1284,59 +1917,190 @@ include("../includes/koneksi.php");
         // Create workbook
         const wb = XLSX.utils.book_new();
 
-        // ========== SHEET 1: SUMMARY ==========
-        const summaryData = [
-          ['📊 KULINO VISITOR DASHBOARD REPORT'],
-          ['Generated:', new Date().toLocaleString('id-ID', {
-            timeZone: timezone
-          })],
-          ['Timezone:', data.display_timezone || timezone],
-          ['Filter Date:', date],
-          [''],
-          ['SUMMARY STATISTICS'],
-          ['Total Visits Today', data.today || 0],
-          ['Unique Visitors', data.unique || 0],
-          ['Active Now (10 min)', data.active || 0],
-          [''],
-          ['WEEKLY TRENDS'],
-          ['Date', 'Visitors'],
-          ...data.labels.map((label, idx) => [label, data.weekly[idx] || 0])
-        ];
+        // Set workbook properties
+        wb.Props = {
+          Title: "Kulino Visitor Dashboard Report",
+          Subject: "Analytics Report",
+          Author: "Kulino Game Hub",
+          CreatedDate: new Date()
+        };
+
+        // ========== SHEET 1: DASHBOARD SUMMARY ==========
+        const summaryData = [];
+
+        // Title row (merged)
+        summaryData.push(['📊 KULINO VISITOR DASHBOARD REPORT']);
+        summaryData.push([]);
+
+        // Report metadata
+        summaryData.push(['Generated:', new Date().toLocaleString('id-ID', {
+          timeZone: timezone
+        })]);
+        summaryData.push(['Timezone:', data.display_timezone || timezone]);
+        summaryData.push(['Filter Date:', date]);
+        summaryData.push(['Report Period:', 'Last 7 Days']);
+        summaryData.push([]);
+
+        // Summary Statistics Section
+        summaryData.push(['═══════════════════════════════════════']);
+        summaryData.push(['SUMMARY STATISTICS']);
+        summaryData.push(['═══════════════════════════════════════']);
+        summaryData.push([]);
+
+        summaryData.push(['Metric', 'Value', 'Description']);
+        summaryData.push(['Total Visits Today', data.today || 0, 'Total page visits on selected date']);
+        summaryData.push(['Unique Visitors', data.unique || 0, 'Unique visitors based on IP + Device']);
+        summaryData.push(['Active Now (10 min)', data.active || 0, 'Currently active visitors']);
+        summaryData.push([]);
+
+        // Weekly Trends Section
+        summaryData.push(['═══════════════════════════════════════']);
+        summaryData.push(['WEEKLY VISITOR TRENDS']);
+        summaryData.push(['═══════════════════════════════════════']);
+        summaryData.push([]);
+
+        summaryData.push(['Date', 'Total Visitors', 'Change', 'Trend']);
+
+        // Add weekly data with trends
+        if (data.labels && data.weekly) {
+          data.labels.forEach((label, idx) => {
+            const current = data.weekly[idx] || 0;
+            const previous = idx > 0 ? (data.weekly[idx - 1] || 0) : 0;
+            const change = previous > 0 ? (((current - previous) / previous) * 100).toFixed(1) + '%' : 'N/A';
+            const trend = current > previous ? '↑' : current < previous ? '↓' : '→';
+
+            summaryData.push([label, current, change, trend]);
+          });
+        }
+
+        summaryData.push([]);
+        summaryData.push(['═══════════════════════════════════════']);
+        summaryData.push(['Total Visits (7 days):', data.weekly ? data.weekly.reduce((a, b) => a + b, 0) : 0]);
+        summaryData.push(['Average Visitors/Day:', data.weekly ? Math.round(data.weekly.reduce((a, b) => a + b, 0) / data.weekly.length) : 0]);
 
         const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+
+        // Column widths
         wsSummary['!cols'] = [{
-          wch: 25
-        }, {
-          wch: 20
+            wch: 30
+          },
+          {
+            wch: 20
+          },
+          {
+            wch: 35
+          },
+          {
+            wch: 10
+          }
+        ];
+
+        // Merge title cell
+        wsSummary['!merges'] = [{
+          s: {
+            r: 0,
+            c: 0
+          },
+          e: {
+            r: 0,
+            c: 3
+          }
         }];
-        XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+        XLSX.utils.book_append_sheet(wb, wsSummary, 'Dashboard Summary');
 
         // ========== SHEET 2: TOP 10 COUNTRIES ==========
-        const countryData = [
-          ['🌍 TOP 10 COUNTRIES (Last 7 Days)'],
-          [''],
-          ['Country', 'Total Visitors'],
-          ...data.country_labels.map((country, idx) => [
-            country,
-            data.country_data[idx] || 0
-          ])
-        ];
+        const countryData = [];
+
+        countryData.push(['🌍 TOP 10 COUNTRIES (Last 7 Days)']);
+        countryData.push([]);
+        countryData.push(['Generated:', new Date().toLocaleString('id-ID')]);
+        countryData.push([]);
+
+        countryData.push(['Rank', 'Country', 'Total Visitors', '% of Total', 'Trend']);
+
+        const totalCountryVisits = data.country_data ? data.country_data.reduce((a, b) => a + b, 0) : 0;
+
+        if (data.country_labels && data.country_data) {
+          data.country_labels.forEach((country, idx) => {
+            const visitors = data.country_data[idx] || 0;
+            const percentage = totalCountryVisits > 0 ? ((visitors / totalCountryVisits) * 100).toFixed(1) + '%' : '0%';
+            const trend = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '⭐';
+
+            countryData.push([
+              idx + 1,
+              country,
+              visitors,
+              percentage,
+              trend
+            ]);
+          });
+        }
+
+        countryData.push([]);
+        countryData.push(['Total Visits:', totalCountryVisits]);
 
         const wsCountry = XLSX.utils.aoa_to_sheet(countryData);
         wsCountry['!cols'] = [{
-          wch: 30
-        }, {
-          wch: 15
+            wch: 8
+          },
+          {
+            wch: 30
+          },
+          {
+            wch: 18
+          },
+          {
+            wch: 15
+          },
+          {
+            wch: 10
+          }
+        ];
+
+        wsCountry['!merges'] = [{
+          s: {
+            r: 0,
+            c: 0
+          },
+          e: {
+            r: 0,
+            c: 4
+          }
         }];
+
         XLSX.utils.book_append_sheet(wb, wsCountry, 'Top Countries');
 
-        // ========== SHEET 3: LOCATION DETAILS ==========
+        // ========== SHEET 3: DETAILED LOCATIONS ==========
         if (data.locations && data.locations.length > 0) {
-          const locationData = [
-            ['📍 VISITOR LOCATIONS - ' + date],
-            [''],
-            ['Country', 'City', 'Street', 'House No', 'District', 'Subdistrict', 'Region', 'Postal Code', 'Timezone', 'Latitude', 'Longitude', 'Total Visits'],
-            ...data.locations.map(loc => [
+          const locationData = [];
+
+          locationData.push(['📍 VISITOR LOCATIONS - ' + date]);
+          locationData.push([]);
+          locationData.push(['Generated:', new Date().toLocaleString('id-ID')]);
+          locationData.push(['Total Unique Locations:', data.locations.length]);
+          locationData.push([]);
+
+          locationData.push([
+            'No',
+            'Country',
+            'City',
+            'Street',
+            'House No',
+            'District',
+            'Subdistrict',
+            'Region',
+            'Postal Code',
+            'Timezone',
+            'Latitude',
+            'Longitude',
+            'Total Visits',
+            'Full Address'
+          ]);
+
+          data.locations.forEach((loc, idx) => {
+            locationData.push([
+              idx + 1,
               loc.country || '',
               loc.city || '',
               loc.street || '',
@@ -1348,138 +2112,425 @@ include("../includes/koneksi.php");
               loc.timezone || '',
               loc.latitude || '',
               loc.longitude || '',
-              loc.total || 0
-            ])
-          ];
+              loc.total || 0,
+              loc.full_location || ''
+            ]);
+          });
+
+          locationData.push([]);
+          locationData.push(['Total Visits from All Locations:', data.locations.reduce((sum, loc) => sum + (loc.total || 0), 0)]);
 
           const wsLocation = XLSX.utils.aoa_to_sheet(locationData);
           wsLocation['!cols'] = [{
+              wch: 6
+            },
+            {
               wch: 20
-            }, {
+            },
+            {
               wch: 20
-            }, {
+            },
+            {
               wch: 25
-            }, {
+            },
+            {
               wch: 10
             },
             {
               wch: 20
-            }, {
+            },
+            {
               wch: 20
-            }, {
+            },
+            {
               wch: 20
-            }, {
+            },
+            {
               wch: 12
             },
             {
               wch: 20
-            }, {
+            },
+            {
               wch: 12
-            }, {
+            },
+            {
               wch: 12
-            }, {
+            },
+            {
               wch: 12
+            },
+            {
+              wch: 50
             }
           ];
-          XLSX.utils.book_append_sheet(wb, wsLocation, 'Locations');
+
+          wsLocation['!merges'] = [{
+            s: {
+              r: 0,
+              c: 0
+            },
+            e: {
+              r: 0,
+              c: 13
+            }
+          }];
+
+          XLSX.utils.book_append_sheet(wb, wsLocation, 'Location Details');
         }
 
-        // ========== SHEET 4: FREQUENCY DATA ==========
+        // ========== SHEET 4: VISIT FREQUENCY ==========
         if (data.frequency && data.frequency.length > 0) {
-          const freqData = [
-            ['🔄 VISIT FREQUENCY (Last 7 Days)'],
-            [''],
-            ['Date', 'IP Address', 'City', 'Country', 'Timezone', 'Device & Browser', 'Visit Count'],
-            ...data.frequency.map(item => [
+          const freqData = [];
+
+          freqData.push(['🔄 VISIT FREQUENCY ANALYSIS (Last 7 Days)']);
+          freqData.push([]);
+          freqData.push(['Generated:', new Date().toLocaleString('id-ID')]);
+          freqData.push(['Total Records:', data.frequency.length]);
+          freqData.push([]);
+
+          freqData.push([
+            'No',
+            'Date',
+            'IP Address',
+            'City',
+            'Country',
+            'Timezone',
+            'Device & Browser',
+            'Visit Count',
+            'Status'
+          ]);
+
+          data.frequency.forEach((item, idx) => {
+            const status = item.visits >= 10 ? 'High Frequency' :
+              item.visits >= 5 ? 'Medium Frequency' : 'Regular';
+
+            freqData.push([
+              idx + 1,
               item.date || '',
               item.ip || '',
               item.city || '',
               item.country || '',
               item.timezone || '',
               item.device || '',
-              item.visits || 0
-            ])
-          ];
+              item.visits || 0,
+              status
+            ]);
+          });
+
+          freqData.push([]);
+          freqData.push(['Total Visits:', data.frequency.reduce((sum, item) => sum + (item.visits || 0), 0)]);
+          freqData.push(['Average Visits per User:', (data.frequency.reduce((sum, item) => sum + (item.visits || 0), 0) / data.frequency.length).toFixed(2)]);
 
           const wsFreq = XLSX.utils.aoa_to_sheet(freqData);
           wsFreq['!cols'] = [{
+              wch: 6
+            },
+            {
               wch: 12
-            }, {
+            },
+            {
               wch: 18
-            }, {
-              wch: 20
-            }, {
+            },
+            {
               wch: 20
             },
             {
               wch: 20
-            }, {
-              wch: 35
-            }, {
+            },
+            {
+              wch: 20
+            },
+            {
+              wch: 40
+            },
+            {
               wch: 12
+            },
+            {
+              wch: 18
             }
           ];
-          XLSX.utils.book_append_sheet(wb, wsFreq, 'Frequency');
+
+          wsFreq['!merges'] = [{
+            s: {
+              r: 0,
+              c: 0
+            },
+            e: {
+              r: 0,
+              c: 8
+            }
+          }];
+
+          XLSX.utils.book_append_sheet(wb, wsFreq, 'Visit Frequency');
         }
 
         // ========== SHEET 5: ACTIVITY LOG ==========
         if (data.activity && data.activity.length > 0) {
-          const activityData = [
-            ['📋 ACTIVITY LOG - ' + date],
-            [''],
-            ['Time', 'IP Address', 'City', 'Country', 'Timezone', 'Device & Browser'],
-            ...data.activity.map(item => [
+          const activityData = [];
+
+          activityData.push(['📋 ACTIVITY LOG - ' + date]);
+          activityData.push([]);
+          activityData.push(['Generated:', new Date().toLocaleString('id-ID')]);
+          activityData.push(['Total Activities:', data.activity.length]);
+          activityData.push([]);
+
+          activityData.push([
+            'No',
+            'Time (Local)',
+            'IP Address',
+            'City',
+            'Country',
+            'Timezone',
+            'Device & Browser',
+            'Full Location'
+          ]);
+
+          data.activity.forEach((item, idx) => {
+            activityData.push([
+              idx + 1,
               item.time || '',
               item.ip || '',
               item.city || '',
               item.country || '',
               item.timezone || '',
-              item.device || ''
-            ])
-          ];
+              item.device || '',
+              item.full_location || ''
+            ]);
+          });
 
           const wsActivity = XLSX.utils.aoa_to_sheet(activityData);
           wsActivity['!cols'] = [{
-              wch: 12
-            }, {
+              wch: 6
+            },
+            {
+              wch: 15
+            },
+            {
               wch: 18
-            }, {
-              wch: 20
-            }, {
+            },
+            {
               wch: 20
             },
             {
               wch: 20
-            }, {
-              wch: 35
+            },
+            {
+              wch: 20
+            },
+            {
+              wch: 40
+            },
+            {
+              wch: 50
             }
           ];
+
+          wsActivity['!merges'] = [{
+            s: {
+              r: 0,
+              c: 0
+            },
+            e: {
+              r: 0,
+              c: 7
+            }
+          }];
+
           XLSX.utils.book_append_sheet(wb, wsActivity, 'Activity Log');
         }
 
         // ========== SHEET 6: BROWSER & DEVICE STATS ==========
         if (data.browsers && data.browsers.length > 0) {
-          const browserData = [
-            ['🌐 BROWSER & DEVICE STATISTICS (Last 7 Days)'],
-            [''],
-            ['Device & Browser', 'Total Users'],
-            ...data.browsers.map(item => [
+          const browserData = [];
+
+          browserData.push(['🌐 BROWSER & DEVICE STATISTICS (Last 7 Days)']);
+          browserData.push([]);
+          browserData.push(['Generated:', new Date().toLocaleString('id-ID')]);
+          browserData.push(['Total Devices:', data.browsers.length]);
+          browserData.push([]);
+
+          browserData.push([
+            'Rank',
+            'Device & Browser',
+            'Total Users',
+            '% of Total',
+            'Category'
+          ]);
+
+          const totalBrowserUsers = data.browsers.reduce((sum, b) => sum + (b.total || 0), 0);
+
+          data.browsers.forEach((item, idx) => {
+            const percentage = totalBrowserUsers > 0 ?
+              ((item.total / totalBrowserUsers) * 100).toFixed(1) + '%' : '0%';
+
+            // Categorize device
+            let category = 'Other';
+            if (item.device.includes('Windows')) category = 'Desktop';
+            else if (item.device.includes('Android')) category = 'Mobile';
+            else if (item.device.includes('iPhone') || item.device.includes('iPad')) category = 'iOS';
+            else if (item.device.includes('Mac')) category = 'Desktop';
+
+            browserData.push([
+              idx + 1,
               item.device || 'Unknown',
-              item.total || 0
-            ])
-          ];
+              item.total || 0,
+              percentage,
+              category
+            ]);
+          });
+
+          browserData.push([]);
+          browserData.push(['Total Users:', totalBrowserUsers]);
+
+          // Add category summary
+          browserData.push([]);
+          browserData.push(['Category Summary:']);
+          const categories = {};
+          data.browsers.forEach(item => {
+            let cat = 'Other';
+            if (item.device.includes('Windows') || item.device.includes('Mac')) cat = 'Desktop';
+            else if (item.device.includes('Android')) cat = 'Android';
+            else if (item.device.includes('iPhone') || item.device.includes('iPad')) cat = 'iOS';
+
+            categories[cat] = (categories[cat] || 0) + (item.total || 0);
+          });
+
+          Object.entries(categories).forEach(([cat, count]) => {
+            const pct = totalBrowserUsers > 0 ? ((count / totalBrowserUsers) * 100).toFixed(1) + '%' : '0%';
+            browserData.push([cat, count, pct]);
+          });
 
           const wsBrowser = XLSX.utils.aoa_to_sheet(browserData);
           wsBrowser['!cols'] = [{
-            wch: 40
-          }, {
-            wch: 15
+              wch: 8
+            },
+            {
+              wch: 45
+            },
+            {
+              wch: 15
+            },
+            {
+              wch: 15
+            },
+            {
+              wch: 15
+            }
+          ];
+
+          wsBrowser['!merges'] = [{
+            s: {
+              r: 0,
+              c: 0
+            },
+            e: {
+              r: 0,
+              c: 4
+            }
           }];
+
           XLSX.utils.book_append_sheet(wb, wsBrowser, 'Browsers & Devices');
         }
 
-        // Generate filename with date
-        const filename = `Kulino_Visitor_Report_${date.replace(/-/g, '')}_${Date.now()}.xlsx`;
+        // ========== SHEET 7: ANALYTICS INSIGHTS ==========
+        const insightsData = [];
+
+        insightsData.push(['💡 ANALYTICS INSIGHTS & RECOMMENDATIONS']);
+        insightsData.push([]);
+        insightsData.push(['Report Date:', date]);
+        insightsData.push(['Generated:', new Date().toLocaleString('id-ID')]);
+        insightsData.push([]);
+
+        // Key Metrics
+        insightsData.push(['═══════════════════════════════════════']);
+        insightsData.push(['KEY PERFORMANCE INDICATORS']);
+        insightsData.push(['═══════════════════════════════════════']);
+        insightsData.push([]);
+
+        const avgVisitors = data.weekly ? Math.round(data.weekly.reduce((a, b) => a + b, 0) / data.weekly.length) : 0;
+        const peakDay = data.weekly && data.labels ?
+          data.labels[data.weekly.indexOf(Math.max(...data.weekly))] : 'N/A';
+
+        insightsData.push(['Metric', 'Value', 'Status', 'Recommendation']);
+        insightsData.push([
+          'Average Daily Visitors',
+          avgVisitors,
+          avgVisitors > 50 ? 'Good' : 'Needs Improvement',
+          avgVisitors > 50 ? 'Maintain current strategies' : 'Consider marketing campaigns'
+        ]);
+        insightsData.push([
+          'Peak Traffic Day',
+          peakDay,
+          'Info',
+          'Focus promotions on peak days'
+        ]);
+        insightsData.push([
+          'Active User Rate',
+          data.active + ' / ' + data.today,
+          data.active > (data.today * 0.1) ? 'Excellent' : 'Average',
+          'Engage users with interactive content'
+        ]);
+        insightsData.push([]);
+
+        // Geographic Insights
+        insightsData.push(['═══════════════════════════════════════']);
+        insightsData.push(['GEOGRAPHIC DISTRIBUTION']);
+        insightsData.push(['═══════════════════════════════════════']);
+        insightsData.push([]);
+
+        if (data.country_labels && data.country_labels.length > 0) {
+          insightsData.push(['Top Country:', data.country_labels[0] || 'N/A']);
+          insightsData.push(['Countries Reached:', data.country_labels.length]);
+          insightsData.push(['Cities Tracked:', data.locations ? data.locations.length : 0]);
+          insightsData.push([]);
+          insightsData.push(['Recommendation:', 'Consider localization for top 3 countries']);
+        }
+
+        // Traffic Patterns
+        insightsData.push([]);
+        insightsData.push(['═══════════════════════════════════════']);
+        insightsData.push(['TRAFFIC PATTERNS']);
+        insightsData.push(['═══════════════════════════════════════']);
+        insightsData.push([]);
+
+        insightsData.push(['Observation', 'Action Item']);
+        insightsData.push(['Weekly trends show...', 'Monitor daily for patterns']);
+        insightsData.push(['User retention rate...', 'Implement loyalty programs']);
+        insightsData.push(['Device diversity...', 'Optimize for all platforms']);
+
+        const wsInsights = XLSX.utils.aoa_to_sheet(insightsData);
+        wsInsights['!cols'] = [{
+            wch: 35
+          },
+          {
+            wch: 20
+          },
+          {
+            wch: 20
+          },
+          {
+            wch: 40
+          }
+        ];
+
+        wsInsights['!merges'] = [{
+          s: {
+            r: 0,
+            c: 0
+          },
+          e: {
+            r: 0,
+            c: 3
+          }
+        }];
+
+        XLSX.utils.book_append_sheet(wb, wsInsights, 'Analytics Insights');
+
+        // Generate filename with timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        const filename = `Kulino_Visitor_Report_${date.replace(/-/g, '')}_${timestamp}.xlsx`;
 
         // Write and download
         XLSX.writeFile(wb, filename);
@@ -1487,65 +2538,83 @@ include("../includes/koneksi.php");
         console.log('✅ Excel report generated successfully');
 
         // Show success message
-        if (window.Swal) {
-          Swal.fire({
-            icon: 'success',
-            title: 'Report Downloaded!',
-            html: `
-            <div class="text-left">
-              <p class="mb-2">📊 <strong>Report Details:</strong></p>
-              <ul class="text-sm space-y-1 ml-4">
-                <li>✓ Summary Statistics</li>
-                <li>✓ Weekly Trends</li>
-                <li>✓ Top 10 Countries</li>
-                <li>✓ ${data.locations?.length || 0} Location Details</li>
-                <li>✓ ${data.frequency?.length || 0} Frequency Records</li>
-                <li>✓ ${data.activity?.length || 0} Activity Logs</li>
-                <li>✓ Browser & Device Stats</li>
-              </ul>
-            </div>
-          `,
-            confirmButtonText: 'Got it!',
-            timer: 5000
-          });
-        }
+        await Swal.fire({
+          icon: 'success',
+          title: 'Report Downloaded Successfully!',
+          html: `
+        <div class="text-left space-y-3">
+          <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200">
+            <p class="text-sm font-semibold text-green-800 mb-2">📊 Report Contents:</p>
+            <ul class="text-sm text-green-700 space-y-1 ml-4">
+              <li>✓ Dashboard Summary with Weekly Trends</li>
+              <li>✓ Top 10 Countries Analysis</li>
+              <li>✓ ${data.locations?.length || 0} Detailed Location Records</li>
+              <li>✓ ${data.frequency?.length || 0} Visit Frequency Data</li>
+              <li>✓ ${data.activity?.length || 0} Activity Log Entries</li>
+              <li>✓ ${data.browsers?.length || 0} Browser & Device Stats</li>
+              <li>✓ Analytics Insights & Recommendations</li>
+            </ul>
+          </div>
+          <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
+            <p class="text-sm text-blue-800">
+              <strong>Filename:</strong><br>
+              <code class="text-xs">${filename}</code>
+            </p>
+          </div>
+          <p class="text-xs text-gray-500 text-center">
+            Check your Downloads folder
+          </p>
+        </div>
+      `,
+          confirmButtonText: 'Great!',
+          confirmButtonColor: '#10b981',
+          width: '600px',
+          timer: 8000
+        });
 
       } catch (error) {
         console.error('❌ Excel export error:', error);
 
-        if (window.Swal) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Export Failed',
-            text: 'Failed to generate Excel report: ' + error.message,
-            confirmButtonColor: '#ef4444'
-          });
-        } else {
-          alert('Failed to generate report: ' + error.message);
-        }
+        await Swal.fire({
+          icon: 'error',
+          title: 'Export Failed',
+          html: `
+        <div class="text-left">
+          <p class="mb-3">Failed to generate Excel report:</p>
+          <div class="bg-red-50 p-3 rounded-lg border border-red-200">
+            <code class="text-sm text-red-700">${error.message}</code>
+          </div>
+          <p class="text-sm text-gray-600 mt-3">Please try again or contact support if the issue persists.</p>
+        </div>
+      `,
+          confirmButtonColor: '#ef4444'
+        });
       } finally {
         // Re-enable button
         if (downloadBtn) {
           downloadBtn.disabled = false;
           downloadBtn.innerHTML = `
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <span class="hidden sm:inline">Download Report</span>
-          <span class="sm:hidden">Download</span>
-        `;
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <span class="hidden sm:inline">Download Report</span>
+        <span class="sm:hidden">Download</span>
+      `;
         }
       }
     }
 
-    // Add event listener for download button
+    // Initialize event listener
     document.addEventListener('DOMContentLoaded', function() {
       const downloadBtn = document.getElementById('downloadReportBtn');
       if (downloadBtn) {
         downloadBtn.addEventListener('click', downloadExcelReport);
-        console.log('✅ Download button event listener added');
+        console.log('✅ Excel download button initialized');
       }
     });
+
+    console.log('✅ Enhanced Excel Report Generator loaded');
   </script>
 </body>
 
