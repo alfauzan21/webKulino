@@ -686,7 +686,6 @@ include("../includes/koneksi.php");
     </section>
 
     <!-- Frequency Table -->
-    <!-- Frequency Table Section (UPDATED) -->
     <section class="table-container mb-8">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-bold text-gray-900">🔄 Frekuensi Kunjungan (7 Hari Terakhir)</h2>
@@ -706,22 +705,17 @@ include("../includes/koneksi.php");
         <table>
           <thead>
             <tr>
-              <th width="12%">Tanggal</th>
-              <th width="15%">IP Address</th>
-              <th width="35%">Lokasi Detail</th>
-              <th width="13%">Timezone</th>
-              <th width="15%">Device & Browser</th>
-              <th width="10%">Jumlah</th>
+              <th>Tanggal</th>
+              <th>IP Address</th>
+              <th>Lokasi</th>
+              <th>Timezone</th>
+              <th>Device & Browser</th>
+              <th>Jumlah</th>
             </tr>
           </thead>
           <tbody id="freqTable">
             <tr>
-              <td colspan="6" class="text-center text-gray-500">
-                <div class="py-8">
-                  <div class="inline-block w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-                  <p>Memuat data frekuensi...</p>
-                </div>
-              </td>
+              <td colspan="6" class="text-center text-gray-500">Memuat data...</td>
             </tr>
           </tbody>
         </table>
@@ -1454,109 +1448,53 @@ include("../includes/koneksi.php");
       if (elements.totalTimezones) elements.totalTimezones.textContent = timezones;
     }
 
-    // ==================== UPDATE FREQUENCY TABLE (FIXED) ====================
     function updateFrequencyTable(frequency) {
       allFrequencyData = frequency;
       const limit = parseInt(document.getElementById('frequencyLimit')?.value || 10);
       const tbody = document.getElementById('freqTable');
 
-      if (!tbody) {
-        console.error('Frequency table body not found');
-        return;
-      }
+      if (!tbody) return;
 
       const displayData = frequency.slice(0, limit);
 
       if (frequency.length === 0) {
-        tbody.innerHTML = `
-      <tr>
-        <td colspan="7" class="text-center text-gray-500 py-8">
-          <div class="flex flex-col items-center">
-            <svg class="w-16 h-16 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-            </svg>
-            <p class="font-semibold">Tidak ada data frekuensi</p>
-            <p class="text-sm text-gray-400 mt-1">Data frekuensi akan muncul dalam 7 hari terakhir</p>
-          </div>
-        </td>
-      </tr>
-    `;
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500 py-8">Tidak ada data frekuensi</td></tr>';
         document.getElementById('freqShowingCount').textContent = '0';
         document.getElementById('freqTotalCount').textContent = '0';
         return;
       }
 
-      tbody.innerHTML = displayData.map(item => {
-        // Build detailed address
-        const addressParts = [];
-
-        if (item.house_number && item.street) {
-          addressParts.push(`<strong>${item.house_number}</strong> ${item.street}`);
-        } else if (item.street) {
-          addressParts.push(item.street);
-        }
-
-        const adminParts = [];
-        if (item.subdistrict) adminParts.push(item.subdistrict);
-        if (item.district) adminParts.push(item.district);
-        if (adminParts.length > 0) {
-          addressParts.push(adminParts.join(', '));
-        }
-
-        if (item.city) {
-          addressParts.push(`<strong>${item.city}</strong>`);
-        }
-
-        if (item.postal_code) {
-          addressParts.push(`📮 ${item.postal_code}`);
-        }
-
-        const fullAddress = addressParts.length > 0 ?
-          addressParts.join('<br>') :
-          (item.city || 'Unknown');
-
-        return `
-      <tr class="hover:bg-purple-50 transition-colors">
-        <td class="text-center font-semibold text-gray-700">${item.date || '-'}</td>
-        <td>
-          <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
-              ${item.ip?.split('.')[3] || '?'}
-            </div>
-            <span class="font-mono text-sm">${item.ip || '-'}</span>
-          </div>
-        </td>
-        <td>
-          <div class="flex items-start gap-2 mb-2">
-            <span class="country-flag text-2xl">${getCountryFlag(item.country_code)}</span>
-            <div class="flex-1">
-              <p class="font-bold text-gray-900">${item.country || 'Unknown'}</p>
-              <div class="text-sm text-gray-700 mt-1">
-                ${fullAddress}
-              </div>
-            </div>
-          </div>
-        </td>
-        <td class="text-center">
-          <span class="inline-block px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl text-xs font-bold shadow-md">
-            ${item.timezone || 'Unknown'}
-          </span>
-        </td>
-        <td>
+      tbody.innerHTML = displayData.map(item => `
+    <tr>
+      <td>${item.date || '-'}</td>
+      <td class="font-mono text-sm">${item.ip || '-'}</td>
+      <td>
+        <div class="flex items-center gap-2">
+          <span class="country-flag">${getCountryFlag(item.country_code)}</span>
           <div class="text-sm">
-            <p class="font-medium text-gray-800">${item.device || 'Unknown'}</p>
+            <div class="font-medium">${item.city || 'Unknown'}</div>
+            <div class="text-gray-500">${item.country || ''}</div>
           </div>
-        </td>
-        <td class="text-center">
-          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm shadow-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
-            <span>🔢</span>
-            <span>${item.visits} visits</span>
-          </div>
-        </td>
-      </tr>
-    `;
-      }).join('');
+        </div>
+      </td>
+      <td>
+        <span class="inline-block px-3 py-1 bg-purple-100 text-purple-800 rounded-lg text-xs font-semibold">
+          ${item.timezone || 'Unknown'}
+        </span>
+      </td>
+      <td>
+        <div class="text-sm">
+          <div class="font-medium">${item.device || 'Unknown'}</div>
+        </div>
+      </td>
+      <td class="text-center">
+        <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
+          <span>🔢</span>
+          <span>${item.visits} visits</span>
+        </span>
+      </td>
+    </tr>
+  `).join('');
 
       document.getElementById('freqShowingCount').textContent = displayData.length;
       document.getElementById('freqTotalCount').textContent = frequency.length;
