@@ -1,75 +1,227 @@
 <!DOCTYPE html>
 <html lang="en-us">
+
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <title>TestingWeb3 - Kulino</title>
   <link rel="shortcut icon" href="TemplateData/favicon.ico" />
   <link rel="stylesheet" href="TemplateData/style.css" />
-  
+
   <!-- Mobile Viewport -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  
+
   <!-- Landscape Enforcement -->
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen" />
-  
-  <!-- ✅ CSS UNTUK ROTATION PROMPT -->
-<style>
-  /* Rotation Prompt */
-  #rotation-prompt {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.95);
-    z-index: 9999;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 20px;
-  }
-  
-  #rotation-prompt.show {
-    display: flex !important;
-  }
-  
-  .rotation-icon {
-    font-size: 80px;
-    margin-bottom: 20px;
-    animation: rotate-icon 2s infinite;
-  }
-  
-  @keyframes rotate-icon {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(90deg); }
-  }
-  
-  .rotation-text {
-    font-size: 24px;
-    font-weight: bold;
-    color: #fff;
-    margin-bottom: 10px;
-  }
-  
-  .rotation-subtext {
-    font-size: 16px;
-    color: #aaa;
-  }
 
-  /* Canvas Full Screen */
-  #unity-canvas {
-    display: block;
-    width: 100% !important;
-    height: 100% !important;
-    max-width: 100%;
-    max-height: 100%;
-  }
-</style>
+  <!-- ✅ CSS UNTUK ROTATION PROMPT -->
+  <style>
+    /* ===== ENHANCED MOBILE SUPPORT ===== */
+
+    /* Prevent zoom on mobile */
+    * {
+      touch-action: pan-x pan-y;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    /* Full viewport for mobile */
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      position: fixed;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Unity Container - Mobile optimized */
+    #unity-container {
+      width: 100vw !important;
+      height: 100vh !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      overflow: hidden !important;
+      background: #000;
+    }
+
+    /* Unity Canvas - Force full size */
+    #unity-canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+      max-width: 100% !important;
+      max-height: 100% !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      touch-action: none !important;
+    }
+
+    /* Rotation Prompt - Enhanced visibility */
+    #rotation-prompt {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 9999;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    #rotation-prompt.show {
+      display: flex !important;
+    }
+
+    .rotation-icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+      animation: rotate-icon 2s infinite ease-in-out;
+    }
+
+    @keyframes rotate-icon {
+
+      0%,
+      100% {
+        transform: rotate(0deg) scale(1);
+      }
+
+      25% {
+        transform: rotate(90deg) scale(1.1);
+      }
+
+      50% {
+        transform: rotate(90deg) scale(1);
+      }
+
+      75% {
+        transform: rotate(0deg) scale(1.1);
+      }
+    }
+
+    .rotation-text {
+      font-size: 24px;
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 10px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .rotation-subtext {
+      font-size: 16px;
+      color: #aaa;
+      line-height: 1.5;
+    }
+
+    /* Loading bar - Better positioning */
+    #unity-loading-bar {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10000;
+    }
+
+    /* Warning messages - Mobile optimized */
+    #unity-warning {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 90%;
+      z-index: 10000;
+    }
+
+    /* Mobile landscape specific */
+    @media screen and (orientation: landscape) and (max-height: 500px) {
+      .rotation-text {
+        font-size: 20px;
+      }
+
+      .rotation-icon {
+        font-size: 60px;
+      }
+    }
+
+    /* Prevent scrolling on mobile */
+    body.unity-loaded {
+      overflow: hidden !important;
+      position: fixed !important;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* Rotation Prompt */
+    #rotation-prompt {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 9999;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    #rotation-prompt.show {
+      display: flex !important;
+    }
+
+    .rotation-icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+      animation: rotate-icon 2s infinite;
+    }
+
+    @keyframes rotate-icon {
+
+      0%,
+      100% {
+        transform: rotate(0deg);
+      }
+
+      50% {
+        transform: rotate(90deg);
+      }
+    }
+
+    .rotation-text {
+      font-size: 24px;
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    .rotation-subtext {
+      font-size: 16px;
+      color: #aaa;
+    }
+
+    /* Canvas Full Screen */
+    #unity-canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+      max-width: 100%;
+      max-height: 100%;
+    }
+  </style>
 
   <!-- Required Libraries -->
   <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
@@ -101,326 +253,429 @@
 
   <!-- Unity Show Banner -->
   <script>
-  window.onerror = function(message, source, lineno, colno, error) {
-    console.error('[GLOBAL-ERROR]', message, 'at', source, lineno + ':' + colno);
-    
-    var suppressedErrors = [
-      'Module_main', 'callMain', 'doRun', 'run(', 'runCaller',
-      'Module.run', 'abort(', 'ExitStatus'
-    ];
-    
-    var shouldSuppress = suppressedErrors.some(function(err) {
-      return message.includes(err) || (source && source.includes(err));
-    });
-    
-    if (shouldSuppress) {
-      console.warn('[GLOBAL-ERROR] Suppressed Unity error (tab switch/reload)');
-      return true;
-    }
-    
-    return false;
-  };
-  
-  function unityShowBanner(msg, type) {
-    try {
-      var warningBanner = document.querySelector("#unity-warning");
-      function updateBannerVisibility() {
-        warningBanner.style.display = warningBanner.children.length ? "block" : "none";
+    window.onerror = function (message, source, lineno, colno, error) {
+      console.error('[GLOBAL-ERROR]', message, 'at', source, lineno + ':' + colno);
+
+      var suppressedErrors = [
+        'Module_main', 'callMain', 'doRun', 'run(', 'runCaller',
+        'Module.run', 'abort(', 'ExitStatus'
+      ];
+
+      var shouldSuppress = suppressedErrors.some(function (err) {
+        return message.includes(err) || (source && source.includes(err));
+      });
+
+      if (shouldSuppress) {
+        console.warn('[GLOBAL-ERROR] Suppressed Unity error (tab switch/reload)');
+        return true;
       }
-      var div = document.createElement("div");
-      div.textContent = msg;
-      div.style.padding = "8px";
-      div.style.margin = "6px";
-      if (type === "error") div.style.background = "rgba(200,0,0,0.9)";
-      else if (type === "warning") div.style.background = "rgba(200,160,0,0.9)";
-      else div.style.background = "rgba(0,0,0,0.6)";
-      warningBanner.appendChild(div);
-      if (type !== "error") {
-        setTimeout(function() { 
-          warningBanner.removeChild(div); 
-          updateBannerVisibility(); 
-        }, 5000);
+
+      return false;
+    };
+
+    function unityShowBanner(msg, type) {
+      try {
+        var warningBanner = document.querySelector("#unity-warning");
+        function updateBannerVisibility() {
+          warningBanner.style.display = warningBanner.children.length ? "block" : "none";
+        }
+        var div = document.createElement("div");
+        div.textContent = msg;
+        div.style.padding = "8px";
+        div.style.margin = "6px";
+        if (type === "error") div.style.background = "rgba(200,0,0,0.9)";
+        else if (type === "warning") div.style.background = "rgba(200,160,0,0.9)";
+        else div.style.background = "rgba(0,0,0,0.6)";
+        warningBanner.appendChild(div);
+        if (type !== "error") {
+          setTimeout(function () {
+            warningBanner.removeChild(div);
+            updateBannerVisibility();
+          }, 5000);
+        }
+        updateBannerVisibility();
+      } catch (e) {
+        console.warn('unityShowBanner error', e);
       }
-      updateBannerVisibility();
-    } catch(e){ 
-      console.warn('unityShowBanner error', e); 
     }
-  }
   </script>
 
   <!-- Tab Visibility Handler -->
   <script>
-  let isTabVisible = true;
-  let unityPaused = false;
-  
-  document.addEventListener('visibilitychange', function() {
-    isTabVisible = !document.hidden;
-    console.log('[TAB]', isTabVisible ? 'VISIBLE' : 'HIDDEN');
-    
-    if (window.unityInstance) {
-      try {
-        if (!isTabVisible) {
-          console.log('[TAB] Pausing Unity...');
-          window.unityInstance.SendMessage('GameManager', 'OnApplicationPause', '1');
-          unityPaused = true;
-        } else {
-          console.log('[TAB] Resuming Unity...');
-          window.unityInstance.SendMessage('GameManager', 'OnApplicationPause', '0');
-          unityPaused = false;
+    let isTabVisible = true;
+    let unityPaused = false;
+
+    document.addEventListener('visibilitychange', function () {
+      isTabVisible = !document.hidden;
+      console.log('[TAB]', isTabVisible ? 'VISIBLE' : 'HIDDEN');
+
+      if (window.unityInstance) {
+        try {
+          if (!isTabVisible) {
+            console.log('[TAB] Pausing Unity...');
+            window.unityInstance.SendMessage('GameManager', 'OnApplicationPause', '1');
+            unityPaused = true;
+          } else {
+            console.log('[TAB] Resuming Unity...');
+            window.unityInstance.SendMessage('GameManager', 'OnApplicationPause', '0');
+            unityPaused = false;
+          }
+        } catch (e) {
+          console.warn('[TAB] SendMessage failed:', e.message);
         }
-      } catch(e) {
-        console.warn('[TAB] SendMessage failed:', e.message);
       }
-    }
-  });
-  
-  window.addEventListener('focus', function() {
-    console.log('[WINDOW] Focused');
-    isTabVisible = true;
-  });
-  
-  window.addEventListener('blur', function() {
-    console.log('[WINDOW] Blurred');
-    isTabVisible = false;
-  });
-  
-  window.addEventListener('beforeunload', function() {
-    console.log('[TAB] Page unloading - cleaning up');
-    if (window.unityInstance) {
-      try {
-        window.unityInstance.Quit();
-      } catch(e) {
-        console.warn('[TAB] Quit failed:', e.message);
+    });
+
+    window.addEventListener('focus', function () {
+      console.log('[WINDOW] Focused');
+      isTabVisible = true;
+    });
+
+    window.addEventListener('blur', function () {
+      console.log('[WINDOW] Blurred');
+      isTabVisible = false;
+    });
+
+    window.addEventListener('beforeunload', function () {
+      console.log('[TAB] Page unloading - cleaning up');
+      if (window.unityInstance) {
+        try {
+          window.unityInstance.Quit();
+        } catch (e) {
+          console.warn('[TAB] Quit failed:', e.message);
+        }
       }
-    }
-  });
-  
-  window.addEventListener('webglcontextlost', function(e) {
-    console.error('[WEBGL] Context lost - preventing default');
-    e.preventDefault();
-  }, false);
-  
-  window.addEventListener('webglcontextrestored', function() {
-    console.log('[WEBGL] Context restored');
-  }, false);
+    });
+
+    window.addEventListener('webglcontextlost', function (e) {
+      console.error('[WEBGL] Context lost - preventing default');
+      e.preventDefault();
+    }, false);
+
+    window.addEventListener('webglcontextrestored', function () {
+      console.log('[WEBGL] Context restored');
+    }, false);
   </script>
 
-  <!-- ✅ ORIENTATION DETECTION JAVASCRIPT -->
-<script>
-(function() {
-  console.log('[ORIENT] Initializing...');
-
-  // ✅ CRITICAL: Define all functions BEFORE Unity loads
-  window.IsMobileBrowser = function() {
-    const ua = navigator.userAgent || navigator.vendor || window.opera;
-    const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-    const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-    const isSmallScreen = window.innerWidth < 1024;
-    const isMobile = isMobileUA || (hasTouch && isSmallScreen);
-    
-    console.log('[ORIENT] Detection:', {
-      userAgent: isMobileUA,
-      touch: hasTouch,
-      screenWidth: window.innerWidth,
-      result: isMobile
-    });
-    
-    return isMobile;
-  };
-
-  window.IsPortraitMode = function() {
-    const portrait = window.innerHeight > window.innerWidth;
-    console.log('[ORIENT] Check:', window.innerWidth, 'x', window.innerHeight, '=', portrait ? 'PORTRAIT' : 'LANDSCAPE');
-    return portrait;
-  };
-
-  // ✅ CRITICAL: Define NotifyOrientationToJS (required by Unity)
-  window.NotifyOrientationToJS = function(isPortrait) {
-    console.log('[ORIENT] Unity notified, portrait:', isPortrait);
-    checkOrientation();
-  };
-
-  // ✅ Check and update UI
-  function checkOrientation() {
-    const mobile = window.IsMobileBrowser();
-    const portrait = window.IsPortraitMode();
-    const prompt = document.getElementById('rotation-prompt');
-    const canvas = document.getElementById('unity-canvas');
-    
-    console.log('[ORIENT] Mobile:', mobile, '| Portrait:', portrait);
-    
-    if (mobile && portrait) {
-      if (prompt) prompt.classList.add('show');
-      if (canvas) canvas.style.display = 'none';
-      console.log('[ORIENT] ⚠️ PORTRAIT - Showing prompt');
-    } else {
-      if (prompt) prompt.classList.remove('show');
-      if (canvas) {
-        canvas.style.display = 'block';
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
-      }
-      console.log('[ORIENT] ✅ LANDSCAPE - OK');
-    }
-  }
-
-  // ✅ Event listeners
-  window.addEventListener('load', function() {
-    console.log('[ORIENT] Page loaded');
-    setTimeout(checkOrientation, 100);
-  });
-
-  let resizeTimer;
-  window.addEventListener('resize', function() {
-    console.log('[ORIENT] Window resized');
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(checkOrientation, 200);
-  });
-
-  window.addEventListener('orientationchange', function() {
-    console.log('[ORIENT] Orientation changed');
-    setTimeout(checkOrientation, 300);
-  });
-
-  console.log('[ORIENT] ✅ System ready');
-})();
-</script>
-
-  <!-- Kulino Bridge -->
+  <!-- ✅ FIXED ORIENTATION DETECTION JAVASCRIPT -->
   <script>
-  (function(){
-    const LOG = (...a) => console.log('[KULINO-BRIDGE]', ...a);
+    (function () {
+      console.log('[ORIENT] Initializing mobile orientation system...');
 
-    const queue = [];
-    let unityReady = false;
+      // ✅ State tracking
+      let unityLoaded = false;
+      let lastOrientation = null;
+      let forceCheckInterval = null;
 
-    window.__kulino_unity_ready = function(){
-      LOG('✅ Unity ready. Queue:', queue.length);
-      unityReady = true;
-      
-      while(queue.length){
-        const item = queue.shift();
-        _sendToUnity(item.method, item.payload);
-      }
-      
-      checkWallet();
-    };
+      // ✅ Define all functions BEFORE Unity loads
+      window.IsMobileBrowser = function () {
+        const ua = navigator.userAgent || navigator.vendor || window.opera;
+        const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+        const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        const isSmallScreen = window.innerWidth < 1024;
+        const isMobile = isMobileUA || (hasTouch && isSmallScreen);
 
-    function _sendToUnity(method, payload){
-      try {
-        if (window.unityInstance && typeof window.unityInstance.SendMessage === 'function') {
-          LOG('📤', method);
-          window.unityInstance.SendMessage('GameManager', method, payload);
-        } else {
-          queue.push({ method, payload });
+        console.log('[ORIENT] Detection:', {
+          userAgent: isMobileUA,
+          touch: hasTouch,
+          screenWidth: window.innerWidth,
+          result: isMobile
+        });
+
+        return isMobile;
+      };
+
+      window.IsPortraitMode = function () {
+        // ✅ CRITICAL FIX: Use screen.orientation API if available
+        if (window.screen && window.screen.orientation) {
+          const type = window.screen.orientation.type;
+          const portrait = type.includes('portrait');
+          console.log('[ORIENT] Orientation API:', type, '→', portrait ? 'PORTRAIT' : 'LANDSCAPE');
+          return portrait;
         }
-      } catch(e){ 
-        console.error('[KULINO-BRIDGE] Send error', e); 
-      }
-    }
 
-    function sendResult(obj){
-      const json = JSON.stringify(obj);
-      if (!unityReady) { 
-        queue.push({ method: 'OnClaimResult', payload: json }); 
-      } else {
-        _sendToUnity('OnClaimResult', json);
-      }
-    }
+        // Fallback: compare dimensions
+        const portrait = window.innerHeight > window.innerWidth;
+        console.log('[ORIENT] Dimension check:', window.innerWidth, 'x', window.innerHeight, '→', portrait ? 'PORTRAIT' : 'LANDSCAPE');
+        return portrait;
+      };
 
-    function checkWallet() {
-      const params = new URLSearchParams(window.location.search);
-      const wallet = params.get('wallet');
-      
-      if (wallet) {
-        LOG('✅ Wallet found:', wallet.substring(0, 8) + '...');
-        notifyWallet(wallet);
-      }
-    }
+      // ✅ CRITICAL FIX: Proper canvas show/hide with resize
+      function checkOrientation() {
+        const mobile = window.IsMobileBrowser();
+        const portrait = window.IsPortraitMode();
+        const prompt = document.getElementById('rotation-prompt');
+        const canvas = document.getElementById('unity-canvas');
+        const container = document.getElementById('unity-container');
 
-    function notifyWallet(address, retry = 0) {
-      if (!window.unityInstance || typeof window.unityInstance.SendMessage !== 'function') {
-        if (retry < 10) {
-          setTimeout(() => notifyWallet(address, retry + 1), 500);
-        }
-        return;
-      }
-      
-      try {
-        window.unityInstance.SendMessage('GameManager', 'OnWalletConnected', address);
-        LOG('✅ Wallet sent to GameManager');
-      } catch(e) {
-        console.error('[KULINO-BRIDGE] Notify failed', e);
-      }
-    }
+        console.log('[ORIENT] Check:', { mobile, portrait, unityLoaded });
 
-    window.requestClaimFromUnity = async function(messageJson) {
-      LOG('💰 Claim requested');
-      try {
-        const provider = (window.solana && window.solana.isPhantom) ? window.solana :
-                         (window.phantom && window.phantom.solana) ? window.phantom.solana : null;
-        if (!provider) {
-          sendResult({ success:false, error:'phantom_not_installed' });
+        if (!mobile) {
+          // Desktop - always show canvas
+          if (prompt) prompt.classList.remove('show');
+          if (canvas) {
+            canvas.style.display = 'block';
+            canvas.style.visibility = 'visible';
+          }
+          console.log('[ORIENT] ✅ DESKTOP - Canvas visible');
           return;
         }
 
-        let payload = (typeof messageJson === 'string') ? JSON.parse(messageJson) : messageJson;
+        if (portrait) {
+          // Mobile Portrait - show rotation prompt
+          if (prompt) prompt.classList.add('show');
+          if (canvas) {
+            canvas.style.display = 'none';
+            canvas.style.visibility = 'hidden';
+          }
+          console.log('[ORIENT] ⚠️ MOBILE PORTRAIT - Showing rotation prompt');
+          lastOrientation = 'portrait';
+        } else {
+          // Mobile Landscape - show canvas
+          if (prompt) prompt.classList.remove('show');
 
-        if (!provider.isConnected) {
-          await provider.connect();
+          if (canvas) {
+            // ✅ CRITICAL: Force canvas to be visible and full size
+            canvas.style.display = 'block';
+            canvas.style.visibility = 'visible';
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            canvas.style.position = 'absolute';
+            canvas.style.top = '0';
+            canvas.style.left = '0';
+
+            // ✅ Force container to fill viewport
+            if (container) {
+              container.style.width = '100vw';
+              container.style.height = '100vh';
+              container.style.position = 'fixed';
+              container.style.top = '0';
+              container.style.left = '0';
+            }
+
+            // ✅ Trigger Unity resize if loaded
+            if (unityLoaded && window.unityInstance) {
+              setTimeout(() => {
+                console.log('[ORIENT] 🔄 Triggering Unity resize...');
+                try {
+                  // Force Unity to recalculate canvas size
+                  if (typeof window.unityInstance.SendMessage === 'function') {
+                    window.unityInstance.SendMessage('MobileOptimizer', 'OnScreenResize', '');
+                  }
+                } catch (e) {
+                  console.warn('[ORIENT] Unity resize message failed:', e);
+                }
+              }, 100);
+            }
+          }
+
+          console.log('[ORIENT] ✅ MOBILE LANDSCAPE - Canvas visible');
+          lastOrientation = 'landscape';
+        }
+      }
+
+      // ✅ Enhanced resize handler
+      let resizeTimer;
+      function handleResize() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          console.log('[ORIENT] 📐 Window resized:', window.innerWidth, 'x', window.innerHeight);
+          checkOrientation();
+        }, 200);
+      }
+
+      // ✅ Orientation change handler
+      function handleOrientationChange() {
+        console.log('[ORIENT] 🔄 Orientation changed');
+        // Wait for dimensions to update
+        setTimeout(() => {
+          checkOrientation();
+        }, 300);
+      }
+
+      // ✅ Unity loaded callback
+      window.__kulino_orientation_ready = function () {
+        console.log('[ORIENT] ✅ Unity fully loaded');
+        unityLoaded = true;
+
+        // Force check after Unity loaded
+        setTimeout(() => {
+          checkOrientation();
+        }, 500);
+
+        // Start periodic check (safety net)
+        if (forceCheckInterval) clearInterval(forceCheckInterval);
+        forceCheckInterval = setInterval(() => {
+          const currentPortrait = window.IsPortraitMode();
+          const currentOrientationState = currentPortrait ? 'portrait' : 'landscape';
+
+          // Only re-check if orientation changed
+          if (currentOrientationState !== lastOrientation) {
+            console.log('[ORIENT] 🔄 Orientation state changed:', lastOrientation, '→', currentOrientationState);
+            checkOrientation();
+          }
+        }, 1000);
+      };
+
+      // ✅ Event listeners
+      window.addEventListener('load', function () {
+        console.log('[ORIENT] 📄 Page loaded');
+        setTimeout(checkOrientation, 100);
+      });
+
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('orientationchange', handleOrientationChange);
+
+      // ✅ Screen orientation API listener (modern browsers)
+      if (window.screen && window.screen.orientation) {
+        window.screen.orientation.addEventListener('change', function () {
+          console.log('[ORIENT] 📱 Screen orientation changed:', window.screen.orientation.type);
+          handleOrientationChange();
+        });
+      }
+
+      // ✅ Initial check
+      setTimeout(checkOrientation, 100);
+
+      console.log('[ORIENT] ✅ Mobile orientation system ready');
+    })();
+  </script>
+
+  <!-- Kulino Bridge -->
+  <script>
+    (function () {
+      const LOG = (...a) => console.log('[KULINO-BRIDGE]', ...a);
+
+      const queue = [];
+      let unityReady = false;
+
+      window.__kulino_unity_ready = function () {
+        LOG('✅ Unity ready. Queue:', queue.length);
+        unityReady = true;
+
+        while (queue.length) {
+          const item = queue.shift();
+          _sendToUnity(item.method, item.payload);
         }
 
-        payload.address = provider.publicKey.toString();
-        const canonical = {
-          address: payload.address,
-          gameId: payload.gameId,
-          amount: payload.amount,
-          nonce: payload.nonce,
-          ts: payload.ts
-        };
-        const messageStr = JSON.stringify(canonical);
+        checkWallet();
+      };
 
-        const encoded = new TextEncoder().encode(messageStr);
-        const signed = await provider.signMessage(encoded, 'utf8');
-        const sig = bs58.encode(signed.signature);
-
-        const resp = await fetch('http://localhost:3000/api/claim', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ 
-            message: messageStr, 
-            signature: sig, 
-            publicKey: provider.publicKey.toString() 
-          })
-        });
-
-        let data = await resp.json();
-        sendResult(data);
-
-      } catch(err) {
-        console.error('[KULINO-BRIDGE] Error:', err);
-        sendResult({ success:false, error: err.message || String(err) });
+      function _sendToUnity(method, payload) {
+        try {
+          if (window.unityInstance && typeof window.unityInstance.SendMessage === 'function') {
+            LOG('📤', method);
+            window.unityInstance.SendMessage('GameManager', method, payload);
+          } else {
+            queue.push({ method, payload });
+          }
+        } catch (e) {
+          console.error('[KULINO-BRIDGE] Send error', e);
+        }
       }
-    };
 
-    LOG('✅ Bridge loaded');
-  })();
+      function sendResult(obj) {
+        const json = JSON.stringify(obj);
+        if (!unityReady) {
+          queue.push({ method: 'OnClaimResult', payload: json });
+        } else {
+          _sendToUnity('OnClaimResult', json);
+        }
+      }
+
+      function checkWallet() {
+        const params = new URLSearchParams(window.location.search);
+        const wallet = params.get('wallet');
+
+        if (wallet) {
+          LOG('✅ Wallet found:', wallet.substring(0, 8) + '...');
+          notifyWallet(wallet);
+        }
+      }
+
+      function notifyWallet(address, retry = 0) {
+        if (!window.unityInstance || typeof window.unityInstance.SendMessage !== 'function') {
+          if (retry < 10) {
+            setTimeout(() => notifyWallet(address, retry + 1), 500);
+          }
+          return;
+        }
+
+        try {
+          window.unityInstance.SendMessage('GameManager', 'OnWalletConnected', address);
+          LOG('✅ Wallet sent to GameManager');
+        } catch (e) {
+          console.error('[KULINO-BRIDGE] Notify failed', e);
+        }
+      }
+
+      window.requestClaimFromUnity = async function (messageJson) {
+        LOG('💰 Claim requested');
+        try {
+          const provider = (window.solana && window.solana.isPhantom) ? window.solana :
+            (window.phantom && window.phantom.solana) ? window.phantom.solana : null;
+          if (!provider) {
+            sendResult({ success: false, error: 'phantom_not_installed' });
+            return;
+          }
+
+          let payload = (typeof messageJson === 'string') ? JSON.parse(messageJson) : messageJson;
+
+          if (!provider.isConnected) {
+            await provider.connect();
+          }
+
+          payload.address = provider.publicKey.toString();
+          const canonical = {
+            address: payload.address,
+            gameId: payload.gameId,
+            amount: payload.amount,
+            nonce: payload.nonce,
+            ts: payload.ts
+          };
+          const messageStr = JSON.stringify(canonical);
+
+          const encoded = new TextEncoder().encode(messageStr);
+          const signed = await provider.signMessage(encoded, 'utf8');
+          const sig = bs58.encode(signed.signature);
+
+          const resp = await fetch('http://localhost:3000/api/claim', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: messageStr,
+              signature: sig,
+              publicKey: provider.publicKey.toString()
+            })
+          });
+
+          let data = await resp.json();
+          sendResult(data);
+
+        } catch (err) {
+          console.error('[KULINO-BRIDGE] Error:', err);
+          sendResult({ success: false, error: err.message || String(err) });
+        }
+      };
+
+      LOG('✅ Bridge loaded');
+    })();
   </script>
 
   <!-- Unity Loader -->
   <script src="bridge.js"></script>
 <script>
     var canvas = document.querySelector("#unity-canvas");
-    
-    canvas.addEventListener('webglcontextlost', function(e) {
+
+    canvas.addEventListener('webglcontextlost', function (e) {
       console.error('[CANVAS] WebGL context lost');
       e.preventDefault();
     }, false);
-    
-    canvas.addEventListener('webglcontextrestored', function() {
+
+    canvas.addEventListener('webglcontextrestored', function () {
       console.log('[CANVAS] WebGL context restored');
     }, false);
-    
+
     var buildUrl = "Build";
     var loaderUrl = buildUrl + "/WebUnity.loader.js";
     var config = {
@@ -432,8 +687,8 @@
       productName: "TestingWeb3",
       productVersion: "1.0",
       showBanner: unityShowBanner,
-      matchWebGLToCanvasSize: true,
-      devicePixelRatio: window.devicePixelRatio || 1,
+      matchWebGLToCanvasSize: true, // ✅ CRITICAL for mobile
+      devicePixelRatio: 1, // ✅ CHANGED: Use 1 for better mobile performance
       webglContextAttributes: {
         preserveDrawingBuffer: false,
         powerPreference: "high-performance"
@@ -450,41 +705,51 @@
       }).then((unityInstance) => {
         document.querySelector("#unity-loading-bar").style.display = "none";
         window.unityInstance = unityInstance;
-        
-        window.addEventListener('error', function(e) {
+
+        window.addEventListener('error', function (e) {
           console.error('[UNITY-ERROR]', e.message);
-          if (e.message.includes('Module_main') || 
-              e.message.includes('callMain') ||
-              e.message.includes('doRun')) {
+          if (e.message.includes('Module_main') ||
+            e.message.includes('callMain') ||
+            e.message.includes('doRun')) {
             console.warn('[UNITY-ERROR] Suppressed Unity initialization error');
             e.preventDefault();
             return false;
           }
         });
-        
-        window.addEventListener('unhandledrejection', function(e) {
+
+        window.addEventListener('unhandledrejection', function (e) {
           console.error('[UNITY-PROMISE]', e.reason);
           if (e.reason && e.reason.toString().includes('WebGL')) {
             console.warn('[UNITY-PROMISE] Suppressed WebGL error');
             e.preventDefault();
           }
         });
-        
+
+        // ✅ Kulino Bridge ready
         if (typeof window.__kulino_unity_ready === 'function') {
           window.__kulino_unity_ready();
         }
-        
-        console.log('✅ Unity loaded');
+
+        // ✅ NEW: Orientation system ready
+        if (typeof window.__kulino_orientation_ready === 'function') {
+          console.log('[UNITY] 📱 Calling orientation ready callback...');
+          setTimeout(() => {
+            window.__kulino_orientation_ready();
+          }, 500);
+        }
+
+        console.log('✅ Unity loaded and fully initialized');
+
       }).catch((message) => {
         console.error('❌ Unity load failed', message);
-        
+
         var errorMsg = 'Failed to load game';
         if (message.includes('memory')) {
           errorMsg += ': Not enough memory';
         } else if (message.includes('WebGL')) {
           errorMsg += ': WebGL not supported';
         }
-        
+
         alert(errorMsg + '. Please refresh the page.');
       });
     };
@@ -495,4 +760,5 @@
     document.body.appendChild(script);
   </script>
 </body>
+
 </html>
