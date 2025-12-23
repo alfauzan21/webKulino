@@ -231,6 +231,7 @@ function showToast(message, type = "info") {
     success: "bg-green-500",
     error: "bg-red-500",
     info: "bg-blue-500",
+    warning: "bg-yellow-500",
   };
 
   const toast = document.createElement("div");
@@ -654,115 +655,58 @@ document.addEventListener("DOMContentLoaded", () => {
 // ==================== IMPROVED BALANCE FUNCTIONS ====================
 async function getSOLBalance(walletAddress) {
   try {
-    console.log("📊 Fetching SOL balance for:", shortAddr(walletAddress));
+    console.log("📊 Fetching SOL balance...");
 
-    // Try multiple methods
-    const methods = [
-      // Method 1: Direct RPC call
-      async () => {
-        const connection = new solanaWeb3.Connection(
-          "https://api.mainnet-beta.solana.com",
-          { commitment: "confirmed" }
-        );
-        const pubkey = new solanaWeb3.PublicKey(walletAddress);
-        return await connection.getBalance(pubkey);
-      },
+    return await retryWithNextRPC(async () => {
+      const connection = getConnection();
+      const pubkey = new solanaWeb3.PublicKey(walletAddress);
+      
+      const balance = await Promise.race([
+        connection.getBalance(pubkey),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout")), 10000)
+        ),
+      ]);
 
-      // Method 2: Use Phantom's connection
-      async () => {
-        if (window.phantom?.solana?.connection) {
-          const pubkey = new solanaWeb3.PublicKey(walletAddress);
-          return await window.phantom.solana.connection.getBalance(pubkey);
-        }
-        throw new Error("Phantom connection not available");
-      },
-    ];
-
-    // Try each method
-    for (const method of methods) {
-      try {
-        const balance = await Promise.race([
-          method(),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Timeout")), 10000)
-          ),
-        ]);
-
-        const solAmount = balance / solanaWeb3.LAMPORTS_PER_SOL;
-        console.log("✅ SOL balance:", solAmount);
-        solBalance = solAmount; // Update global
-        return solAmount;
-      } catch (err) {
-        console.warn("Method failed, trying next:", err.message);
-        continue;
-      }
-    }
-
-    throw new Error("All balance fetch methods failed");
+      const solAmount = balance / solanaWeb3.LAMPORTS_PER_SOL;
+      console.log("✅ SOL balance:", solAmount);
+      return solAmount;
+    });
   } catch (error) {
     console.error("❌ SOL fetch error:", error.message);
-    // Don't throw, return 0 instead
-    solBalance = 0;
     return 0;
   }
 }
 
 async function getKulinoBalance(walletAddress) {
   try {
-    console.log("📊 Fetching Kulino balance for:", shortAddr(walletAddress));
+    console.log("📊 Fetching Kulino balance...");
 
-    // Try multiple RPC endpoints
-    const endpoints = [
-      "https://api.mainnet-beta.solana.com",
-      "https://solana-api.syndica.io/access-token/HGlwRGMqfQ8LoQWRn83x48fcq4UmTXKT5bLrPqJfpnvPpJtw47wf0nWKd62B46Uo/rpc",
-      "https://solana.public-rpc.com",
-    ];
+    return await retryWithNextRPC(async () => {
+      const connection = getConnection();
+      const pubkey = new solanaWeb3.PublicKey(walletAddress);
+      const tokenMint = new solanaWeb3.PublicKey(KULINO_TOKEN_MINT);
 
-    for (const endpoint of endpoints) {
-      try {
-        console.log(`Trying endpoint: ${endpoint.substring(0, 40)}...`);
+      const tokenAccounts = await Promise.race([
+        connection.getParsedTokenAccountsByOwner(pubkey, { mint: tokenMint }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout")), 10000)
+        ),
+      ]);
 
-        const connection = new solanaWeb3.Connection(endpoint, {
-          commitment: "confirmed",
-          confirmTransactionInitialTimeout: 15000,
-        });
-
-        const pubkey = new solanaWeb3.PublicKey(walletAddress);
-        const tokenMint = new solanaWeb3.PublicKey(KULINO_TOKEN_MINT);
-
-        // Fetch with timeout
-        const tokenAccounts = await Promise.race([
-          connection.getParsedTokenAccountsByOwner(pubkey, { mint: tokenMint }),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Timeout")), 10000)
-          ),
-        ]);
-
-        if (tokenAccounts.value.length > 0) {
-          const balance =
-            tokenAccounts.value[0].account.data.parsed.info.tokenAmount
-              .uiAmount || 0;
-          console.log("✅ Kulino balance:", balance);
-          kulinoBalance = balance; // Update global
-          return balance;
-        }
-
-        console.log("ℹ️ No Kulino tokens found in this account");
-        kulinoBalance = 0;
-        return 0;
-      } catch (err) {
-        console.warn(
-          `Endpoint ${endpoint.substring(0, 40)}... failed:`,
-          err.message
-        );
-        continue;
+      if (tokenAccounts.value.length > 0) {
+        const balance =
+          tokenAccounts.value[0].account.data.parsed.info.tokenAmount
+            .uiAmount || 0;
+        console.log("✅ Kulino balance:", balance);
+        return balance;
       }
-    }
 
-    throw new Error("All RPC endpoints failed");
+      console.log("ℹ️ No Kulino tokens found");
+      return 0;
+    });
   } catch (error) {
     console.error("❌ Kulino fetch error:", error.message);
-    kulinoBalance = 0;
     return 0;
   }
 }
@@ -778,7 +722,7 @@ async function updateBalanceDisplay(address = userAddress) {
   const solEl = document.getElementById("solBalance");
   const refreshBtn = document.getElementById("refreshBalanceBtn");
 
-  // Show loading indicators
+  // Show loading
   if (kulinoEl) {
     kulinoEl.innerHTML =
       '<div class="inline-flex items-center gap-2"><span class="inline-block w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin"></span><span class="text-sm">Loading...</span></div>';
@@ -795,29 +739,18 @@ async function updateBalanceDisplay(address = userAddress) {
   try {
     console.log("🔄 Starting balance fetch...");
 
-    // Fetch both balances in parallel but with individual timeouts
+    // Fetch both balances
     const [kulinoResult, solResult] = await Promise.allSettled([
       getKulinoBalance(address),
       getSOLBalance(address),
     ]);
 
-    // Handle Kulino balance
-    if (kulinoResult.status === "fulfilled") {
-      kulinoBalance = kulinoResult.value;
-    } else {
-      console.error("Kulino balance failed:", kulinoResult.reason);
-      kulinoBalance = 0;
-    }
+    // Handle results
+    kulinoBalance =
+      kulinoResult.status === "fulfilled" ? kulinoResult.value : 0;
+    solBalance = solResult.status === "fulfilled" ? solResult.value : 0;
 
-    // Handle SOL balance
-    if (solResult.status === "fulfilled") {
-      solBalance = solResult.value;
-    } else {
-      console.error("SOL balance failed:", solResult.reason);
-      solBalance = 0;
-    }
-
-    // Update UI with results
+    // Update UI
     if (kulinoEl) {
       if (kulinoBalance > 0) {
         kulinoEl.innerHTML = `<strong class="text-2xl">${formatKulinoBalance(
@@ -830,14 +763,11 @@ async function updateBalanceDisplay(address = userAddress) {
     }
 
     if (solEl) {
-      if (solBalance > 0) {
-        solEl.textContent = `${formatSOLBalance(solBalance)} SOL`;
-      } else {
-        solEl.textContent = "0.0000 SOL";
-      }
+      solEl.textContent =
+        solBalance > 0 ? `${formatSOLBalance(solBalance)} SOL` : "0.0000 SOL";
     }
 
-    // Show success or warning message
+    // Show appropriate message
     if (
       kulinoResult.status === "fulfilled" &&
       solResult.status === "fulfilled"
@@ -852,10 +782,10 @@ async function updateBalanceDisplay(address = userAddress) {
       showToast("Some balances updated", "info");
     } else {
       console.error("❌ All balance fetches failed");
-      showToast("Could not fetch balances. Please try again.", "warning");
+      showToast("Could not fetch balances", "warning");
     }
 
-    // Update swap UI if needed
+    // Update swap UI
     const kulinoBalanceDisplay = document.getElementById(
       "kulinoBalanceDisplay"
     );
@@ -865,15 +795,13 @@ async function updateBalanceDisplay(address = userAddress) {
   } catch (error) {
     console.error("❌ Balance update error:", error);
 
-    // Fallback UI
     if (kulinoEl)
       kulinoEl.innerHTML =
         '<strong>--</strong> <span class="text-sm">KULINO</span>';
     if (solEl) solEl.textContent = "-- SOL";
 
-    showToast("Balance fetch failed. Check console for details.", "error");
+    showToast("Balance fetch failed", "error");
   } finally {
-    // Re-enable refresh button
     if (refreshBtn) {
       refreshBtn.disabled = false;
       refreshBtn.classList.remove("opacity-50", "cursor-not-allowed");
@@ -1691,17 +1619,69 @@ function waitForLibraries() {
   });
 }
 
+// ==================== IMPROVED MOBILE MENU ====================
+function setupMobileMenu() {
+  const menuToggle = document.getElementById("menuToggle");
+  const mobileMenu = document.getElementById("mobileMenu");
+
+  if (!menuToggle || !mobileMenu) {
+    console.warn("Mobile menu elements not found");
+    return;
+  }
+
+  console.log("✅ Setting up mobile menu");
+
+  // Remove any existing listeners
+  const newToggle = menuToggle.cloneNode(true);
+  menuToggle.parentNode.replaceChild(newToggle, menuToggle);
+
+  // Add new click listener
+  newToggle.addEventListener("click", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    console.log("🍔 Hamburger clicked");
+
+    // Toggle menu visibility
+    mobileMenu.classList.toggle("hidden");
+
+    // Toggle hamburger animation
+    newToggle.classList.toggle("open");
+
+    // Log state
+    console.log("Menu visible:", !mobileMenu.classList.contains("hidden"));
+  });
+
+  // Close menu when clicking outside
+  document.addEventListener("click", function (e) {
+    if (!newToggle.contains(e.target) && !mobileMenu.contains(e.target)) {
+      if (!mobileMenu.classList.contains("hidden")) {
+        mobileMenu.classList.add("hidden");
+        newToggle.classList.remove("open");
+        console.log("📱 Menu closed (clicked outside)");
+      }
+    }
+  });
+
+  // Close menu when clicking menu items
+  const menuLinks = mobileMenu.querySelectorAll("a, button");
+  menuLinks.forEach((link) => {
+    link.addEventListener("click", function () {
+      setTimeout(() => {
+        mobileMenu.classList.add("hidden");
+        newToggle.classList.remove("open");
+        console.log("📱 Menu closed (item clicked)");
+      }, 100);
+    });
+  });
+}
+
 async function initializeApp() {
   console.log("⏳ Waiting for libraries...");
   await waitForLibraries();
 
-  if (typeof solanaWeb3 === "undefined") {
-    console.error("❌ Solana Web3 library not loaded!");
-    return;
-  }
-
-  if (typeof Swal === "undefined") {
-    console.error("❌ SweetAlert2 library not loaded!");
+  if (typeof solanaWeb3 === "undefined" || typeof Swal === "undefined") {
+    console.error("❌ Required libraries not loaded!");
     return;
   }
 
@@ -1812,5 +1792,9 @@ window.filterBySubCategory = filterBySubCategory;
 window.openProductModal = openProductModal;
 window.closeProductModal = closeProductModal;
 window.buyNowProduct = buyNowProduct;
+window.getSOLBalance = getSOLBalance;
+window.getKulinoBalance = getKulinoBalance;
+window.updateBalanceDisplay = updateBalanceDisplay;
 
 console.log("✅ Script loaded successfully");
+console.log("✅ Balance functions loaded");
