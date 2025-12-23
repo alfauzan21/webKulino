@@ -735,6 +735,24 @@
     </div>
   </header>
 
+  <!-- ✅ MOBILE BROWSER WARNING (NEW) -->
+<div id="mobileBrowserWarning" class="hidden fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-yellow-500 to-orange-500 text-white p-3 shadow-lg">
+  <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
+    <div class="flex items-center gap-3 flex-1">
+      <svg class="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+      </svg>
+      <div class="text-sm">
+        <p class="font-semibold">⚠️ Using Phantom Browser</p>
+        <p class="text-xs opacity-90">Landscape mode not supported. Open in Chrome for best experience.</p>
+      </div>
+    </div>
+    <button onclick="copyCurrentURL()" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap">
+      📋 Copy URL
+    </button>
+  </div>
+</div>
+
   <main class="max-w-6xl mx-auto px-4 py-8">
 
     <!-- Hero Section with Balance Display -->
@@ -1615,6 +1633,37 @@
       return balance.toFixed(2);
     }
   </script>
+
+  <script>
+  // Show warning if in Phantom browser
+  (function() {
+    const ua = navigator.userAgent || '';
+    const isPhantomBrowser = ua.includes('Phantom') || ua.includes('phantom');
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
+    
+    if (isPhantomBrowser && isMobile) {
+      document.getElementById('mobileBrowserWarning').classList.remove('hidden');
+      
+      // Offset content
+      const mainHeader = document.getElementById('mainHeader');
+      if (mainHeader) {
+        mainHeader.style.marginTop = '60px';
+      }
+    }
+  })();
+  
+  function copyCurrentURL() {
+    const url = window.location.href;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => {
+        showToast('URL copied! Open in Chrome browser', 'success');
+      });
+    } else {
+      // Fallback
+      prompt('Copy this URL and open in Chrome:', url);
+    }
+  }
+</script>
 
   <script src="./js/script-index.js"></script>
   <script src="./js/swap.js"></script>

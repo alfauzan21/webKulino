@@ -878,43 +878,91 @@ function resetDisconnectedUI() {
 
   console.log("✅ UI reset complete");
 }
-
-// ==================== WALLET FUNCTIONS ====================
+// ==================== WALLET CONNECTION (IMPROVED) ====================
 async function connectWallet() {
   console.log("🔌 Connect wallet initiated");
 
   const isMobile = isMobileDevice();
+  const isPhantomBrowser = isInPhantomBrowser(); // NEW!
 
   try {
+    // ✅ CHECK 1: Apakah sudah di Phantom browser?
+    if (isMobile && isPhantomBrowser) {
+      await Swal.fire({
+        icon: "warning",
+        title: "⚠️ Browser Not Supported",
+        html: `
+          <div class="text-left space-y-3">
+            <p>Phantom browser does not support landscape mode properly.</p>
+            <p class="font-semibold text-red-600">Please open this game in Chrome browser instead!</p>
+            <ol class="list-decimal list-inside text-sm space-y-1">
+              <li>Copy this page URL</li>
+              <li>Open Chrome browser</li>
+              <li>Paste and open the URL</li>
+              <li>Connect wallet there</li>
+            </ol>
+          </div>
+        `,
+        confirmButtonText: "Copy URL",
+        confirmButtonColor: "#667eea",
+        showCancelButton: true,
+        cancelButtonText: "Continue Anyway"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Copy URL to clipboard
+          const url = window.location.href;
+          copyToClipboard(url);
+          showToast("URL copied! Open in Chrome browser", "success");
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+          // User wants to continue anyway
+          proceedWithConnection(isMobile);
+        }
+      });
+      return;
+    }
+
+    // ✅ CHECK 2: Apakah Phantom terinstall?
     if (!window.phantom?.solana?.isPhantom) {
       console.log("⚠️ Phantom wallet not detected");
 
       if (isMobile) {
+        // MOBILE: Jangan redirect ke app, minta install extension
         await Swal.fire({
           icon: "info",
-          title: "Open in Phantom App",
-          text: "Please open this website in the Phantom app browser",
+          title: "Install Phantom Extension",
+          html: `
+            <div class="text-left space-y-3">
+              <p class="font-semibold">For best experience on mobile:</p>
+              <ol class="list-decimal list-inside text-sm space-y-2">
+                <li>Use <strong>Kiwi Browser</strong> or <strong>Chrome</strong></li>
+                <li>Install <strong>Phantom extension</strong> (not app)</li>
+                <li>Return to this page</li>
+                <li>Connect wallet</li>
+              </ol>
+              <div class="bg-yellow-50 p-3 rounded-lg mt-3 border border-yellow-200">
+                <p class="text-xs text-yellow-800">
+                  <strong>⚠️ Important:</strong> Phantom mobile app browser does not support landscape mode.
+                  Use Chrome + Extension instead!
+                </p>
+              </div>
+            </div>
+          `,
           showCancelButton: true,
+          confirmButtonText: "Install Extension",
+          denyButtonText: "Use Desktop Instead",
           showDenyButton: true,
-          confirmButtonText: "Open Phantom",
-          denyButtonText: "Download App",
           confirmButtonColor: "#667eea",
           denyButtonColor: "#10b981",
         }).then((result) => {
           if (result.isConfirmed) {
-            const deepLink = `https://phantom.app/ul/browse/${encodeURIComponent(
-              window.location.href
-            )}`;
-            window.location.href = deepLink;
+            // Open extension store
+            window.open("https://chrome.google.com/webstore/detail/phantom/bfnaelmomeimhlpmgjnjophhpkkoljpa", "_blank");
           } else if (result.isDenied) {
-            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-            const url = isIOS
-              ? "https://apps.apple.com/app/phantom-solana-wallet/id1598432977"
-              : "https://play.google.com/store/apps/details?id=app.phantom";
-            window.open(url, "_blank");
+            showToast("Please open this page on desktop", "info");
           }
         });
       } else {
+        // DESKTOP: Normal flow
         await Swal.fire({
           icon: "warning",
           title: "Phantom Not Installed",
@@ -931,62 +979,112 @@ async function connectWallet() {
       return;
     }
 
-    console.log("✅ Phantom wallet detected");
-    provider = window.phantom.solana;
+    // ✅ Proceed with normal connection
+    await proceedWithConnection(isMobile);
 
-    Swal.fire({
-      title: "Connecting...",
-      text: "Please approve the connection in Phantom",
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
-    });
-
-    console.log("🔄 Requesting wallet connection...");
-    const resp = await provider.connect();
-    const address = resp.publicKey.toString();
-
-    console.log("✅ Connected to wallet:", shortAddr(address));
-    updateConnectedUI(address);
-
-    await Swal.fire({
-      icon: "success",
-      title: "Connected!",
-      html: `
-        <div class="space-y-3">
-          <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-3 rounded-lg">
-            <p class="text-sm text-gray-600 mb-1">Wallet Address:</p>
-            <code class="text-xs font-mono text-indigo-600 font-semibold">${shortAddr(
-              address
-            )}</code>
-          </div>
-          <div class="bg-green-50 border border-green-200 rounded-lg p-3">
-            <p class="text-sm text-green-800">✓ Auto-reconnect enabled for 30 days</p>
-          </div>
-        </div>
-      `,
-      confirmButtonText: "Start Playing",
-      confirmButtonColor: "#667eea",
-      timer: 5000,
-    });
   } catch (err) {
     console.error("❌ Connect error:", err);
-    Swal.close();
+    handleConnectionError(err);
+  }
+}
 
-    if (err.message?.includes("rejected") || err.code === 4001) {
-      await Swal.fire({
-        icon: "info",
-        title: "Connection Cancelled",
-        text: "You cancelled the wallet connection",
-        confirmButtonColor: "#667eea",
-      });
-    } else {
-      await Swal.fire({
-        icon: "error",
-        title: "Connection Failed",
-        text: err.message || "Failed to connect wallet",
-        confirmButtonColor: "#ef4444",
-      });
-    }
+// ===== HELPER FUNCTIONS (NEW) =====
+
+// Detect if currently in Phantom's built-in browser
+function isInPhantomBrowser() {
+  const ua = navigator.userAgent || '';
+  // Phantom browser has specific UA string
+  return ua.includes('Phantom') || ua.includes('phantom');
+}
+
+// Copy text to clipboard
+function copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch((err) => {
+      console.error('Clipboard error:', err);
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    document.execCommand('copy');
+  } catch (err) {
+    console.error('Copy failed:', err);
+  }
+  document.body.removeChild(textarea);
+}
+
+// Actual connection process
+async function proceedWithConnection(isMobile) {
+  console.log("✅ Proceeding with wallet connection...");
+  
+  provider = window.phantom.solana;
+
+  Swal.fire({
+    title: "Connecting...",
+    text: "Please approve the connection in Phantom",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading(),
+  });
+
+  console.log("🔄 Requesting wallet connection...");
+  const resp = await provider.connect();
+  const address = resp.publicKey.toString();
+
+  console.log("✅ Connected to wallet:", shortAddr(address));
+  updateConnectedUI(address);
+
+  await Swal.fire({
+    icon: "success",
+    title: "Connected!",
+    html: `
+      <div class="space-y-3">
+        <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-3 rounded-lg">
+          <p class="text-sm text-gray-600 mb-1">Wallet Address:</p>
+          <code class="text-xs font-mono text-indigo-600 font-semibold">${shortAddr(address)}</code>
+        </div>
+        ${isMobile ? `
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+          <p class="text-sm text-yellow-800">
+            <strong>📱 Mobile Tip:</strong> Rotate your device to landscape for best experience!
+          </p>
+        </div>
+        ` : ''}
+      </div>
+    `,
+    confirmButtonText: "Start Playing",
+    confirmButtonColor: "#667eea",
+    timer: 5000,
+  });
+}
+
+function handleConnectionError(err) {
+  Swal.close();
+
+  if (err.message?.includes("rejected") || err.code === 4001) {
+    Swal.fire({
+      icon: "info",
+      title: "Connection Cancelled",
+      text: "You cancelled the wallet connection",
+      confirmButtonColor: "#667eea",
+    });
+  } else {
+    Swal.fire({
+      icon: "error",
+      title: "Connection Failed",
+      text: err.message || "Failed to connect wallet",
+      confirmButtonColor: "#ef4444",
+    });
   }
 }
 
