@@ -15,7 +15,7 @@ let currentRPCIndex = 0;
 function getConnection() {
   const rpcUrl = SOLANA_RPC_ENDPOINTS[currentRPCIndex];
   console.log(`🔗 Using RPC: ${rpcUrl.substring(0, 50)}...`);
-  
+
   return new solanaWeb3.Connection(rpcUrl, {
     commitment: "confirmed",
     confirmTransactionInitialTimeout: 30000, // Reduced from 60000
@@ -32,23 +32,28 @@ async function retryWithNextRPC(fn) {
       return await fn();
     } catch (error) {
       lastError = error;
-      
+
       // Only log if it's a real error, not just switching RPC
       if (!error.message?.includes("Failed to fetch")) {
         console.warn(
-          `⚠️ RPC ${SOLANA_RPC_ENDPOINTS[currentRPCIndex].substring(0, 40)}... failed:`,
+          `⚠️ RPC ${SOLANA_RPC_ENDPOINTS[currentRPCIndex].substring(
+            0,
+            40
+          )}... failed:`,
           error.message
         );
       }
-      
+
       currentRPCIndex = (currentRPCIndex + 1) % SOLANA_RPC_ENDPOINTS.length;
-      
+
       if (i < maxRetries - 1) {
         console.log(
-          `🔄 Switching to RPC ${currentRPCIndex + 1}/${SOLANA_RPC_ENDPOINTS.length}`
+          `🔄 Switching to RPC ${currentRPCIndex + 1}/${
+            SOLANA_RPC_ENDPOINTS.length
+          }`
         );
         // Add small delay between retries
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
     }
   }
@@ -455,7 +460,7 @@ function showMainContent() {
 // Track visitor with location
 // Track visitor with location - IMPROVED VERSION
 async function trackVisitorWithLocation(location) {
-  console.log('📊 Tracking visitor with GPS location:', location);
+  console.log("📊 Tracking visitor with GPS location:", location);
 
   // Build tracking data with GPS coordinates
   const trackData = {
@@ -470,13 +475,13 @@ async function trackVisitorWithLocation(location) {
   const params = new URLSearchParams(trackData);
 
   try {
-    console.log('📡 Sending tracking request with GPS data...');
-    
+    console.log("📡 Sending tracking request with GPS data...");
+
     const response = await fetch(`track.php?${params.toString()}`, {
-      method: 'GET',
-      credentials: 'same-origin',
+      method: "GET",
+      credentials: "same-origin",
       headers: {
-        'Accept': 'application/json',
+        Accept: "application/json",
       },
     });
 
@@ -485,46 +490,45 @@ async function trackVisitorWithLocation(location) {
     }
 
     const data = await response.json();
-    
+
     if (data.error) {
       throw new Error(data.error);
     }
-    
-    console.log('✅ Visitor tracked successfully:', data);
+
+    console.log("✅ Visitor tracked successfully:", data);
 
     // Update visitor count
     if (data.today !== undefined) {
-      const countEl = document.getElementById('visitorCount');
+      const countEl = document.getElementById("visitorCount");
       if (countEl) countEl.textContent = data.today;
     }
-    
+
     // Store successful tracking
-    sessionStorage.setItem('tracking_success', Date.now().toString());
-    
+    sessionStorage.setItem("tracking_success", Date.now().toString());
   } catch (error) {
-    console.error('❌ Tracking failed:', error);
+    console.error("❌ Tracking failed:", error);
 
     // Retry after 2 seconds
     setTimeout(() => {
-      console.log('🔄 Retrying tracking request...');
+      console.log("🔄 Retrying tracking request...");
       fetch(`track.php?${params.toString()}`, {
-        method: 'GET',
-        credentials: 'same-origin'
+        method: "GET",
+        credentials: "same-origin",
       })
-      .then(res => res.json())
-      .then(data => console.log('✅ Retry successful:', data))
-      .catch(e => console.error('❌ Retry also failed:', e));
+        .then((res) => res.json())
+        .then((data) => console.log("✅ Retry successful:", data))
+        .catch((e) => console.error("❌ Retry also failed:", e));
     }, 2000);
   }
 }
 
 // Request location permission - IMPROVED VERSION
 async function requestLocationPermission() {
-  console.log('📍 Requesting location permission...');
+  console.log("📍 Requesting location permission...");
 
   Swal.fire({
-    title: 'Meminta Izin Lokasi...',
-    html: 'Mohon izinkan akses lokasi pada popup browser Anda',
+    title: "Meminta Izin Lokasi...",
+    html: "Mohon izinkan akses lokasi pada popup browser Anda",
     allowOutsideClick: false,
     didOpen: () => {
       Swal.showLoading();
@@ -533,17 +537,17 @@ async function requestLocationPermission() {
 
   if (!navigator.geolocation) {
     Swal.fire({
-      icon: 'error',
-      title: 'Browser Tidak Mendukung',
-      text: 'Browser Anda tidak mendukung geolocation. Mohon gunakan browser modern.',
-      confirmButtonColor: '#ef4444',
+      icon: "error",
+      title: "Browser Tidak Mendukung",
+      text: "Browser Anda tidak mendukung geolocation. Mohon gunakan browser modern.",
+      confirmButtonColor: "#ef4444",
     });
     return;
   }
 
   navigator.geolocation.getCurrentPosition(
     async (position) => {
-      console.log('✅ Location granted:', position);
+      console.log("✅ Location granted:", position);
 
       const coords = {
         latitude: position.coords.latitude,
@@ -552,7 +556,7 @@ async function requestLocationPermission() {
       };
 
       Swal.update({
-        html: 'Menyimpan lokasi Anda...',
+        html: "Menyimpan lokasi Anda...",
       });
 
       // Show basic location info
@@ -565,7 +569,7 @@ async function requestLocationPermission() {
 
       // Save to session
       sessionStorage.setItem(
-        'kulino_location_granted',
+        "kulino_location_granted",
         JSON.stringify({
           location: userLocation,
           timestamp: Date.now(),
@@ -575,8 +579,8 @@ async function requestLocationPermission() {
       locationGranted = true;
 
       Swal.fire({
-        icon: 'success',
-        title: 'Lokasi Terdeteksi!',
+        icon: "success",
+        title: "Lokasi Terdeteksi!",
         html: `
           <div class="text-left bg-green-50 rounded-lg p-4 mt-3">
             <p class="text-sm font-semibold text-green-800 mb-2">📍 GPS Coordinates:</p>
@@ -590,8 +594,8 @@ async function requestLocationPermission() {
             </p>
           </div>
         `,
-        confirmButtonText: 'Lanjutkan',
-        confirmButtonColor: '#10b981',
+        confirmButtonText: "Lanjutkan",
+        confirmButtonColor: "#10b981",
         timer: 3000,
       }).then(() => {
         showMainContent();
@@ -600,34 +604,34 @@ async function requestLocationPermission() {
       });
     },
     (error) => {
-      console.error('❌ Location error:', error);
+      console.error("❌ Location error:", error);
 
-      let errorMessage = '';
+      let errorMessage = "";
       switch (error.code) {
         case error.PERMISSION_DENIED:
           errorMessage =
-            'Anda menolak akses lokasi. Mohon izinkan akses lokasi untuk melanjutkan.';
+            "Anda menolak akses lokasi. Mohon izinkan akses lokasi untuk melanjutkan.";
           break;
         case error.POSITION_UNAVAILABLE:
-          errorMessage = 'Informasi lokasi tidak tersedia. Mohon coba lagi.';
+          errorMessage = "Informasi lokasi tidak tersedia. Mohon coba lagi.";
           break;
         case error.TIMEOUT:
-          errorMessage = 'Permintaan lokasi timeout. Mohon coba lagi.';
+          errorMessage = "Permintaan lokasi timeout. Mohon coba lagi.";
           break;
         default:
-          errorMessage = 'Terjadi kesalahan saat mendapatkan lokasi.';
+          errorMessage = "Terjadi kesalahan saat mendapatkan lokasi.";
       }
 
       Swal.fire({
-        icon: 'error',
-        title: 'Gagal Mendapatkan Lokasi',
+        icon: "error",
+        title: "Gagal Mendapatkan Lokasi",
         text: errorMessage,
-        confirmButtonText: 'Coba Lagi',
-        confirmButtonColor: '#667eea',
+        confirmButtonText: "Coba Lagi",
+        confirmButtonColor: "#667eea",
       });
     },
     {
-      enableHighAccuracy: true,  // Use GPS for better accuracy
+      enableHighAccuracy: true, // Use GPS for better accuracy
       timeout: 10000,
       maximumAge: 0,
     }
@@ -647,67 +651,123 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ==================== BALANCE FUNCTIONS (FIXED) ====================
+// ==================== IMPROVED BALANCE FUNCTIONS ====================
 async function getSOLBalance(walletAddress) {
   try {
-    console.log("📊 Fetching SOL balance...");
+    console.log("📊 Fetching SOL balance for:", shortAddr(walletAddress));
 
-    const balance = await retryWithNextRPC(async () => {
-      const connection = getConnection();
-      const pubkey = new solanaWeb3.PublicKey(walletAddress);
-      return await connection.getBalance(pubkey);
-    });
+    // Try multiple methods
+    const methods = [
+      // Method 1: Direct RPC call
+      async () => {
+        const connection = new solanaWeb3.Connection(
+          "https://api.mainnet-beta.solana.com",
+          { commitment: "confirmed" }
+        );
+        const pubkey = new solanaWeb3.PublicKey(walletAddress);
+        return await connection.getBalance(pubkey);
+      },
 
-    const solAmount = balance / solanaWeb3.LAMPORTS_PER_SOL;
-    console.log("✅ SOL balance:", solAmount);
-    return solAmount;
+      // Method 2: Use Phantom's connection
+      async () => {
+        if (window.phantom?.solana?.connection) {
+          const pubkey = new solanaWeb3.PublicKey(walletAddress);
+          return await window.phantom.solana.connection.getBalance(pubkey);
+        }
+        throw new Error("Phantom connection not available");
+      },
+    ];
+
+    // Try each method
+    for (const method of methods) {
+      try {
+        const balance = await Promise.race([
+          method(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Timeout")), 10000)
+          ),
+        ]);
+
+        const solAmount = balance / solanaWeb3.LAMPORTS_PER_SOL;
+        console.log("✅ SOL balance:", solAmount);
+        solBalance = solAmount; // Update global
+        return solAmount;
+      } catch (err) {
+        console.warn("Method failed, trying next:", err.message);
+        continue;
+      }
+    }
+
+    throw new Error("All balance fetch methods failed");
   } catch (error) {
     console.error("❌ SOL fetch error:", error.message);
-    
-    // Don't show error toast if it's just a connection issue
-    if (!error.message?.includes("Failed to fetch")) {
-      showToast("Could not fetch SOL balance", "warning");
-    }
-    
+    // Don't throw, return 0 instead
+    solBalance = 0;
     return 0;
   }
 }
 
 async function getKulinoBalance(walletAddress) {
   try {
-    console.log("📊 Fetching Kulino balance...");
+    console.log("📊 Fetching Kulino balance for:", shortAddr(walletAddress));
 
-    const tokenAccounts = await retryWithNextRPC(async () => {
-      const connection = getConnection();
-      const pubkey = new solanaWeb3.PublicKey(walletAddress);
-      const tokenMint = new solanaWeb3.PublicKey(KULINO_TOKEN_MINT);
+    // Try multiple RPC endpoints
+    const endpoints = [
+      "https://api.mainnet-beta.solana.com",
+      "https://solana-api.syndica.io/access-token/HGlwRGMqfQ8LoQWRn83x48fcq4UmTXKT5bLrPqJfpnvPpJtw47wf0nWKd62B46Uo/rpc",
+      "https://solana.public-rpc.com",
+    ];
 
-      return await connection.getParsedTokenAccountsByOwner(pubkey, {
-        mint: tokenMint,
-      });
-    });
+    for (const endpoint of endpoints) {
+      try {
+        console.log(`Trying endpoint: ${endpoint.substring(0, 40)}...`);
 
-    if (tokenAccounts.value.length > 0) {
-      const balance =
-        tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount ||
-        0;
-      console.log("✅ Kulino balance:", balance);
-      return balance;
+        const connection = new solanaWeb3.Connection(endpoint, {
+          commitment: "confirmed",
+          confirmTransactionInitialTimeout: 15000,
+        });
+
+        const pubkey = new solanaWeb3.PublicKey(walletAddress);
+        const tokenMint = new solanaWeb3.PublicKey(KULINO_TOKEN_MINT);
+
+        // Fetch with timeout
+        const tokenAccounts = await Promise.race([
+          connection.getParsedTokenAccountsByOwner(pubkey, { mint: tokenMint }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Timeout")), 10000)
+          ),
+        ]);
+
+        if (tokenAccounts.value.length > 0) {
+          const balance =
+            tokenAccounts.value[0].account.data.parsed.info.tokenAmount
+              .uiAmount || 0;
+          console.log("✅ Kulino balance:", balance);
+          kulinoBalance = balance; // Update global
+          return balance;
+        }
+
+        console.log("ℹ️ No Kulino tokens found in this account");
+        kulinoBalance = 0;
+        return 0;
+      } catch (err) {
+        console.warn(
+          `Endpoint ${endpoint.substring(0, 40)}... failed:`,
+          err.message
+        );
+        continue;
+      }
     }
 
-    console.log("ℹ️ No Kulino tokens found");
-    return 0;
+    throw new Error("All RPC endpoints failed");
   } catch (error) {
     console.error("❌ Kulino fetch error:", error.message);
-    
-    // Don't show error toast if it's just a connection issue
-    if (!error.message?.includes("Failed to fetch")) {
-      showToast("Could not fetch KULINO balance", "warning");
-    }
-    
+    kulinoBalance = 0;
     return 0;
   }
 }
 
+// ==================== IMPROVED UPDATE BALANCE ====================
 async function updateBalanceDisplay(address = userAddress) {
   if (!address) {
     console.log("⚠️ No address to update balance");
@@ -718,61 +778,105 @@ async function updateBalanceDisplay(address = userAddress) {
   const solEl = document.getElementById("solBalance");
   const refreshBtn = document.getElementById("refreshBalanceBtn");
 
-  // Show loading state
+  // Show loading indicators
   if (kulinoEl) {
     kulinoEl.innerHTML =
-      '<span class="inline-block w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin"></span>';
+      '<div class="inline-flex items-center gap-2"><span class="inline-block w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin"></span><span class="text-sm">Loading...</span></div>';
+  }
+  if (solEl) {
+    solEl.innerHTML =
+      '<span class="inline-block w-3 h-3 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"></span>';
   }
   if (refreshBtn) {
     refreshBtn.disabled = true;
-    refreshBtn.classList.add("opacity-50");
+    refreshBtn.classList.add("opacity-50", "cursor-not-allowed");
   }
 
   try {
-    // Fetch balances with longer timeout
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Balance fetch timeout")), 30000) // Increased to 30s
-    );
+    console.log("🔄 Starting balance fetch...");
 
-    const balancePromise = Promise.all([
+    // Fetch both balances in parallel but with individual timeouts
+    const [kulinoResult, solResult] = await Promise.allSettled([
       getKulinoBalance(address),
       getSOLBalance(address),
     ]);
 
-    [kulinoBalance, solBalance] = await Promise.race([
-      balancePromise,
-      timeoutPromise,
-    ]);
-
-    // Update UI
-    if (kulinoEl) {
-      kulinoEl.innerHTML = `<strong>${formatKulinoBalance(
-        kulinoBalance
-      )}</strong> KULINO`;
-    }
-    if (solEl) {
-      solEl.textContent = `${formatSOLBalance(solBalance)} SOL`;
-    }
-
-    console.log("✅ Balance updated");
-    showToast("Balance updated successfully", "success");
-  } catch (error) {
-    console.error("❌ Balance update failed:", error.message);
-    
-    // Show friendly error message
-    if (kulinoEl) kulinoEl.innerHTML = "<strong>--</strong> KULINO";
-    if (solEl) solEl.textContent = "-- SOL";
-    
-    // Only show error toast if it's not a timeout
-    if (!error.message?.includes("timeout")) {
-      showToast("Unable to fetch balances. Please try again.", "warning");
+    // Handle Kulino balance
+    if (kulinoResult.status === "fulfilled") {
+      kulinoBalance = kulinoResult.value;
     } else {
-      showToast("Balance fetch took too long. Please refresh.", "warning");
+      console.error("Kulino balance failed:", kulinoResult.reason);
+      kulinoBalance = 0;
     }
+
+    // Handle SOL balance
+    if (solResult.status === "fulfilled") {
+      solBalance = solResult.value;
+    } else {
+      console.error("SOL balance failed:", solResult.reason);
+      solBalance = 0;
+    }
+
+    // Update UI with results
+    if (kulinoEl) {
+      if (kulinoBalance > 0) {
+        kulinoEl.innerHTML = `<strong class="text-2xl">${formatKulinoBalance(
+          kulinoBalance
+        )}</strong> <span class="text-sm">KULINO</span>`;
+      } else {
+        kulinoEl.innerHTML =
+          '<strong class="text-xl">0.00</strong> <span class="text-sm">KULINO</span>';
+      }
+    }
+
+    if (solEl) {
+      if (solBalance > 0) {
+        solEl.textContent = `${formatSOLBalance(solBalance)} SOL`;
+      } else {
+        solEl.textContent = "0.0000 SOL";
+      }
+    }
+
+    // Show success or warning message
+    if (
+      kulinoResult.status === "fulfilled" &&
+      solResult.status === "fulfilled"
+    ) {
+      console.log("✅ All balances updated successfully");
+      showToast("Balances updated!", "success");
+    } else if (
+      kulinoResult.status === "fulfilled" ||
+      solResult.status === "fulfilled"
+    ) {
+      console.log("⚠️ Partial balance update");
+      showToast("Some balances updated", "info");
+    } else {
+      console.error("❌ All balance fetches failed");
+      showToast("Could not fetch balances. Please try again.", "warning");
+    }
+
+    // Update swap UI if needed
+    const kulinoBalanceDisplay = document.getElementById(
+      "kulinoBalanceDisplay"
+    );
+    if (kulinoBalanceDisplay) {
+      kulinoBalanceDisplay.textContent = formatKulinoBalance(kulinoBalance);
+    }
+  } catch (error) {
+    console.error("❌ Balance update error:", error);
+
+    // Fallback UI
+    if (kulinoEl)
+      kulinoEl.innerHTML =
+        '<strong>--</strong> <span class="text-sm">KULINO</span>';
+    if (solEl) solEl.textContent = "-- SOL";
+
+    showToast("Balance fetch failed. Check console for details.", "error");
   } finally {
+    // Re-enable refresh button
     if (refreshBtn) {
       refreshBtn.disabled = false;
-      refreshBtn.classList.remove("opacity-50");
+      refreshBtn.classList.remove("opacity-50", "cursor-not-allowed");
     }
   }
 }
@@ -783,21 +887,21 @@ async function updateBalanceDisplay(address = userAddress) {
 const originalConsoleError = console.error;
 const errorCache = new Set();
 
-console.error = function(...args) {
-  const errorMsg = args.join(' ');
-  
+console.error = function (...args) {
+  const errorMsg = args.join(" ");
+
   // Filter out repetitive RPC errors
-  if (errorMsg.includes('RPC') || errorMsg.includes('Failed to fetch')) {
+  if (errorMsg.includes("RPC") || errorMsg.includes("Failed to fetch")) {
     const errorKey = errorMsg.substring(0, 50);
     if (errorCache.has(errorKey)) {
       return; // Skip duplicate errors
     }
     errorCache.add(errorKey);
-    
+
     // Clear cache after 5 seconds
     setTimeout(() => errorCache.delete(errorKey), 5000);
   }
-  
+
   originalConsoleError.apply(console, args);
 };
 
@@ -906,7 +1010,7 @@ async function connectWallet() {
         confirmButtonText: "Copy URL",
         confirmButtonColor: "#667eea",
         showCancelButton: true,
-        cancelButtonText: "Continue Anyway"
+        cancelButtonText: "Continue Anyway",
       }).then((result) => {
         if (result.isConfirmed) {
           // Copy URL to clipboard
@@ -956,7 +1060,10 @@ async function connectWallet() {
         }).then((result) => {
           if (result.isConfirmed) {
             // Open extension store
-            window.open("https://chrome.google.com/webstore/detail/phantom/bfnaelmomeimhlpmgjnjophhpkkoljpa", "_blank");
+            window.open(
+              "https://chrome.google.com/webstore/detail/phantom/bfnaelmomeimhlpmgjnjophhpkkoljpa",
+              "_blank"
+            );
           } else if (result.isDenied) {
             showToast("Please open this page on desktop", "info");
           }
@@ -981,7 +1088,6 @@ async function connectWallet() {
 
     // ✅ Proceed with normal connection
     await proceedWithConnection(isMobile);
-
   } catch (err) {
     console.error("❌ Connect error:", err);
     handleConnectionError(err);
@@ -992,16 +1098,16 @@ async function connectWallet() {
 
 // Detect if currently in Phantom's built-in browser
 function isInPhantomBrowser() {
-  const ua = navigator.userAgent || '';
+  const ua = navigator.userAgent || "";
   // Phantom browser has specific UA string
-  return ua.includes('Phantom') || ua.includes('phantom');
+  return ua.includes("Phantom") || ua.includes("phantom");
 }
 
 // Copy text to clipboard
 function copyToClipboard(text) {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).catch((err) => {
-      console.error('Clipboard error:', err);
+      console.error("Clipboard error:", err);
       fallbackCopy(text);
     });
   } else {
@@ -1010,16 +1116,16 @@ function copyToClipboard(text) {
 }
 
 function fallbackCopy(text) {
-  const textarea = document.createElement('textarea');
+  const textarea = document.createElement("textarea");
   textarea.value = text;
-  textarea.style.position = 'fixed';
-  textarea.style.opacity = '0';
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
   document.body.appendChild(textarea);
   textarea.select();
   try {
-    document.execCommand('copy');
+    document.execCommand("copy");
   } catch (err) {
-    console.error('Copy failed:', err);
+    console.error("Copy failed:", err);
   }
   document.body.removeChild(textarea);
 }
@@ -1027,7 +1133,7 @@ function fallbackCopy(text) {
 // Actual connection process
 async function proceedWithConnection(isMobile) {
   console.log("✅ Proceeding with wallet connection...");
-  
+
   provider = window.phantom.solana;
 
   Swal.fire({
@@ -1051,15 +1157,21 @@ async function proceedWithConnection(isMobile) {
       <div class="space-y-3">
         <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-3 rounded-lg">
           <p class="text-sm text-gray-600 mb-1">Wallet Address:</p>
-          <code class="text-xs font-mono text-indigo-600 font-semibold">${shortAddr(address)}</code>
+          <code class="text-xs font-mono text-indigo-600 font-semibold">${shortAddr(
+            address
+          )}</code>
         </div>
-        ${isMobile ? `
+        ${
+          isMobile
+            ? `
         <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
           <p class="text-sm text-yellow-800">
             <strong>📱 Mobile Tip:</strong> Rotate your device to landscape for best experience!
           </p>
         </div>
-        ` : ''}
+        `
+            : ""
+        }
       </div>
     `,
     confirmButtonText: "Start Playing",
