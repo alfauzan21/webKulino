@@ -1243,6 +1243,9 @@ function playGame(gameId) {
 
   console.log("🚀 Opening game at:", gameUrl);
 
+  // Check if mobile
+  const isMobile = isMobileDevice();
+
   Swal.fire({
     title: "Loading Game...",
     html: `
@@ -1250,10 +1253,21 @@ function playGame(gameId) {
         <div class="inline-block w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
         <p class="text-gray-600">Opening <strong>${gameId}</strong></p>
         <p class="text-sm text-gray-500 mt-2">Game will open in a new tab</p>
+        ${isMobile ? `
+        <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-lg mt-4 border border-yellow-300">
+          <p class="text-sm font-semibold text-yellow-800 mb-2">📱 Mobile Instructions:</p>
+          <ol class="text-xs text-yellow-700 text-left list-decimal list-inside space-y-1">
+            <li>Game will open in new tab</li>
+            <li><strong>Rotate device to landscape</strong></li>
+            <li>Make sure rotation lock is OFF</li>
+            <li>Enjoy the game!</li>
+          </ol>
+        </div>
+        ` : ''}
       </div>
     `,
     showConfirmButton: false,
-    timer: 2000,
+    timer: isMobile ? 4000 : 2000,
     allowOutsideClick: false,
   });
 
@@ -1283,8 +1297,15 @@ function playGame(gameId) {
       Swal.fire({
         icon: "success",
         title: "Game Opened!",
-        text: "Check your new tab to play",
-        timer: 2000,
+        html: `
+          <p>Check your new tab to play</p>
+          ${isMobile ? `
+          <p class="text-sm text-yellow-600 mt-2">
+            <strong>Remember:</strong> Rotate to landscape mode!
+          </p>
+          ` : ''}
+        `,
+        timer: 3000,
         showConfirmButton: false,
       });
     }
