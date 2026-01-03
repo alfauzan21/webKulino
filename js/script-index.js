@@ -655,7 +655,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // ==================== IMPROVED BALANCE FUNCTIONS ====================
 async function getSOLBalance(walletAddress) {
   try {
-    console.log("📊 Fetching SOL balance...");
+    console.log("📊 Fetching SOL for balance for:",shortAddr(walletAddress));
 
     return await retryWithNextRPC(async () => {
       const connection = getConnection();
@@ -680,7 +680,7 @@ async function getSOLBalance(walletAddress) {
 
 async function getKulinoBalance(walletAddress) {
   try {
-    console.log("📊 Fetching Kulino balance...");
+    console.log("📊 Fetching Kulino balance for:", shortAddr(walletAddress));
 
     return await retryWithNextRPC(async () => {
       const connection = getConnection();
@@ -1794,7 +1794,6 @@ window.closeProductModal = closeProductModal;
 window.buyNowProduct = buyNowProduct;
 window.getSOLBalance = getSOLBalance;
 window.getKulinoBalance = getKulinoBalance;
-window.updateBalanceDisplay = updateBalanceDisplay;
 
 console.log("✅ Script loaded successfully");
-console.log("✅ Balance functions loaded");
+console.log("✅ All functions exposed globally");
