@@ -17,143 +17,146 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen" />
 
   <style>
-  /* ===== FULL RESET ===== */
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  html, body {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    position: fixed;
-    background: #000;
-  }
-
-  /* ===== Unity Container ===== */
-  #unity-container {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-  }
-
-  /* ===== Canvas ALWAYS Visible (No Display None!) ===== */
-  #unity-canvas {
-    display: block !important;
-    width: 100% !important;
-    height: 100% !important;
-    position: absolute;
-    top: 0;
-    left: 0;
-    background: #000;
-  }
-
-  /* ===== Rotation Prompt Overlay ===== */
-  #rotation-prompt {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.98);
-    z-index: 99999;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 20px;
-    pointer-events: none;
-  }
-  
-  #rotation-prompt.show {
-    display: flex !important;
-    pointer-events: auto;
-  }
-  
-  .rotation-icon {
-    font-size: 100px;
-    margin-bottom: 30px;
-    animation: rotate-pulse 2s ease-in-out infinite;
-    filter: drop-shadow(0 0 20px rgba(255,255,255,0.5));
-  }
-  
-  @keyframes rotate-pulse {
-    0%, 100% { 
-      transform: rotate(0deg) scale(1); 
-      opacity: 1;
+    /* ===== FULL RESET ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-    25% { 
-      transform: rotate(-15deg) scale(1.1); 
-      opacity: 0.8;
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      position: fixed;
+      background: #000;
     }
-    50% { 
-      transform: rotate(90deg) scale(1.2); 
-      opacity: 1;
+
+    /* ===== Unity Container ===== */
+    #unity-container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
     }
-    75% { 
-      transform: rotate(105deg) scale(1.1); 
-      opacity: 0.8;
+
+    /* ===== Canvas ALWAYS Visible (No Display None!) ===== */
+    #unity-canvas {
+      display: block !important;
+      width: 100% !important;
+      height: 100% !important;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: #000;
     }
-  }
-  
-  .rotation-text {
-    font-size: 28px;
-    font-weight: bold;
-    color: #fff;
-    margin-bottom: 15px;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  }
-  
-  .rotation-subtext {
-    font-size: 18px;
-    color: #aaa;
-    line-height: 1.5;
-    margin-bottom: 20px;
-    text-shadow: 0 1px 5px rgba(0,0,0,0.8);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  }
 
-  .skip-button {
-    padding: 12px 32px;
-    background: rgba(255,255,255,0.1);
-    border: 2px solid rgba(255,255,255,0.3);
-    color: #fff;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: -apple-system, sans-serif;
-    transition: all 0.3s;
-  }
+    /* ===== Rotation Prompt Overlay ===== */
+    #rotation-prompt {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.98);
+      z-index: 99999;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      pointer-events: none;
+    }
 
-  .skip-button:hover {
-    background: rgba(255,255,255,0.2);
-    border-color: rgba(255,255,255,0.5);
-  }
+    #rotation-prompt.show {
+      display: flex !important;
+      pointer-events: auto;
+    }
 
-  /* ===== Loading Bar ===== */
-  #unity-loading-bar {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1000;
-  }
+    .rotation-icon {
+      font-size: 100px;
+      margin-bottom: 30px;
+      animation: rotate-pulse 2s ease-in-out infinite;
+      filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.5));
+    }
 
-  #unity-warning {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1000;
-  }
-</style>
+    @keyframes rotate-pulse {
+
+      0%,
+      100% {
+        transform: rotate(0deg) scale(1);
+        opacity: 1;
+      }
+
+      25% {
+        transform: rotate(-15deg) scale(1.1);
+        opacity: 0.8;
+      }
+
+      50% {
+        transform: rotate(90deg) scale(1.2);
+        opacity: 1;
+      }
+
+      75% {
+        transform: rotate(105deg) scale(1.1);
+        opacity: 0.8;
+      }
+    }
+
+    .rotation-text {
+      font-size: 28px;
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 15px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    }
+
+    .rotation-subtext {
+      font-size: 18px;
+      color: #aaa;
+      line-height: 1.5;
+      text-shadow: 0 1px 5px rgba(0, 0, 0, 0.8);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    }
+
+    /* ===== Loading Bar ===== */
+    #unity-loading-bar {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1000;
+    }
+
+    #unity-warning {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+    }
+
+    /* ===== Debug Info (Remove in production) ===== */
+    #debug-info {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      color: #0f0;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      z-index: 100000;
+      border: 1px solid #0f0;
+      display: none;
+      /* Set to 'block' for debugging */
+    }
+  </style>
 
   <!-- Required Libraries -->
   <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
@@ -164,14 +167,40 @@
 </head>
 
 <body>
+
+  <!-- ✅ BROWSER COMPATIBILITY CHECK -->
+<div id="browser-check-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 99999; justify-content: center; align-items: center; padding: 20px;">
+  <div style="background: white; border-radius: 20px; padding: 30px; max-width: 500px; text-align: center;">
+    <div style="font-size: 60px; margin-bottom: 20px;">⚠️</div>
+    <h2 style="font-size: 24px; font-weight: bold; color: #000; margin-bottom: 15px;">
+      Browser Not Supported
+    </h2>
+    <p style="color: #666; margin-bottom: 20px; line-height: 1.6;">
+      Phantom Wallet browser does not support landscape mode properly.<br>
+      <strong>Please open this game in Chrome browser!</strong>
+    </p>
+    
+    <div style="background: #f0f0f0; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: left;">
+      <p style="font-size: 14px; color: #333; margin-bottom: 10px;"><strong>How to fix:</strong></p>
+      <ol style="font-size: 13px; color: #555; padding-left: 20px;">
+        <li>Copy this page URL</li>
+        <li>Open Chrome browser</li>
+        <li>Paste and open the URL</li>
+        <li>Play in landscape mode ✅</li>
+      </ol>
+    </div>
+    
+    <button onclick="copyGameURL()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; width: 100%;">
+      📋 Copy URL & Close
+    </button>
+  </div>
+</div>
+
   <!-- ✅ ROTATION PROMPT OVERLAY (MOBILE ONLY) -->
   <div id="rotation-prompt">
     <div class="rotation-icon">📱</div>
     <div class="rotation-text">Please rotate your device</div>
     <div class="rotation-subtext">This game works best in landscape mode</div>
-    <button class="skip-button" onclick="window.skipRotationPrompt()">
-      Skip and Continue →
-    </button>
   </div>
 
   <!-- Unity Container -->
@@ -185,6 +214,43 @@
     </div>
     <div id="unity-warning"></div>
   </div>
+
+  <script>
+  function copyGameURL() {
+    const url = window.location.href;
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(() => {
+        alert('✅ URL copied!\n\nNow:\n1. Open Chrome browser\n2. Paste the URL\n3. Enjoy landscape mode!');
+        // Try to close Phantom browser
+        if (window.phantom && window.phantom.solana) {
+          window.close();
+        }
+      }).catch(() => {
+        prompt('Copy this URL and open in Chrome:', url);
+      });
+    } else {
+      prompt('Copy this URL and open in Chrome:', url);
+    }
+  }
+  
+  // Check browser on load
+  (function() {
+    const ua = navigator.userAgent || '';
+    const isPhantomBrowser = ua.includes('Phantom') || ua.includes('phantom');
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
+    
+    if (isPhantomBrowser && isMobile) {
+      console.log('%c⚠️ PHANTOM BROWSER DETECTED ON MOBILE', 'color: #ff0; font-size: 16px; font-weight: bold');
+      console.log('Showing browser compatibility warning...');
+      
+      // Show overlay after 2 seconds
+      setTimeout(() => {
+        document.getElementById('browser-check-overlay').style.display = 'flex';
+      }, 2000);
+    }
+  })();
+</script>
 
   <!-- Unity Show Banner -->
   <script>
@@ -292,253 +358,280 @@
     }, false);
   </script>
 
- <!-- ✅ FIXED v5.0: Aggressive Orientation Detection -->
-<script>
-(function() {
-  'use strict';
-  
-  console.log('%c[ORIENT] v5.0 - AGGRESSIVE DETECTION', 'color: #0f0; font-weight: bold');
+  <!-- ✅ ULTRA-FIXED v4.0: Rotation Detection -->
+  <script>
+    (function () {
+      'use strict';
 
-  // ===== CONFIG =====
-  const CONFIG = {
-    MOBILE_MAX_WIDTH: 900,
-    PORTRAIT_THRESHOLD: 1.1,
-    CHECK_DELAY: 100,
-    CONTINUOUS_CHECK_INTERVAL: 250,
-    DIMENSION_STABILIZE_TIME: 200
-  };
+      console.log('%c[ORIENT] Starting v4.0 - FIXED STUCK PROMPT', 'color: #0f0; font-weight: bold');
 
-  let state = {
-    mobile: false,
-    portrait: false,
-    promptVisible: false,
-    lastCheck: 0,
-    checkCount: 0
-  };
+      // ===== CONFIG =====
+      const CONFIG = {
+        MOBILE_MAX_WIDTH: 900,
+        PORTRAIT_THRESHOLD: 1.1,    // height/width ratio
+        CHECK_DELAY: 300,            // ms after orientation change
+        RECHECK_DELAY: 1000,         // ms for continuous recheck
+        MAX_RETRIES: 3               // max recheck attempts
+      };
 
-  let continuousCheckTimer = null;
-  let dimensionCheckTimer = null;
+      let state = {
+        mobile: false,
+        portrait: false,
+        promptVisible: false,
+        retryCount: 0
+      };
 
-  // ===== MOBILE DETECTION =====
-  window.IsMobileBrowser = function() {
-    const ua = navigator.userAgent || '';
-    const width = window.innerWidth;
-    
-    const isMobileUA = /Android.*Mobile|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-    const isTablet = /iPad|Android(?!.*Mobile)/i.test(ua);
-    const isSmallScreen = width < CONFIG.MOBILE_MAX_WIDTH;
-    const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-    
-    const result = isMobileUA && isSmallScreen && hasTouch && !isTablet;
-    
-    console.log('[ORIENT] Mobile check:', {
-      ua: isMobileUA,
-      tablet: isTablet,
-      width: width,
-      touch: hasTouch,
-      result: result ? '📱 MOBILE' : '🖥️ DESKTOP'
-    });
-    
-    return result;
-  };
+      let recheckTimer = null;
+      let debounceTimer = null;
 
-  // ===== PORTRAIT DETECTION =====
-  window.IsPortraitMode = function() {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    
-    // METHOD 1: Screen Orientation API
-    if (window.screen?.orientation?.type) {
-      const result = window.screen.orientation.type.includes('portrait');
-      console.log('[ORIENT] screen.orientation:', window.screen.orientation.type, '→', result ? 'PORTRAIT' : 'LANDSCAPE');
-      return result;
-    }
-    
-    // METHOD 2: window.orientation (iOS)
-    if (typeof window.orientation !== 'undefined') {
-      const angle = window.orientation;
-      const result = (angle === 0 || angle === 180);
-      console.log('[ORIENT] window.orientation:', angle + '°', '→', result ? 'PORTRAIT' : 'LANDSCAPE');
-      return result;
-    }
-    
-    // METHOD 3: matchMedia
-    if (window.matchMedia) {
-      const result = window.matchMedia('(orientation: portrait)').matches;
-      console.log('[ORIENT] matchMedia:', result ? 'PORTRAIT' : 'LANDSCAPE');
-      return result;
-    }
-    
-    // METHOD 4: Dimensions
-    const result = h > w * CONFIG.PORTRAIT_THRESHOLD;
-    console.log('[ORIENT] dimensions:', w + 'x' + h, '→', result ? 'PORTRAIT' : 'LANDSCAPE');
-    return result;
-  };
+      // ===== MOBILE DETECTION (IMPROVED) =====
+      window.IsMobileBrowser = function () {
+        const ua = navigator.userAgent || '';
+        const width = window.innerWidth;
 
-  // ===== MAIN CHECK =====
-  function checkOrientation(immediate = false) {
-    const now = Date.now();
-    if (!immediate && now - state.lastCheck < 50) return;
-    
-    state.lastCheck = now;
-    state.checkCount++;
-    
-    const mobile = window.IsMobileBrowser();
-    const portrait = window.IsPortraitMode();
-    const prompt = document.getElementById('rotation-prompt');
-    const canvas = document.getElementById('unity-canvas');
-    
-    console.log(`%c[ORIENT] CHECK #${state.checkCount}`, 'color: #ff0', {
-      mobile,
-      portrait,
-      size: `${window.innerWidth}x${window.innerHeight}`,
-      promptVisible: state.promptVisible
-    });
-    
-    const shouldShowPrompt = mobile && portrait;
-    
-    if (shouldShowPrompt !== state.promptVisible) {
-      console.log('%c[ORIENT] 🔄 STATE CHANGE!', 'color: #f0f; font-weight: bold');
-      
-      if (shouldShowPrompt) {
-        if (prompt) {
-          prompt.classList.add('show');
-          console.log('[ORIENT] ✅ PROMPT SHOWN');
+        // ✅ FIX 1: Better mobile UA detection (PHONES ONLY)
+        const isMobileUA = /Android.*Mobile|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+
+        // ✅ FIX 2: Exclude tablets
+        const isTablet = /iPad|Android(?!.*Mobile)/i.test(ua);
+
+        // ✅ FIX 3: Size check
+        const isSmallScreen = width < CONFIG.MOBILE_MAX_WIDTH;
+
+        // ✅ FIX 4: Touch support
+        const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+        // Final: Mobile = has mobile UA + small screen + touch + NOT tablet
+        const result = isMobileUA && isSmallScreen && hasTouch && !isTablet;
+
+        console.log('[ORIENT] Mobile check:', {
+          ua: isMobileUA,
+          tablet: isTablet,
+          width: width,
+          touch: hasTouch,
+          result: result ? '📱 MOBILE' : '🖥️ DESKTOP'
+        });
+
+        return result;
+      };
+
+      // ===== PORTRAIT DETECTION (IMPROVED) =====
+      window.IsPortraitMode = function () {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const ratio = h / w;
+
+        let method = 'unknown';
+        let result = false;
+
+        // ✅ METHOD 1: Screen Orientation API (most reliable)
+        if (window.screen && window.screen.orientation && window.screen.orientation.type) {
+          const type = window.screen.orientation.type;
+          result = type.includes('portrait');
+          method = 'screen.orientation';
+
+          console.log(`[ORIENT] ${method}:`, type, '→', result ? 'PORTRAIT' : 'LANDSCAPE');
+          return result;
         }
-        state.promptVisible = true;
-        startContinuousCheck();
-        
-      } else {
-        if (prompt) {
-          prompt.classList.remove('show');
-          console.log('[ORIENT] ❌ PROMPT HIDDEN → GAME VISIBLE');
+
+        // ✅ METHOD 2: window.orientation (iOS Safari)
+        if (typeof window.orientation !== 'undefined') {
+          const angle = window.orientation;
+          // 0 or 180 = portrait, 90 or -90 = landscape
+          result = (angle === 0 || angle === 180);
+          method = 'window.orientation';
+
+          console.log(`[ORIENT] ${method}:`, angle, '°', '→', result ? 'PORTRAIT' : 'LANDSCAPE');
+          return result;
         }
-        state.promptVisible = false;
-        stopContinuousCheck();
-        
+
+        // ✅ METHOD 3: matchMedia (modern browsers)
+        if (window.matchMedia) {
+          const mql = window.matchMedia('(orientation: portrait)');
+          result = mql.matches;
+          method = 'matchMedia';
+
+          console.log(`[ORIENT] ${method}:`, result ? 'PORTRAIT' : 'LANDSCAPE');
+          return result;
+        }
+
+        // ✅ METHOD 4: Dimension ratio (fallback)
+        result = ratio > CONFIG.PORTRAIT_THRESHOLD;
+        method = 'ratio';
+
+        console.log(`[ORIENT] ${method}: ${w}x${h} (${ratio.toFixed(2)})`, '→', result ? 'PORTRAIT' : 'LANDSCAPE');
+        return result;
+      };
+
+      // ===== MAIN CHECK FUNCTION (IMPROVED) =====
+      function checkOrientation() {
+        const mobile = window.IsMobileBrowser();
+        const portrait = window.IsPortraitMode();
+        const prompt = document.getElementById('rotation-prompt');
+        const canvas = document.getElementById('unity-canvas');
+
+        console.log('%c[ORIENT] CHECK', 'color: #ff0; font-weight: bold', {
+          mobile: mobile,
+          portrait: portrait,
+          dimensions: window.innerWidth + 'x' + window.innerHeight,
+          currentState: state.promptVisible ? 'PROMPT SHOWN' : 'PROMPT HIDDEN'
+        });
+
+        // ===== DECISION LOGIC (FIXED) =====
+        const shouldShowPrompt = mobile && portrait;
+
+        if (shouldShowPrompt !== state.promptVisible) {
+          // State changed!
+          console.log('%c[ORIENT] STATE CHANGE!', 'color: #f0f; font-weight: bold',
+            shouldShowPrompt ? 'SHOW PROMPT' : 'HIDE PROMPT');
+
+          if (shouldShowPrompt) {
+            // ✅ Show prompt
+            if (prompt) {
+              prompt.classList.add('show');
+              console.log('[ORIENT] ✅ Prompt SHOWN');
+            }
+            state.promptVisible = true;
+            state.retryCount = 0; // Reset retry
+
+            // Keep rechecking while in portrait
+            clearTimeout(recheckTimer);
+            if (state.retryCount < CONFIG.MAX_RETRIES) {
+              recheckTimer = setTimeout(() => {
+                state.retryCount++;
+                checkOrientation();
+              }, CONFIG.RECHECK_DELAY);
+            }
+
+          } else {
+            // ✅ Hide prompt
+            if (prompt) {
+              prompt.classList.remove('show');
+              console.log('[ORIENT] ❌ Prompt HIDDEN');
+            }
+            state.promptVisible = false;
+            state.retryCount = 0;
+
+            // Stop rechecking
+            clearTimeout(recheckTimer);
+          }
+        } else {
+          console.log('[ORIENT] No state change needed');
+        }
+
+        // ✅ CRITICAL: Ensure canvas is ALWAYS visible
         if (canvas) {
           canvas.style.display = 'block';
-          canvas.style.visibility = 'visible';
-          canvas.style.opacity = '1';
-          canvas.style.pointerEvents = 'auto';
+          canvas.style.width = '100%';
+          canvas.style.height = '100%';
+          canvas.style.position = 'absolute';
+          canvas.style.top = '0';
+          canvas.style.left = '0';
+        }
+
+        // Update state
+        state.mobile = mobile;
+        state.portrait = portrait;
+      }
+
+      // ===== DEBOUNCED CHECK =====
+      function debouncedCheck(delay = 200) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(checkOrientation, delay);
+      }
+
+      // ===== EVENT LISTENERS =====
+
+      // Initial check
+      window.addEventListener('load', function () {
+        console.log('[ORIENT] Page loaded - checking after delay');
+        setTimeout(checkOrientation, 500);
+      });
+
+      // Window resize
+      window.addEventListener('resize', function () {
+        console.log('[ORIENT] Resize event:', window.innerWidth, 'x', window.innerHeight);
+        debouncedCheck(CONFIG.CHECK_DELAY);
+      });
+
+      // Orientation change (most important!)
+      window.addEventListener('orientationchange', function () {
+        console.log('[ORIENT] ⚡ ORIENTATION CHANGE EVENT!');
+
+        // ✅ CRITICAL FIX: Wait for browser to update dimensions
+        setTimeout(function () {
+          console.log('[ORIENT] Rechecking after orientation change...');
+          checkOrientation();
+        }, CONFIG.CHECK_DELAY);
+      });
+
+      // Screen orientation API
+      if (window.screen && window.screen.orientation) {
+        window.screen.orientation.addEventListener('change', function () {
+          console.log('[ORIENT] ⚡ screen.orientation.change:', window.screen.orientation.type);
+          setTimeout(checkOrientation, CONFIG.CHECK_DELAY);
+        });
+      }
+
+      // matchMedia listener (modern approach)
+      if (window.matchMedia) {
+        const portraitMQL = window.matchMedia('(orientation: portrait)');
+        const landscapeMQL = window.matchMedia('(orientation: landscape)');
+
+        const mqHandler = function (e) {
+          console.log('[ORIENT] ⚡ matchMedia changed:', e.matches ? e.media : 'not matched');
+          setTimeout(checkOrientation, CONFIG.CHECK_DELAY);
+        };
+
+        // Modern browsers
+        if (portraitMQL.addEventListener) {
+          portraitMQL.addEventListener('change', mqHandler);
+          landscapeMQL.addEventListener('change', mqHandler);
+        }
+        // Legacy browsers
+        else if (portraitMQL.addListener) {
+          portraitMQL.addListener(mqHandler);
+          landscapeMQL.addListener(mqHandler);
         }
       }
-    }
-    
-    if (canvas && !state.promptVisible) {
-      canvas.style.display = 'block';
-      canvas.style.width = '100%';
-      canvas.style.height = '100%';
-    }
-    
-    state.mobile = mobile;
-    state.portrait = portrait;
-  }
 
-  // ===== CONTINUOUS CHECK =====
-  function startContinuousCheck() {
-    stopContinuousCheck();
-    console.log('[ORIENT] 🔄 Starting continuous check...');
-    continuousCheckTimer = setInterval(() => {
-      if (state.promptVisible) {
-        checkOrientation(true);
-      } else {
-        stopContinuousCheck();
-      }
-    }, CONFIG.CONTINUOUS_CHECK_INTERVAL);
-  }
+      // Visibility change
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) {
+          console.log('[ORIENT] Tab visible - rechecking');
+          setTimeout(checkOrientation, 500);
+        }
+      });
 
-  function stopContinuousCheck() {
-    if (continuousCheckTimer) {
-      clearInterval(continuousCheckTimer);
-      continuousCheckTimer = null;
-      console.log('[ORIENT] ⏸️ Stopped continuous check');
-    }
-  }
+      // ===== MANUAL CONTROLS (for Unity/console) =====
+      window.HideRotationPrompt = function () {
+        const prompt = document.getElementById('rotation-prompt');
+        if (prompt) {
+          prompt.classList.remove('show');
+          state.promptVisible = false;
+          console.log('[ORIENT] 🎮 Unity: FORCE HIDE');
+        }
+      };
 
-  // ===== DIMENSION STABILIZATION =====
-  function checkWithStabilization() {
-    clearTimeout(dimensionCheckTimer);
-    checkOrientation(true);
-    dimensionCheckTimer = setTimeout(() => {
-      checkOrientation(true);
-    }, CONFIG.DIMENSION_STABILIZE_TIME);
-  }
+      window.ShowRotationPrompt = function () {
+        const prompt = document.getElementById('rotation-prompt');
+        if (prompt && window.IsMobileBrowser()) {
+          prompt.classList.add('show');
+          state.promptVisible = true;
+          console.log('[ORIENT] 🎮 Unity: FORCE SHOW');
+        }
+      };
 
-  // ===== EVENT LISTENERS =====
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => checkOrientation(true), 100);
-    });
-  } else {
-    setTimeout(() => checkOrientation(true), 100);
-  }
+      window.forceCheckOrientation = checkOrientation;
 
-  window.addEventListener('resize', () => {
-    console.log('[ORIENT] 📐 Resize:', window.innerWidth + 'x' + window.innerHeight);
-    checkWithStabilization();
-  });
+      console.log('%c[ORIENT] ✅ System v4.0 initialized', 'color: #0f0; font-weight: bold');
 
-  window.addEventListener('orientationchange', () => {
-    console.log('[ORIENT] 📱 orientationchange');
-    setTimeout(() => checkWithStabilization(), CONFIG.CHECK_DELAY);
-  });
+      // ✅ CRITICAL: Check immediately
+      setTimeout(checkOrientation, 100);
 
-  if (window.screen?.orientation) {
-    window.screen.orientation.addEventListener('change', () => {
-      console.log('[ORIENT] 📱 screen.orientation.change');
-      setTimeout(() => checkWithStabilization(), CONFIG.CHECK_DELAY);
-    });
-  }
+    })();
+  </script>
 
-  if (window.matchMedia) {
-    const portraitMQL = window.matchMedia('(orientation: portrait)');
-    const landscapeMQL = window.matchMedia('(orientation: landscape)');
-    
-    const handler = () => checkWithStabilization();
-    
-    if (portraitMQL.addEventListener) {
-      portraitMQL.addEventListener('change', handler);
-      landscapeMQL.addEventListener('change', handler);
-    } else if (portraitMQL.addListener) {
-      portraitMQL.addListener(handler);
-      landscapeMQL.addListener(handler);
-    }
-  }
-
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) {
-      setTimeout(() => checkOrientation(true), 300);
-    }
-  });
-
-  window.addEventListener('pageshow', () => {
-    setTimeout(() => checkOrientation(true), 300);
-  });
-
-  // ===== MANUAL CONTROLS =====
-  window.HideRotationPrompt = function() {
-    const prompt = document.getElementById('rotation-prompt');
-    if (prompt) {
-      prompt.classList.remove('show');
-      state.promptVisible = false;
-      stopContinuousCheck();
-    }
-  };
-
-  window.skipRotationPrompt = function() {
-    console.log('[ORIENT] ⏭️ User skipped');
-    window.HideRotationPrompt();
-    const canvas = document.getElementById('unity-canvas');
-    if (canvas) {
-      canvas.style.display = 'block';
-      canvas.style.visibility = 'visible';
-    }
-  };
-
-  console.log('[ORIENT] ✅ v5.0 initialized');
-})();
-</script>
 
   <!-- Kulino Bridge -->
   <script>
@@ -686,8 +779,8 @@
       productName: "TestingWeb3",
       productVersion: "1.0",
       showBanner: unityShowBanner,
-      matchWebGLToCanvasSize: true,
-      devicePixelRatio: 1,
+      matchWebGLToCanvasSize: true, // ✅ CRITICAL for mobile
+      devicePixelRatio: 1, // ✅ CHANGED: Use 1 for better mobile performance
       webglContextAttributes: {
         preserveDrawingBuffer: false,
         powerPreference: "high-performance"
@@ -724,8 +817,17 @@
           }
         });
 
+        // ✅ Kulino Bridge ready
         if (typeof window.__kulino_unity_ready === 'function') {
           window.__kulino_unity_ready();
+        }
+
+        // ✅ NEW: Orientation system ready
+        if (typeof window.__kulino_orientation_ready === 'function') {
+          console.log('[UNITY] 📱 Calling orientation ready callback...');
+          setTimeout(() => {
+            window.__kulino_orientation_ready();
+          }, 500);
         }
 
         console.log('✅ Unity loaded and fully initialized');
@@ -750,5 +852,7 @@
     document.body.appendChild(script);
   </script>
 </body>
+
+
 
 </html>

@@ -735,7 +735,7 @@
     </div>
   </header>
 
-  <!-- ✅ MOBILE BROWSER WARNING (NEW) -->
+ <!-- ✅ MOBILE BROWSER WARNING (NEW) -->
 <div id="mobileBrowserWarning" class="hidden fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-yellow-500 to-orange-500 text-white p-3 shadow-lg">
   <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
     <div class="flex items-center gap-3 flex-1">
@@ -1665,6 +1665,36 @@
   }
 </script>
 
+  <script>
+  // Show warning if in Phantom browser
+  (function() {
+    const ua = navigator.userAgent || '';
+    const isPhantomBrowser = ua.includes('Phantom') || ua.includes('phantom');
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
+    
+    if (isPhantomBrowser && isMobile) {
+      document.getElementById('mobileBrowserWarning').classList.remove('hidden');
+      
+      // Offset content
+      const mainHeader = document.getElementById('mainHeader');
+      if (mainHeader) {
+        mainHeader.style.marginTop = '60px';
+      }
+    }
+  })();
+  
+  function copyCurrentURL() {
+    const url = window.location.href;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => {
+        showToast('URL copied! Open in Chrome browser', 'success');
+      });
+    } else {
+      // Fallback
+      prompt('Copy this URL and open in Chrome:', url);
+    }
+  }
+</script>
   <script src="./js/script-index.js"></script>
   <script src="./js/swap.js"></script>
 

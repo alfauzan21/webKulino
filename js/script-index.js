@@ -915,7 +915,7 @@ async function connectWallet() {
   console.log("🔌 Connect wallet initiated");
 
   const isMobile = isMobileDevice();
-  const isPhantomBrowser = isInPhantomBrowser(); // NEW!
+  const isPhantomBrowser = isInPhantomBrowser(); // NEW DETECTION
 
   try {
     // ✅ CHECK 1: Apakah sudah di Phantom browser?
@@ -941,12 +941,9 @@ async function connectWallet() {
         cancelButtonText: "Continue Anyway",
       }).then((result) => {
         if (result.isConfirmed) {
-          // Copy URL to clipboard
-          const url = window.location.href;
-          copyToClipboard(url);
+          copyToClipboard(window.location.href);
           showToast("URL copied! Open in Chrome browser", "success");
         } else if (result.dismiss === Swal.DismissReason.cancel) {
-          // User wants to continue anyway
           proceedWithConnection(isMobile);
         }
       });
@@ -958,7 +955,6 @@ async function connectWallet() {
       console.log("⚠️ Phantom wallet not detected");
 
       if (isMobile) {
-        // MOBILE: Jangan redirect ke app, minta install extension
         await Swal.fire({
           icon: "info",
           title: "Install Phantom Extension",
@@ -987,7 +983,6 @@ async function connectWallet() {
           denyButtonColor: "#10b981",
         }).then((result) => {
           if (result.isConfirmed) {
-            // Open extension store
             window.open(
               "https://chrome.google.com/webstore/detail/phantom/bfnaelmomeimhlpmgjnjophhpkkoljpa",
               "_blank"
@@ -997,7 +992,7 @@ async function connectWallet() {
           }
         });
       } else {
-        // DESKTOP: Normal flow
+        // DESKTOP
         await Swal.fire({
           icon: "warning",
           title: "Phantom Not Installed",
@@ -1022,12 +1017,11 @@ async function connectWallet() {
   }
 }
 
-// ===== HELPER FUNCTIONS (NEW) =====
+// ==================== MOBILE DETECTION HELPERS ====================
 
 // Detect if currently in Phantom's built-in browser
 function isInPhantomBrowser() {
   const ua = navigator.userAgent || "";
-  // Phantom browser has specific UA string
   return ua.includes("Phantom") || ua.includes("phantom");
 }
 
@@ -1249,6 +1243,9 @@ function playGame(gameId) {
 
   console.log("🚀 Opening game at:", gameUrl);
 
+  // Check if mobile
+  const isMobile = isMobileDevice();
+
   Swal.fire({
     title: "Loading Game...",
     html: `
@@ -1256,10 +1253,21 @@ function playGame(gameId) {
         <div class="inline-block w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
         <p class="text-gray-600">Opening <strong>${gameId}</strong></p>
         <p class="text-sm text-gray-500 mt-2">Game will open in a new tab</p>
+        ${isMobile ? `
+        <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-lg mt-4 border border-yellow-300">
+          <p class="text-sm font-semibold text-yellow-800 mb-2">📱 Mobile Instructions:</p>
+          <ol class="text-xs text-yellow-700 text-left list-decimal list-inside space-y-1">
+            <li>Game will open in new tab</li>
+            <li><strong>Rotate device to landscape</strong></li>
+            <li>Make sure rotation lock is OFF</li>
+            <li>Enjoy the game!</li>
+          </ol>
+        </div>
+        ` : ''}
       </div>
     `,
     showConfirmButton: false,
-    timer: 2000,
+    timer: isMobile ? 4000 : 2000,
     allowOutsideClick: false,
   });
 
@@ -1289,8 +1297,15 @@ function playGame(gameId) {
       Swal.fire({
         icon: "success",
         title: "Game Opened!",
-        text: "Check your new tab to play",
-        timer: 2000,
+        html: `
+          <p>Check your new tab to play</p>
+          ${isMobile ? `
+          <p class="text-sm text-yellow-600 mt-2">
+            <strong>Remember:</strong> Rotate to landscape mode!
+          </p>
+          ` : ''}
+        `,
+        timer: 3000,
         showConfirmButton: false,
       });
     }
