@@ -598,45 +598,62 @@
 
 
 <body class="bg-gradient-to-br from-gray-50 via-gray-100 to-indigo-50">
-  <div id="locationBlockOverlay">
-    <div class="location-block-content">
-      <div class="location-icon">
-        <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
+  <!-- ✅ IMPROVED: Location Permission Alert (Top-left corner) -->
+  <div id="locationAlert" class="fixed top-20 left-4 z-[9998] hidden max-w-sm animate-slide-in">
+    <div class="bg-white rounded-2xl shadow-2xl border-2 border-indigo-500 overflow-hidden">
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-white font-bold text-lg">Aktifkan Lokasi</h3>
+            <p class="text-white/80 text-xs">Required for access</p>
+          </div>
+        </div>
       </div>
 
-      <h2 class="text-2xl font-bold text-gray-800 mb-3">Aktifkan Lokasi Anda</h2>
-      <p class="text-gray-600 mb-4">
-        Untuk mengakses Kulino Game Hub, kami memerlukan akses lokasi Anda untuk memberikan pengalaman terbaik dan keamanan.
-      </p>
+      <!-- Content -->
+      <div class="p-4 space-y-3">
+        <p class="text-gray-700 text-sm">
+          Kami memerlukan akses lokasi Anda untuk memberikan pengalaman terbaik dan keamanan.
+        </p>
 
-      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-        <p class="text-sm text-yellow-800">
-          <strong>⚠️ Penting:</strong> Halaman ini tidak akan ditampilkan sampai Anda mengizinkan akses lokasi.
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+          <p class="text-xs text-yellow-800">
+            <strong>⚠️ Penting:</strong> Halaman tidak akan ditampilkan sampai Anda mengizinkan akses lokasi.
+          </p>
+        </div>
+
+        <div class="bg-gray-50 rounded-lg p-3">
+          <p class="text-xs font-semibold text-gray-700 mb-2">Cara mengaktifkan:</p>
+          <ol class="text-xs text-gray-600 space-y-1 list-decimal list-inside">
+            <li>Klik tombol "Izinkan Lokasi"</li>
+            <li>Izinkan akses pada popup browser</li>
+            <li>Tunggu hingga lokasi terdeteksi</li>
+          </ol>
+        </div>
+
+        <button onclick="requestLocationPermission()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+          </svg>
+          Izinkan Lokasi
+        </button>
+
+        <p class="text-xs text-gray-500 text-center">
+          Lokasi hanya digunakan untuk analitik dan keamanan
         </p>
       </div>
-
-      <div class="text-left bg-gray-50 rounded-lg p-4 mb-4">
-        <p class="text-sm font-semibold text-gray-700 mb-2">Cara mengaktifkan:</p>
-        <ol class="text-sm text-gray-600 space-y-1 ml-4 list-decimal">
-          <li>Klik tombol "Izinkan Lokasi" di bawah</li>
-          <li>Izinkan akses lokasi pada popup browser</li>
-          <li>Tunggu hingga lokasi terdeteksi</li>
-          <li>Halaman akan otomatis ditampilkan</li>
-        </ol>
-      </div>
-
-      <button onclick="requestLocationPermission()" class="retry-btn">
-        📍 Izinkan Lokasi
-      </button>
-
-      <p class="text-xs text-gray-500 mt-4">
-        Lokasi Anda hanya digunakan untuk analitik dan keamanan
-      </p>
     </div>
   </div>
+
+  <!-- Overlay untuk blur background saat alert muncul -->
+  <div id="locationOverlay" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9997] hidden"></div>
 
   <!-- Top Bar with Visitor Counter -->
   <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
@@ -735,23 +752,23 @@
     </div>
   </header>
 
- <!-- ✅ MOBILE BROWSER WARNING (NEW) -->
-<div id="mobileBrowserWarning" class="hidden fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-yellow-500 to-orange-500 text-white p-3 shadow-lg">
-  <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
-    <div class="flex items-center gap-3 flex-1">
-      <svg class="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-      </svg>
-      <div class="text-sm">
-        <p class="font-semibold">⚠️ Using Phantom Browser</p>
-        <p class="text-xs opacity-90">Landscape mode not supported. Open in Chrome for best experience.</p>
+  <!-- ✅ MOBILE BROWSER WARNING (NEW) -->
+  <div id="mobileBrowserWarning" class="hidden fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-yellow-500 to-orange-500 text-white p-3 shadow-lg">
+    <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 flex-1">
+        <svg class="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+        <div class="text-sm">
+          <p class="font-semibold">⚠️ Using Phantom Browser</p>
+          <p class="text-xs opacity-90">Landscape mode not supported. Open in Chrome for best experience.</p>
+        </div>
       </div>
+      <button onclick="copyCurrentURL()" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap">
+        📋 Copy URL
+      </button>
     </div>
-    <button onclick="copyCurrentURL()" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap">
-      📋 Copy URL
-    </button>
   </div>
-</div>
 
   <main class="max-w-6xl mx-auto px-4 py-8">
 
@@ -1635,66 +1652,66 @@
   </script>
 
   <script>
-  // Show warning if in Phantom browser
-  (function() {
-    const ua = navigator.userAgent || '';
-    const isPhantomBrowser = ua.includes('Phantom') || ua.includes('phantom');
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
-    
-    if (isPhantomBrowser && isMobile) {
-      document.getElementById('mobileBrowserWarning').classList.remove('hidden');
-      
-      // Offset content
-      const mainHeader = document.getElementById('mainHeader');
-      if (mainHeader) {
-        mainHeader.style.marginTop = '60px';
+    // Show warning if in Phantom browser
+    (function() {
+      const ua = navigator.userAgent || '';
+      const isPhantomBrowser = ua.includes('Phantom') || ua.includes('phantom');
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
+
+      if (isPhantomBrowser && isMobile) {
+        document.getElementById('mobileBrowserWarning').classList.remove('hidden');
+
+        // Offset content
+        const mainHeader = document.getElementById('mainHeader');
+        if (mainHeader) {
+          mainHeader.style.marginTop = '60px';
+        }
+      }
+    })();
+
+    function copyCurrentURL() {
+      const url = window.location.href;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(() => {
+          showToast('URL copied! Open in Chrome browser', 'success');
+        });
+      } else {
+        // Fallback
+        prompt('Copy this URL and open in Chrome:', url);
       }
     }
-  })();
-  
-  function copyCurrentURL() {
-    const url = window.location.href;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(url).then(() => {
-        showToast('URL copied! Open in Chrome browser', 'success');
-      });
-    } else {
-      // Fallback
-      prompt('Copy this URL and open in Chrome:', url);
-    }
-  }
-</script>
+  </script>
 
   <script>
-  // Show warning if in Phantom browser
-  (function() {
-    const ua = navigator.userAgent || '';
-    const isPhantomBrowser = ua.includes('Phantom') || ua.includes('phantom');
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
-    
-    if (isPhantomBrowser && isMobile) {
-      document.getElementById('mobileBrowserWarning').classList.remove('hidden');
-      
-      // Offset content
-      const mainHeader = document.getElementById('mainHeader');
-      if (mainHeader) {
-        mainHeader.style.marginTop = '60px';
+    // Show warning if in Phantom browser
+    (function() {
+      const ua = navigator.userAgent || '';
+      const isPhantomBrowser = ua.includes('Phantom') || ua.includes('phantom');
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
+
+      if (isPhantomBrowser && isMobile) {
+        document.getElementById('mobileBrowserWarning').classList.remove('hidden');
+
+        // Offset content
+        const mainHeader = document.getElementById('mainHeader');
+        if (mainHeader) {
+          mainHeader.style.marginTop = '60px';
+        }
+      }
+    })();
+
+    function copyCurrentURL() {
+      const url = window.location.href;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(() => {
+          showToast('URL copied! Open in Chrome browser', 'success');
+        });
+      } else {
+        // Fallback
+        prompt('Copy this URL and open in Chrome:', url);
       }
     }
-  })();
-  
-  function copyCurrentURL() {
-    const url = window.location.href;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(url).then(() => {
-        showToast('URL copied! Open in Chrome browser', 'success');
-      });
-    } else {
-      // Fallback
-      prompt('Copy this URL and open in Chrome:', url);
-    }
-  }
-</script>
+  </script>
   <script src="./js/script-index.js"></script>
   <script src="./js/swap.js"></script>
 

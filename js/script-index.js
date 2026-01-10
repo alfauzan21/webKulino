@@ -269,6 +269,50 @@ function checkLocationStatus() {
   return false;
 }
 
+function showLocationAlert() {
+  console.log("📍 Showing location alert");
+  
+  const alert = document.getElementById("locationAlert");
+  const overlay = document.getElementById("locationOverlay");
+  const mainContent = document.getElementById("mainContent");
+  
+  if (alert) {
+    alert.classList.remove("hidden");
+    overlay.classList.remove("hidden");
+    mainContent.classList.add("blurred");
+  }
+}
+
+function hideLocationAlert() {
+  const alert = document.getElementById("locationAlert");
+  const overlay = document.getElementById("locationOverlay");
+  const mainContent = document.getElementById("mainContent");
+  
+  if (alert) {
+    alert.classList.add("hidden");
+    overlay.classList.add("hidden");
+    mainContent.classList.remove("blurred");
+  }
+}
+
+function showMainContent() {
+  hideLocationAlert();
+  document.getElementById("mainContent").classList.add("active");
+  console.log("✅ Main content displayed");
+}
+
+// Initialize on page load
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("🚀 Initializing location system...");
+
+  // Check if location already granted
+  if (!checkLocationStatus()) {
+    // Show location alert instead of fullscreen overlay
+    showLocationAlert();
+    console.log("⚠️ Location not granted, showing alert");
+  }
+});
+
 // Request location permission
 async function requestLocationPermission() {
   console.log("📍 Requesting location permission...");
