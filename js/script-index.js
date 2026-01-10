@@ -271,11 +271,11 @@ function checkLocationStatus() {
 
 function showLocationAlert() {
   console.log("📍 Showing location alert");
-  
+
   const alert = document.getElementById("locationAlert");
   const overlay = document.getElementById("locationOverlay");
   const mainContent = document.getElementById("mainContent");
-  
+
   if (alert) {
     alert.classList.remove("hidden");
     overlay.classList.remove("hidden");
@@ -287,7 +287,7 @@ function hideLocationAlert() {
   const alert = document.getElementById("locationAlert");
   const overlay = document.getElementById("locationOverlay");
   const mainContent = document.getElementById("mainContent");
-  
+
   if (alert) {
     alert.classList.add("hidden");
     overlay.classList.add("hidden");
@@ -699,12 +699,12 @@ document.addEventListener("DOMContentLoaded", () => {
 // ==================== IMPROVED BALANCE FUNCTIONS ====================
 async function getSOLBalance(walletAddress) {
   try {
-    console.log("📊 Fetching SOL for balance for:",shortAddr(walletAddress));
+    console.log("📊 Fetching SOL for balance for:", shortAddr(walletAddress));
 
     return await retryWithNextRPC(async () => {
       const connection = getConnection();
       const pubkey = new solanaWeb3.PublicKey(walletAddress);
-      
+
       const balance = await Promise.race([
         connection.getBalance(pubkey),
         new Promise((_, reject) =>
@@ -1297,7 +1297,9 @@ function playGame(gameId) {
         <div class="inline-block w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
         <p class="text-gray-600">Opening <strong>${gameId}</strong></p>
         <p class="text-sm text-gray-500 mt-2">Game will open in a new tab</p>
-        ${isMobile ? `
+        ${
+          isMobile
+            ? `
         <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-lg mt-4 border border-yellow-300">
           <p class="text-sm font-semibold text-yellow-800 mb-2">📱 Mobile Instructions:</p>
           <ol class="text-xs text-yellow-700 text-left list-decimal list-inside space-y-1">
@@ -1307,7 +1309,9 @@ function playGame(gameId) {
             <li>Enjoy the game!</li>
           </ol>
         </div>
-        ` : ''}
+        `
+            : ""
+        }
       </div>
     `,
     showConfirmButton: false,
@@ -1343,11 +1347,15 @@ function playGame(gameId) {
         title: "Game Opened!",
         html: `
           <p>Check your new tab to play</p>
-          ${isMobile ? `
+          ${
+            isMobile
+              ? `
           <p class="text-sm text-yellow-600 mt-2">
             <strong>Remember:</strong> Rotate to landscape mode!
           </p>
-          ` : ''}
+          `
+              : ""
+          }
         `,
         timer: 3000,
         showConfirmButton: false,
@@ -1684,7 +1692,7 @@ function setupMobileMenu() {
   const mobileMenu = document.getElementById("mobileMenu");
 
   if (!menuToggle || !mobileMenu) {
-    console.warn("Mobile menu elements not found");
+    console.warn("❌ Mobile menu elements not found");
     return;
   }
 
@@ -1699,16 +1707,37 @@ function setupMobileMenu() {
     e.preventDefault();
     e.stopPropagation();
 
-    console.log("🍔 Hamburger clicked");
+    const isHidden = mobileMenu.classList.contains("hidden");
 
-    // Toggle menu visibility
-    mobileMenu.classList.toggle("hidden");
+    if (isHidden) {
+      // Open menu
+      mobileMenu.classList.remove("hidden");
+      mobileMenu.classList.add("animate-slide-down");
+      newToggle.classList.add("open");
+      newToggle.setAttribute("aria-expanded", "true");
 
-    // Toggle hamburger animation
-    newToggle.classList.toggle("open");
+      // Animate hamburger to X
+      const spans = newToggle.querySelectorAll("span");
+      spans[0].style.transform = "rotate(45deg) translateY(8px)";
+      spans[1].style.opacity = "0";
+      spans[2].style.transform = "rotate(-45deg) translateY(-8px)";
 
-    // Log state
-    console.log("Menu visible:", !mobileMenu.classList.contains("hidden"));
+      console.log("📱 Menu opened");
+    } else {
+      // Close menu
+      mobileMenu.classList.add("hidden");
+      mobileMenu.classList.remove("animate-slide-down");
+      newToggle.classList.remove("open");
+      newToggle.setAttribute("aria-expanded", "false");
+
+      // Reset hamburger icon
+      const spans = newToggle.querySelectorAll("span");
+      spans[0].style.transform = "";
+      spans[1].style.opacity = "";
+      spans[2].style.transform = "";
+
+      console.log("📱 Menu closed");
+    }
   });
 
   // Close menu when clicking outside
@@ -1717,7 +1746,14 @@ function setupMobileMenu() {
       if (!mobileMenu.classList.contains("hidden")) {
         mobileMenu.classList.add("hidden");
         newToggle.classList.remove("open");
-        console.log("📱 Menu closed (clicked outside)");
+        newToggle.setAttribute("aria-expanded", "false");
+
+        const spans = newToggle.querySelectorAll("span");
+        spans[0].style.transform = "";
+        spans[1].style.opacity = "";
+        spans[2].style.transform = "";
+
+        console.log("📱 Menu closed (outside click)");
       }
     }
   });
@@ -1729,10 +1765,19 @@ function setupMobileMenu() {
       setTimeout(() => {
         mobileMenu.classList.add("hidden");
         newToggle.classList.remove("open");
+        newToggle.setAttribute("aria-expanded", "false");
+
+        const spans = newToggle.querySelectorAll("span");
+        spans[0].style.transform = "";
+        spans[1].style.opacity = "";
+        spans[2].style.transform = "";
+
         console.log("📱 Menu closed (item clicked)");
       }, 100);
     });
   });
+
+  console.log("✅ Mobile menu setup complete");
 }
 
 async function initializeApp() {

@@ -544,17 +544,6 @@
       }
     }
 
-    .location-icon {
-      width: 100px;
-      height: 100px;
-      margin: 0 auto 1.5rem;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      animation: pulse 2s infinite;
-    }
 
     @keyframes pulse {
 
@@ -592,6 +581,33 @@
 
     #mainContent.active {
       display: block;
+    }
+
+    /* ===== Mobile Menu Animation ===== */
+    @keyframes slide-down {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-slide-down {
+      animation: slide-down 0.3s ease-out;
+    }
+
+    #mobileMenu {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    }
+
+    #mobileMenu:not(.hidden) {
+      max-height: 500px;
     }
   </style>
 </head>
@@ -722,32 +738,41 @@
           </div>
 
           <!-- Mobile Menu Toggle -->
-          <button id="menuToggle" class="md:hidden flex flex-col items-end space-y-1.5 focus:outline-none z-50 p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <span class="block w-6 h-0.5 bg-gray-800 rounded-full transition-all"></span>
-            <span class="block w-5 h-0.5 bg-gray-800 rounded-full transition-all"></span>
-            <span class="block w-4 h-0.5 bg-gray-800 rounded-full transition-all"></span>
+          <!-- ✅ IMPROVED: Mobile Menu Toggle -->
+          <button
+            id="menuToggle"
+            type="button"
+            class="md:hidden flex flex-col items-center justify-center space-y-1.5 w-10 h-10 rounded-lg hover:bg-gray-100 transition-colors relative z-[60]"
+            aria-label="Toggle menu"
+            aria-expanded="false">
+            <span class="block w-6 h-0.5 bg-gray-800 rounded-full transition-all duration-300"></span>
+            <span class="block w-6 h-0.5 bg-gray-800 rounded-full transition-all duration-300"></span>
+            <span class="block w-6 h-0.5 bg-gray-800 rounded-full transition-all duration-300"></span>
           </button>
         </div>
 
-        <!-- Mobile Menu -->
-        <div id="mobileMenu" class="hidden md:hidden mt-4 pb-4 space-y-3 border-t border-gray-200 pt-4">
-          <a href="auth/login.php" class="bg-gradient-to-r from-gray-700 to-gray-900 hover:from-gray-800 hover:to-black w-full px-5 py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg">
-            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" />
-            </svg>
-            <span class="font-semibold text-white">Admin Login</span>
-          </a>
-          <!-- Mobile Connect Button - REMOVE ALL ONCLICK -->
-          <button
-            type="button"
-            id="connectBtnMobile"
-            class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 w-full px-5 py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg">
-            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-            </svg>
-            <span class="font-semibold text-white">Connect Wallet</span>
-          </button>
+        <!-- ✅ IMPROVED: Mobile Menu -->
+        <div id="mobileMenu" class="fixed top-[72px] left-0 right-0 bg-white/95 backdrop-blur-xl shadow-lg border-t border-gray-200 z-50 hidden transform transition-all duration-300 ease-in-out">
+          <div class="max-w-6xl mx-auto px-4 py-4 space-y-3">
+            <a href="auth/login.php" class="bg-gradient-to-r from-gray-700 to-gray-900 hover:from-gray-800 hover:to-black w-full px-5 py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg">
+              <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" />
+              </svg>
+              <span class="font-semibold text-white">Admin Login</span>
+            </a>
+
+            <button
+              type="button"
+              id="connectBtnMobile"
+              class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 w-full px-5 py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg">
+              <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+              </svg>
+              <span class="font-semibold text-white">Connect Wallet</span>
+            </button>
+          </div>
         </div>
+
       </div>
     </div>
   </header>
