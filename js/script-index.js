@@ -1817,6 +1817,9 @@ async function initializeApp() {
   setupButton("connectBtn");
   setupButton("connectBtnMobile");
 
+  // ✅ Setup mobile menu
+  setupMobileMenu();
+  
   // Setup disconnect button
   const disconnectBtn = document.getElementById("disconnectBtn");
   if (disconnectBtn) {
